@@ -1,4 +1,6 @@
 fastapi
+gunicorn
+uvicorn
 numpy
 requests
 transformers

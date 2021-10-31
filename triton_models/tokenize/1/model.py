@@ -14,7 +14,7 @@ class TritonPythonModel:
         for request in requests:
             # binary data typed back to string
             query = [t.decode('UTF-8') for t in pb_utils.get_input_tensor_by_name(request, "TEXT").as_numpy().tolist()]
-            tokens = self.tokenizer(text=query, return_token_type_ids=False, return_tensors=TensorType.NUMPY)
+            tokens = self.tokenizer(text=query, return_token_type_ids=False, return_tensors=TensorType.NUMPY, max_length=128, truncation=True,)
             # communicate the tokenization results to Triton server
             input_ids = pb_utils.Tensor("INPUT_IDS", tokens['input_ids'])
             attention = pb_utils.Tensor("ATTENTION", tokens['attention_mask'])

@@ -1,0 +1,29 @@
+name: "cross"
+platform: "onnxruntime_onnx"
+max_batch_size: 0
+
+input [
+    {
+        name: "input_ids"
+        data_type: TYPE_INT64
+        dims: [-1, -1]
+    },
+    {
+        name: "attention_mask"
+        data_type: TYPE_INT64
+        dims: [-1, -1]
+    }
+]
+
+output {
+    name: "model_output"
+    data_type: TYPE_FP32
+    dims: [-1, 2]
+}
+
+instance_group [
+    {
+      count: 1
+      kind: KIND_GPU
+    }
+]

@@ -7,7 +7,7 @@ They may need some small adaptations to be run on a modern Linux
 
 ## Performance target
 
-[Huggingface demo video](https://www.youtube.com/watch?v=jiftCAhOYQA)
+[Hugging Face infinity demo video](https://www.youtube.com/watch?v=jiftCAhOYQA)
 
 * hardware: T4 / g4.dnn
 * model: "philschmid/MiniLM-L6-H384-uncased-sst2"
@@ -88,12 +88,13 @@ Performance counter stats for 'curl -G --data-urlencode query=This live event is
 https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md
 
 ```shell
-# copy the generated model
-cp ./onnx_models/model-optimized.onnx ./triton_models/cross/1/model.onnx
-docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3
-# inside the container
-pip install transformers # just to get tokenizer support
-tritonserver --model-repository=/models # launch server
+# copy the generated model to triton model folder
+cp ./onnx_models/model-optimized.onnx ./triton_models/sts/1/model.onnx
+# install transformers (and its tokenizer) and launch server in a single line, ugly but good enough for our demo
+# --shm-size 256m -> to have several Python backend at the same time
+docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
+  bash -c pip install transformers && tritonserver --model-repository=/models
 ```
 
 ## Perf analysis

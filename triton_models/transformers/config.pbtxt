@@ -1,6 +1,7 @@
 name: "transformers"
 platform: "ensemble"
 max_batch_size: 0
+
 input [
     {
         name: "TEXT"
@@ -8,48 +9,50 @@ input [
         dims: [ -1 ]
     }
 ]
+
 output {
-    name: "model_output"
+    name: "score"
     data_type: TYPE_FP32
     dims: [-1, 2]
 }
+
 ensemble_scheduling {
-  step [
-    {
-      model_name: "tokenize"
-      model_version: -1
-      input_map {
-        key: "TEXT"
-        value: "TEXT"
-      }
-      output_map [
-          {
-            key: "INPUT_IDS"
-            value: "INPUT_IDS"
-          },
-          {
-            key: "ATTENTION"
-            value: "ATTENTION"
-          }
-      ]
-    },
-    {
-      model_name: "cross"
-      model_version: -1
-      input_map [
-          {
-            key: "input_ids"
-            value: "INPUT_IDS"
-          },
-          {
-            key: "attention_mask"
-            value: "ATTENTION"
-          }
-      ]
-      output_map {
-        key: "model_output"
-        value: "model_output"
-      }
-    }
-  ]
+    step [
+        {
+            model_name: "tokenize"
+            model_version: -1
+            input_map {
+            key: "TEXT"
+            value: "TEXT"
+        }
+        output_map [
+            {
+                key: "INPUT_IDS"
+                value: "INPUT_IDS"
+            },
+            {
+                key: "ATTENTION"
+                value: "ATTENTION"
+            }
+        ]
+        },
+        {
+            model_name: "sts"
+            model_version: -1
+            input_map [
+                {
+                    key: "input_ids"
+                    value: "INPUT_IDS"
+                },
+                {
+                    key: "attention_mask"
+                    value: "ATTENTION"
+                }
+            ]
+        output_map {
+                key: "model_output"
+                value: "score"
+            }
+        }
+    ]
 }

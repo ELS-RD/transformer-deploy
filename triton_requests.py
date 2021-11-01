@@ -19,19 +19,19 @@ tokens = tokenizer(text=text,
                    )
 
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md
-url = 'http://127.0.0.1:8000/v2/models/cross/versions/1/infer'
+url = 'http://127.0.0.1:8000/v2/models/sts/versions/1/infer'
 message = {
     "id": "42",
     "inputs": [
         {
             "name": "input_ids",
-            "shape": [1, 16],
+            "shape": tokens['input_ids'].shape,
             "datatype": "INT64",
             "data": tokens['input_ids'].tolist()
         },
         {
             "name": "attention_mask",
-            "shape": [1, 16],
+            "shape": tokens['attention_mask'].shape,
             "datatype": "INT64",
             "data": tokens['attention_mask'].tolist()
         },

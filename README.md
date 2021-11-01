@@ -29,7 +29,7 @@ pip3 install -r requirements.txt
 ```shell
 # inside the triton_transformers folder
 DOCKER_BUILDKIT=1 docker build --tag onnxruntime-trt:latest -f Dockerfile .
-docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c cd /project && python convert_onnx.py
+docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c "cd /project && python convert_onnx.py"
 ```
 
 ```log
@@ -94,7 +94,7 @@ cp ./onnx_models/model-optimized.onnx ./triton_models/sts/1/model.onnx
 # --shm-size 256m -> to have several Python backend at the same time
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
   -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
-  bash -c pip install transformers && tritonserver --model-repository=/models
+  bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 
 ## Perf analysis
@@ -118,7 +118,7 @@ ubuntu@ip-XXX:~/triton_transformers$ python3 triton_transformers.py
 ```
 
 [documentation](https://github.com/triton-inference-server/server/blob/main/docs/perf_analyzer.md)
-To run on your machine only (the tool won't work on Ubuntu 18.04 :-( ):
+To run on Ubuntu >= 20.04 (the tool won't work on Ubuntu 18.04 used for the AWS official Ubuntu deep learning image):
 
 ```shell
 # perf_analyzer needs this dependency
@@ -130,3 +130,14 @@ sudo apt install libb64-dev
 # python -m onnxruntime.tools.symbolic_shape_infer --input output/okdoc-base-onnx/model.onnx --output output/okdoc-base-onnx/model2.onnx --auto_merge
 # /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/qdq_model.onnx" --int8 --calib="/home/geantvert/workspace/okdoc/calibration.json" --workspace=6000
 # /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/model.onnx" --shapes=input_ids:1x128,attention_mask:1x128 --workspace=6000 --best
+
+## Call Triton HTTP API directly
+
+If you don't want to use the tritonclient API, you can call the Triton server those ways:
+
+```shell
+# if you like requests liubrary
+python3 triton_requests.py
+# if you want generic HTTP template, the @ means no data conversion
+curl -X POST  http://localhost:8000/v2/models/transformers/versions/1/infer --data-binary "@query_body.bin" --header "Inference-Header-Content-Length: 160"
+```

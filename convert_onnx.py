@@ -185,7 +185,7 @@ time_buffer = []
 for _ in range(nb_benchmark):
     with track_infer_time(time_buffer):
         model_pytorch(**inputs_pytorch)
-results["Pytorch_32"] = time_buffer
+results["Pytorch_fp32"] = time_buffer
 
 with autocast():
     for _ in range(warm_up):

@@ -1,9 +1,7 @@
 import logging
 import multiprocessing
 import os
-from contextlib import contextmanager
 from pathlib import Path
-from time import time
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -89,7 +87,7 @@ def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pyt
             dynamic_axes={
                 "input_ids": symbolic_names,  # variable length axes
                 "attention_mask": symbolic_names,
-                "model_output": symbolic_names,
+                "model_output": {0: "batch_size"},
             },
             verbose=False,
         )

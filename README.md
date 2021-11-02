@@ -130,14 +130,52 @@ sudo apt install libb64-dev
 # python -m onnxruntime.tools.symbolic_shape_infer --input output/okdoc-base-onnx/model.onnx --output output/okdoc-base-onnx/model2.onnx --auto_merge
 # /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/qdq_model.onnx" --int8 --calib="/home/geantvert/workspace/okdoc/calibration.json" --workspace=6000
 # /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/model.onnx" --shapes=input_ids:1x128,attention_mask:1x128 --workspace=6000 --best
+# /usr/src/tensorrt/bin/trtexec --onnx=onnx_models/model.onnx --best --shapes=input_ids:8x128,attention_mask:8x128 --workspace=6000
+# /usr/src/tensorrt/bin/trtexec --onnx=quantization.onnx --best --shapes=input_ids:8x128,attention_mask:8x128 --workspace=6000
+
 
 ## Call Triton HTTP API directly
 
-If you don't want to use the tritonclient API, you can call the Triton server those ways:
+If you don't want to use the `tritonclient` API, you can call the Triton server those ways:
 
 ```shell
 # if you like requests liubrary
 python3 triton_requests.py
 # if you want generic HTTP template, the @ means no data conversion
-curl -X POST  http://localhost:8000/v2/models/transformers/versions/1/infer --data-binary "@query_body.bin" --header "Inference-Header-Content-Length: 160"
+curl -X POST  http://localhost:8000/v2/models/transformers/versions/1/infer \
+  --data-binary "@query_body.bin" \
+  --header "Inference-Header-Content-Length: 160"
 ```
+
+## Use TensorRT model in Triton server
+
+To use TensorRT model instead of ONNX Runtime one:
+
+* we need to convert the ONNX to TensorRT engine
+* update the configuration, TensorRT takes int32 as input instead of int64
+
+```shell
+# we use Docker to be sure it's the right trtexec version which is used, otherwise you may have an error message
+# it's a bacic conversion, IRL you want to provide minimum, optimimum and maximum shape at least
+# it may takes a few minutes...
+docker run -it --rm --gpus all -v $PWD/onnx_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
+    /usr/src/tensorrt/bin/trtexec \
+    --onnx=/models/model.onnx \
+    --best \
+    --shapes=input_ids:1x128,attention_mask:1x128 \
+    --saveEngine="/models/model.plan" \
+    --workspace=6000
+# move to triton model folder
+cp ./onnx_models/model.plan ./triton_models/sts/1/model.plan
+```
+
+You then need to update you config.pbtxt in sts and tokenizer to replace all TYPE_INT64 tensors by TYPE_INT64 (just replace the type).
+In STS, replace `platform: "onnxruntime_onnx"` by `platform: "tensorrt_plan"`
+Finally convert the tensors to int32 in the tokenizer model, like that (notice the `astype()`):
+
+```python
+input_ids = pb_utils.Tensor("INPUT_IDS", tokens['input_ids'].astype(np.int32))
+attention = pb_utils.Tensor("ATTENTION", tokens['attention_mask'].astype(np.int32))
+```
+
+And you are done!

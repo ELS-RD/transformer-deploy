@@ -5,7 +5,7 @@ from utils import print_timings, setup_logging, track_infer_time
 model_name = 'sts'
 url = '127.0.0.1:8000'
 model_version = '1'
-nb_tokens = 16
+nb_tokens = 16  # edit to check longer sequence length
 
 setup_logging()
 triton_client = tritonclient.http.InferenceServerClient(url=url, verbose=False)

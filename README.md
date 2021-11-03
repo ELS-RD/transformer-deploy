@@ -26,6 +26,9 @@ pip3 install -r requirements.txt
 
 ## Generate optimized models
 
+We generate the models from a Docker image so we can also get measures for TensorRT + ONNX Runtime.
+If you don't care about TensorRT, just run the script on the VM bash.
+
 ```shell
 # inside the triton_transformers folder
 DOCKER_BUILDKIT=1 docker build --tag onnxruntime-trt:latest -f Dockerfile .
@@ -61,7 +64,7 @@ python3 -m gunicorn -w 1 -k uvicorn.workers.UvicornWorker --log-level warning se
 time curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict
 # serious measures
 sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
-sudo perf stat -r 50 -d curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict
+sudo perf stat -r 50 -d curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict -s > /dev/null
 ```
 
 ```shell

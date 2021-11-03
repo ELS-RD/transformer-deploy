@@ -72,21 +72,18 @@ def prepare_input(
 
 
 def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Dict[str, torch.Tensor]) -> None:
-    symbolic_names = {0: "batch_size", 1: "sequence"}
-
     with torch.no_grad():
         torch.onnx.export(
-            model_pytorch,  # model being run
-            args=tuple(inputs_pytorch.values()),  # model input (or a tuple for multiple inputs)
-            f=output_path,
-            # where to save the model (can be a file or file-like object)
-            opset_version=12,  # the ONNX version to export the model to
-            do_constant_folding=True,  # whether to execute constant folding for optimization
-            input_names=["input_ids", "attention_mask"],  # the model's input names
-            output_names=["model_output"],  # the model's output names
-            dynamic_axes={
-                "input_ids": symbolic_names,  # variable length axes
-                "attention_mask": symbolic_names,
+            model_pytorch,  # model to optimize
+            args=(inputs_pytorch["input_ids"], inputs_pytorch["attention_mask"]),  # tuple of multiple inputs
+            f=output_path,  # output path / file object
+            opset_version=12,  # the ONNX version to use
+            do_constant_folding=True,  # simplify model (replace constant expressions)
+            input_names=["input_ids", "attention_mask"],  # input names
+            output_names=["model_output"],  # output name
+            dynamic_axes={  # declare dynamix axis for each input / output (dynamic axis == variable length axis)
+                "input_ids": {0: "batch_size", 1: "sequence"},
+                "attention_mask": {0: "batch_size", 1: "sequence"},
                 "model_output": {0: "batch_size"},
             },
             verbose=False,
@@ -95,18 +92,18 @@ def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pyt
 
 def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> None:
     optimization_options = FusionOptions("bert")
-    # optimization_options.enable_gelu_approximation = True
+    optimization_options.enable_gelu_approximation = True  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
         model_type="bert",
         use_gpu=use_cuda,
         opt_level=1,
-        num_heads=0,
-        hidden_size=0,
+        num_heads=0,  # automatic detection
+        hidden_size=0,  # automatic detection
         optimization_options=optimization_options,
     )
 
-    optimized_model.convert_float_to_float16()
+    optimized_model.convert_float_to_float16()  # FP32 -> FP16
     logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
     optimized_model.save_model_to_file(onnx_optim_fp16_path)
 

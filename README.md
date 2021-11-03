@@ -1,9 +1,10 @@
-# Submillisecond Transformer inference
+# Submillisecond Transformer inference and deployment on Nvidia Triton server
 
 Yes, you can perfom inference with transformer based model in less than 1ms on the cheapest GPU available on Amazon (T4)!
 
 The command below have been tested on a AWS G4.dnn with IMAGE VERSION USED.
-They may need some small adaptations to be run on a modern Linux
+They may need some small adaptations to be run on a modern Linux.
+
 
 ## Performance target
 
@@ -12,11 +13,11 @@ They may need some small adaptations to be run on a modern Linux
 * hardware: T4 / g4.dnn
 * model: "philschmid/MiniLM-L6-H384-uncased-sst2"
 * experience 1 : seq len 16 tokens -> 1.7ms
-* experience 2 : seq len 128 tokens -> 2.7ms
+* experience 2 : seq len 128 tokens -> 2.5ms
 
 ## Install dependencies
 
-To be installed on the remote machine directly (no container).
+Those dependencies have to be installed on the remote machine directly (no container).
 
 ```shell
 git clone git@github.com:ELS-RD/triton_transformers.git
@@ -27,13 +28,15 @@ pip3 install -r requirements.txt
 ## Generate optimized models
 
 We generate the models from a Docker image so we can also get measures for TensorRT + ONNX Runtime.
-If you don't care about TensorRT, just run the script on the VM bash.
+If you don't care about TensorRT measures, you don't need the Docker image.
 
 ```shell
-# inside the triton_transformers folder
+cd "... path to triton_transformers folder ..."
 DOCKER_BUILDKIT=1 docker build --tag onnxruntime-trt:latest -f Dockerfile .
 docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c "cd /project && python convert_onnx.py"
 ```
+
+It should produce something like that:
 
 ```log
 10/31/2021 11:35:08 INFO     inference done on Tesla T4
@@ -44,15 +47,15 @@ docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c "cd /pro
 10/31/2021 11:35:08 INFO     timing [Pytorch_fp16]: mean=6.04ms, sd=0.74ms, min=5.77ms, max=28.79ms, median=6.05ms, 95p=6.19ms, 99p=6.29ms
 ```
 
-TensorRT and optimized onnxruntime provides very similar results on short sequences.
-In the following steps, we will continu with onnxruntime model because the dynamic axis are easier to work with compared to TensorRT. 
+TensorRT and optimized ONNX Runtime provides very similar results on short sequences.
+In the following steps, we will continue with ONNX Runtime model because the dynamic axis are easier to work with compared to TensorRT. 
 
-> Docker build will take almost 1 hour...
-> the docker image is only required for `tensorrt` support inside `onnxruntime` (and measure a difference, if any, with onnxruntime).
-> if you don't want to wait, you can also just install onnxruntime-gpu from pip on the machine (no container) 
-> and disable the line `("TensorrtExecutionProvider", infered_shape_model_onnx_path),` to run the script directly on the machine
+> Docker build will is very slow on a G4, be patient...
+> the docker image is only required for `tensorrt` support inside `ONNX Runtime` (and measure a difference, if any, with ONNX Runtime).
 
 ## FastAPI server
+
+This is our baseline, easy to run, but not very performant.
 
 ```shell
 # launch server, disable logging for best performances
@@ -62,10 +65,12 @@ python3 -m gunicorn -w 1 -k uvicorn.workers.UvicornWorker --log-level warning se
 
 # simple inference timing
 time curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict
-# serious measures
+# slightly more serious measure
 sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
 sudo perf stat -r 50 -d curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict -s > /dev/null
 ```
+
+It should produce:
 
 ```shell
 Performance counter stats for 'curl -G --data-urlencode query=This live event is great. I will sign-up for Infinity. localhost:8000/predict' (50 runs):
@@ -88,7 +93,9 @@ Performance counter stats for 'curl -G --data-urlencode query=This live event is
 
 ## Triton server
 
-https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md
+We want to copy the ONNX model we have generated in the first step in this folder.
+Then we launch the Triton image. As you can see we install Transformers and then launch the server itself.
+This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
 ```shell
 # copy the generated model to triton model folder
@@ -100,11 +107,9 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 
-## Perf analysis
+## Triton server perf analysis
 
-```shell
-python3 triton_transformers.py
-```
+You need to edit the source code to load the 16 or 128 token sequence (the text is already included).
 
 * 16 tokens:
 ```shell
@@ -120,8 +125,10 @@ ubuntu@ip-XXX:~/triton_transformers$ python3 triton_transformers.py
 [[-3.4589844  3.3027344]]
 ```
 
+There is also a more serious performance analysis tool called perf_analyzer (it will take care to check that measures are stable, etc.).
 [documentation](https://github.com/triton-inference-server/server/blob/main/docs/perf_analyzer.md)
-To run on Ubuntu >= 20.04 (the tool won't work on Ubuntu 18.04 used for the AWS official Ubuntu deep learning image):
+The tool need to be run on Ubuntu >= 20.04 (and won't work on Ubuntu 18.04 used for the AWS official Ubuntu deep learning image):
+It also make measures on torchserve and tensorflow.
 
 ```shell
 # perf_analyzer needs this dependency
@@ -130,37 +137,31 @@ sudo apt install libb64-dev
 ~/.local/bin/perf_analyzer -m transformers --percentile=95 --input-data perf_data.json --shape TEXT:1 # -i grpc -a
 ```
 
-# python -m onnxruntime.tools.symbolic_shape_infer --input output/okdoc-base-onnx/model.onnx --output output/okdoc-base-onnx/model2.onnx --auto_merge
-# /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/qdq_model.onnx" --int8 --calib="/home/geantvert/workspace/okdoc/calibration.json" --workspace=6000
-# /usr/src/tensorrt/bin/trtexec --onnx="output/okdoc-base-onnx/model.onnx" --shapes=input_ids:1x128,attention_mask:1x128 --workspace=6000 --best
-# /usr/src/tensorrt/bin/trtexec --onnx=onnx_models/model.onnx --best --shapes=input_ids:8x128,attention_mask:8x128 --workspace=6000
-# /usr/src/tensorrt/bin/trtexec --onnx=quantization.onnx --best --shapes=input_ids:8x128,attention_mask:8x128 --workspace=6000
-
-
 ## Call Triton HTTP API directly
 
 If you don't want to use the `tritonclient` API, you can call the Triton server those ways:
 
 ```shell
-# if you like requests liubrary
+# if you like Python requests library
 python3 triton_requests.py
+
 # if you want generic HTTP template, the @ means no data conversion
 curl -X POST  http://localhost:8000/v2/models/transformers/versions/1/infer \
   --data-binary "@query_body.bin" \
   --header "Inference-Header-Content-Length: 160"
 ```
 
-## Use TensorRT model in Triton server
+## Use TensorRT model in Triton server (instead of ONNX)
 
 To use TensorRT model instead of ONNX Runtime one:
 
 * we need to convert the ONNX to TensorRT engine
-* update the configuration, TensorRT takes int32 as input instead of int64
+* update the configuration, TensorRT takes `int32` as input instead of `int64`
 
 ```shell
-# we use Docker to be sure it's the right trtexec version which is used, otherwise you may have an error message
+# we use Docker container to guarantee the use of the right trtexec version (otherwise you will have a deserialization error)
 # it's a bacic conversion, IRL you want to provide minimum, optimimum and maximum shape at least
-# it may takes a few minutes...
+# it may take a few minutes...
 docker run -it --rm --gpus all -v $PWD/onnx_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
     /usr/src/tensorrt/bin/trtexec \
     --onnx=/models/model.onnx \
@@ -172,9 +173,9 @@ docker run -it --rm --gpus all -v $PWD/onnx_models:/models nvcr.io/nvidia/triton
 cp ./onnx_models/model.plan ./triton_models/sts/1/model.plan
 ```
 
-You then need to update you config.pbtxt in sts and tokenizer to replace all TYPE_INT64 tensors by TYPE_INT64 (just replace the type).
-In STS, replace `platform: "onnxruntime_onnx"` by `platform: "tensorrt_plan"`
-Finally convert the tensors to int32 in the tokenizer model, like that (notice the `astype()`):
+You then need to update you config.pbtxt in STS and tokenizer folders, replace all `TYPE_INT64` tensor type by `TYPE_INT32`.
+In STS configuraiton file, replace `platform: "onnxruntime_onnx"` by `platform: "tensorrt_plan"`
+Finally convert the numpy tensors to int32 in the tokenizer python code, like below (notice the `astype()`):
 
 ```python
 input_ids = pb_utils.Tensor("INPUT_IDS", tokens['input_ids'].astype(np.int32))

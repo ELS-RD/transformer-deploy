@@ -1,16 +1,16 @@
 import logging
 from contextlib import contextmanager
-from time import time
+import time
 from typing import List
 import numpy as np
 
 
 def print_timings(name: str, timings: List[float]):
-    mean_time = 1e3 * np.mean(timings)
-    std_time = 1e3 * np.std(timings)
-    min_time = 1e3 * np.min(timings)
-    max_time = 1e3 * np.max(timings)
-    median, percent_95_time, percent_99_time = 1e3 * np.percentile(timings, [50, 95, 99])
+    mean_time = np.mean(timings) / 1e6
+    std_time = np.std(timings) / 1e6
+    min_time = np.min(timings) / 1e6
+    max_time = np.max(timings) / 1e6
+    median, percent_95_time, percent_99_time = np.percentile(timings, [50, 95, 99]) / 1e6
     logging.info(
         f"timing [{name}]: "
         f"mean={mean_time:.2f}ms, "
@@ -29,7 +29,7 @@ def setup_logging():
 
 @contextmanager
 def track_infer_time(buffer: [int]):
-    start = time()
+    start = time.perf_counter_ns()
     yield
-    end = time()
+    end = time.perf_counter_ns()
     buffer.append(end - start)

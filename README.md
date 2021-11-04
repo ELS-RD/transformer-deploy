@@ -21,20 +21,20 @@ Those dependencies have to be installed on the remote machine directly (no conta
 
 ```shell
 git clone git@github.com:ELS-RD/triton_transformers.git
-cd triton_transformers
 pip3 install -r requirements.txt
 ```
 
 ## Generate optimized models
 
 We generate the models from a Docker image so we can also get measures for TensorRT + ONNX Runtime.
-If you don't care about TensorRT measures, you don't need the Docker image.
 
 ```shell
-cd "... path to triton_transformers folder ..."
+cd triton_transformers
 DOCKER_BUILDKIT=1 docker build --tag onnxruntime-trt:latest -f Dockerfile .
 docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c "cd /project && python convert_onnx.py"
 ```
+
+> If you run the conversion *outside* Docker container, you may have very different timings, and TensorRT won't work
 
 It should produce something like that:
 

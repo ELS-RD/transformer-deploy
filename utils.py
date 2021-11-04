@@ -1,6 +1,6 @@
 import logging
 from contextlib import contextmanager
-from time import time
+import time
 from typing import List
 import numpy as np
 
@@ -29,7 +29,7 @@ def setup_logging():
 
 @contextmanager
 def track_infer_time(buffer: [int]):
-    start = time()
+    start = time.perf_counter()
     yield
-    end = time()
+    end = time.perf_counter()
     buffer.append(end - start)

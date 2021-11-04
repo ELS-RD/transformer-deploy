@@ -1,19 +1,22 @@
-# Submillisecond Transformer inference and deployment on Nvidia Triton server
+# 🤗 Hugging Face Transformer submillisecond inference 🤯 and deployment on Nvidia Triton server
 
 Yes, you can perfom inference with transformer based model in less than 1ms on the cheapest GPU available on Amazon (T4)!
 
-The command below have been tested on a AWS G4.dnn with IMAGE VERSION USED.
-They may need some small adaptations to be run on a modern Linux.
+The commands below have been tested on a AWS G4.dnn with `Deep Learning Base AMI (Ubuntu 18.04) Version 44.0`.
+They may require some small adaptations to be run on a another Linux distribution.
+
+You can find explanations on how it works in 
+[Hugging Face Transformer inference UNDER 1 millisecond latency]()
 
 
-## Performance target
+## Baseline set by Hugging Face Infinity demo
 
 [Hugging Face infinity demo video](https://www.youtube.com/watch?v=jiftCAhOYQA)
 
-* hardware: T4 / g4.dnn
-* model: "philschmid/MiniLM-L6-H384-uncased-sst2"
-* experience 1 : seq len 16 tokens -> 1.7ms
-* experience 2 : seq len 128 tokens -> 2.5ms
+* AWS virtual machine: `g4dn.xlarge` (T4 GPU)
+* model: `"philschmid/MiniLM-L6-H384-uncased-sst2"` (Hugging Face hub URL)
+* experience 1 : batch size 1, seq len 16 tokens -> `1.7ms`
+* experience 2 : batch size 1, seq len 128 tokens -> `2.5ms`
 
 ## Install dependencies
 
@@ -26,7 +29,7 @@ pip3 install -r requirements.txt
 
 ## Generate optimized models
 
-We generate the models from a Docker image so we can also get measures for TensorRT + ONNX Runtime.
+We generate the models from a Docker image so we can also get measures for `TensorRT + ONNX Runtime`.
 
 ```shell
 cd triton_transformers
@@ -34,7 +37,7 @@ DOCKER_BUILDKIT=1 docker build --tag onnxruntime-trt:latest -f Dockerfile .
 docker run -it --rm --gpus all -v $PWD:/project onnxruntime-trt bash -c "cd /project && python convert_onnx.py"
 ```
 
-> If you run the conversion *outside* Docker container, you may have very different timings, and TensorRT won't work
+> ⚠️**WARNING**⚠️: if you run the conversion *outside* Docker container, you may have very different timings, and TensorRT won't work
 
 It should produce something like that:
 
@@ -44,14 +47,14 @@ It should produce something like that:
 10/31/2021 11:35:08 INFO     timing [[CUDAExecutionProvider] ./onnx_models/model.onnx]: mean=1.10ms, sd=0.10ms, min=1.04ms, max=3.44ms, median=1.07ms, 95p=1.29ms, 99p=1.36ms
 10/31/2021 11:35:08 INFO     timing [[CUDAExecutionProvider] ./onnx_models/model-optimized.onnx]: mean=0.63ms, sd=0.05ms, min=0.60ms, max=0.84ms, median=0.61ms, 95p=0.77ms, 99p=0.79ms
 10/31/2021 11:35:08 INFO     timing [Pytorch_32]: mean=5.09ms, sd=0.16ms, min=4.88ms, max=6.11ms, median=5.07ms, 95p=5.28ms, 99p=5.35ms
-10/31/2021 11:35:08 INFO     timing [Pytorch_fp16]: mean=6.04ms, sd=0.74ms, min=5.77ms, max=28.79ms, median=6.05ms, 95p=6.19ms, 99p=6.29ms
+10/31/2021 11:35:08 INFO     timing [Pytorch_FP16]: mean=6.04ms, sd=0.74ms, min=5.77ms, max=28.79ms, median=6.05ms, 95p=6.19ms, 99p=6.29ms
 ```
 
-TensorRT and optimized ONNX Runtime provides very similar results on short sequences.
+`TensorRT` and optimized `ONNX Runtime` provides very similar results on short sequences.
 In the following steps, we will continue with ONNX Runtime model because the dynamic axis are easier to work with compared to TensorRT. 
 
 > Docker build will is very slow on a G4, be patient...
-> the docker image is only required for `tensorrt` support inside `ONNX Runtime` (and measure a difference, if any, with ONNX Runtime).
+> the docker image is only required for `TensorRT` support inside `ONNX Runtime` (and measure a difference, if any, with ONNX Runtime).
 
 ## FastAPI server
 

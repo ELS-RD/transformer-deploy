@@ -6,7 +6,7 @@ The commands below have been tested on a AWS G4.dnn with `Deep Learning Base AMI
 They may require some small adaptations to be run on a another Linux distribution.
 
 You can find explanations on how it works in 
-[Hugging Face Transformer inference UNDER 1 millisecond latency]()
+[Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
 
 
 ## Baseline set by Hugging Face Infinity demo

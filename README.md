@@ -138,6 +138,8 @@ It also make measures on torchserve and tensorflow.
 sudo apt install libb64-dev
 # add -a for async measures, and -i grpc to use that protocol instead of http 
 ~/.local/bin/perf_analyzer -m transformers --percentile=95 --input-data perf_data.json --shape TEXT:1 # -i grpc -a
+# just test the model part (easier to get random input)
+~/.local/bin/perf_analyzer --input-data zero -m sts --shape input_ids:1,16 --shape attention_mask:1,16 #-i grpc -a
 ```
 
 ## Call Triton HTTP API directly
@@ -169,9 +171,13 @@ docker run -it --rm --gpus all -v $PWD/onnx_models:/models nvcr.io/nvidia/triton
     /usr/src/tensorrt/bin/trtexec \
     --onnx=/models/model.onnx \
     --best \
-    --shapes=input_ids:1x128,attention_mask:1x128 \
+    --minShapes=input_ids:1x16,attention_mask:1x16 \
+    --optShapes=input_ids:1x16,attention_mask:1x16 \
+    --maxShapes=input_ids:32x16,attention_mask:32x16  \
     --saveEngine="/models/model.plan" \
-    --workspace=6000
+    --workspace=6000 \
+    --useCudaGraph
+
 # move to triton model folder
 cp ./onnx_models/model.plan ./triton_models/sts/1/model.plan
 ```

@@ -1,7 +1,7 @@
 import numpy as np
 import tritonclient.http
 
-from utils import setup_logging, track_infer_time, print_timings
+from benchmarks.utils import setup_logging, track_infer_time, print_timings
 
 setup_logging()
 model_name = 'transformers'

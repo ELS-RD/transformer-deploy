@@ -4,7 +4,7 @@ import zlib
 import requests
 from transformers import AutoTokenizer, TensorType
 
-from utils import print_timings, setup_logging, track_infer_time
+from benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 setup_logging()
 tokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")

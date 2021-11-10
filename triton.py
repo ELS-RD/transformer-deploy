@@ -1,6 +1,6 @@
 import tritonclient.http
 import numpy as np
-from utils import print_timings, setup_logging, track_infer_time
+from benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 model_name = 'sts'
 url = '127.0.0.1:8000'

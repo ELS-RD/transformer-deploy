@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 from contextlib import contextmanager
 import time
 from typing import List, Tuple, Dict
@@ -36,16 +37,16 @@ def track_infer_time(buffer: [int]):
     buffer.append(end - start)
 
 
-def prepare_input(seq_len: int, batch_size: int, include_token_ids: bool = False) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
+def prepare_input(seq_len: int, batch_size: int, include_token_ids: bool) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
     shape = (batch_size, seq_len)
     # input_ids = torch.tensor([[101, 2023, 2444, 2724, 2003, 2307, 1012, 1045, 2097, 3696, 1011, 2039, 2005, 15579, 1012, 102]], dtype=torch.long, device="cuda")
     # attention_mask = torch.ones((1, 16), dtype=torch.long, device="cuda")
 
-    input_ids = torch.randint(high=100, size=shape, dtype=torch.long, device="cuda")
-    attention_mask = torch.ones(size=shape, dtype=torch.long, device="cuda")
-    inputs_pytorch: Dict[str, torch.Tensor] = {"input_ids": input_ids, "attention_mask": attention_mask}
+    inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
+    inputs_pytorch["input_ids"] = torch.randint(high=100, size=shape, dtype=torch.long, device="cuda")
     if include_token_ids:
         inputs_pytorch["token_type_ids"] = torch.ones(size=shape, dtype=torch.long, device="cuda")
+    inputs_pytorch["attention_mask"] = torch.ones(size=shape, dtype=torch.long, device="cuda")
     inputs_onnx: Dict[str, np.ndarray] = {
         k: np.ascontiguousarray(v.detach().cpu().numpy()) for k, v in inputs_pytorch.items()
     }

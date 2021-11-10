@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, OrderedDict
 import pycuda.driver as cuda
 from numpy import ndarray
 from pycuda._driver import Stream
@@ -49,6 +49,8 @@ def build_engine(runtime: Runtime, onnx_file_path: str, logger: Logger, min_shap
         # CUBLAS_LT only for TensorRT >= 8
         config.set_tactic_sources(tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT))
         config.set_flag(trt.BuilderFlag.FP16)
+        # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when going in FP16)
+        config.set_flag(trt.BuilderFlag.STRICT_TYPES)
         with open(onnx_file_path, 'rb') as f:
             parser.parse(f.read())
         profile = builder.create_optimization_profile()
@@ -72,10 +74,9 @@ def load_engine(runtime: Runtime, engine_file_path: str) -> ICudaEngine:
         return runtime.deserialize_cuda_engine(f.read())
 
 
-def infer_tensorrt(context: IExecutionContext, host_inputs: Dict[str, np.ndarray], input_binding_idxs: List[int], output_binding_idxs: List[int], stream: Stream) -> np.ndarray:
-    assert len(host_inputs) == 3, "didn't get the expected number of tensors, is token type included?"
+def infer_tensorrt(context: IExecutionContext, host_inputs: OrderedDict[str, np.ndarray], input_binding_idxs: List[int], output_binding_idxs: List[int], stream: Stream) -> np.ndarray:
     # warning: small change in output if int64 is used instead of int32
-    input_list: List[ndarray] = [host_inputs[name].astype(np.int32) for name in ["input_ids", "token_type_ids", "attention_mask"]]
+    input_list: List[ndarray] = [tensor.astype(np.int32) for tensor in host_inputs.values()]
     # allocate GPU memory for input tensors
     device_inputs = [cuda.mem_alloc(tensor.nbytes) for tensor in input_list]
     for h_input, d_input in zip(input_list, device_inputs):

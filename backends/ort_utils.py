@@ -1,0 +1,58 @@
+import logging
+import multiprocessing
+from collections import OrderedDict
+
+import torch
+from onnxruntime import InferenceSession, SessionOptions, GraphOptimizationLevel
+from onnxruntime.transformers import optimizer
+from onnxruntime.transformers.fusion_options import FusionOptions
+from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
+from transformers import PreTrainedModel
+
+
+def create_model_for_provider(path: str, provider_to_use: str) -> InferenceSession:
+    options = SessionOptions()
+    options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
+    if type(provider_to_use) == list and provider_to_use == "CPUExecutionProvider":
+        options.intra_op_num_threads = multiprocessing.cpu_count()
+    if type(provider_to_use) != list:
+        provider_to_use = [provider_to_use]
+    return InferenceSession(path, options, providers=provider_to_use)
+
+
+def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OrderedDict[str, torch.Tensor]) -> None:
+    # dynamic axis == variable length axis
+    dynamic_axis = OrderedDict()
+    for k in inputs_pytorch.keys():
+        dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
+    dynamic_axis["output"] = {0: "batch_size"}
+    with torch.no_grad():
+        torch.onnx.export(
+            model_pytorch,  # model to optimize
+            args=tuple(inputs_pytorch.values()),  # tuple of multiple inputs
+            f=output_path,  # output path / file object
+            opset_version=12,  # the ONNX version to use
+            do_constant_folding=True,  # simplify model (replace constant expressions)
+            input_names=list(inputs_pytorch.keys()),  # input names
+            output_names=["output"],  # output name
+            dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
+            verbose=False,
+        )
+
+
+def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> None:
+    optimization_options = FusionOptions("bert")
+    optimization_options.enable_gelu_approximation = True  # additional optimization
+    optimized_model: BertOnnxModel = optimizer.optimize_model(
+        input=onnx_path,
+        model_type="bert",
+        use_gpu=use_cuda,
+        opt_level=1,
+        num_heads=0,  # automatic detection
+        hidden_size=0,  # automatic detection
+        optimization_options=optimization_options,
+    )
+
+    optimized_model.convert_float_to_float16()  # FP32 -> FP16
+    logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
+    optimized_model.save_model_to_file(onnx_optim_fp16_path)

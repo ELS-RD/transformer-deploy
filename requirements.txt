@@ -10,5 +10,8 @@ onnx
 onnxruntime-gpu==1.9.0
 sympy
 coloredlogs
+pycuda
 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 torch==1.10.0+cu113
+--extra-index-url https://pypi.ngc.nvidia.com
+nvidia-tensorrt

@@ -1,3 +1,4 @@
+from typing import OrderedDict as OD
 import logging
 import multiprocessing
 from collections import OrderedDict
@@ -20,7 +21,7 @@ def create_model_for_provider(path: str, provider_to_use: str) -> InferenceSessi
     return InferenceSession(path, options, providers=provider_to_use)
 
 
-def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OrderedDict[str, torch.Tensor]) -> None:
+def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor]) -> None:
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():

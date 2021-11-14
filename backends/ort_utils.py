@@ -8,6 +8,7 @@ from onnxruntime import InferenceSession, SessionOptions, GraphOptimizationLevel
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
+from torch.onnx import TrainingMode
 from transformers import PreTrainedModel
 
 
@@ -35,8 +36,9 @@ def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pyt
             opset_version=12,  # the ONNX version to use
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
-            output_names=["output"],  # output name
+            output_names=["output"],  # output axis name
             dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
+            training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,
         )
 

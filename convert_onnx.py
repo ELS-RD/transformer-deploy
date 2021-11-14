@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Callable, Union
 
 import numpy as np
 import torch
@@ -28,6 +28,7 @@ import pycuda.autoinit
 # TODO adapt README to show command line to type to launch and benchmark the server
 # TODO script shell to run all commands including the benchmark
 # TODO format code
+# TODO add verbose mode
 
 torch.manual_seed(123)
 setup_logging()
@@ -61,9 +62,10 @@ def main():
     tensor_shapes = list(zip(args.batch_size, args.seq_len))
     inputs_pytorch, inputs_onnx = prepare_input(batch_size=tensor_shapes[-1][0], seq_len=tensor_shapes[-1][1], include_token_ids="token_type_ids" in input_names)
 
-    output = model_pytorch(**inputs_pytorch)
-    output = output.logits  # extract the value of interest
-    output_pytorch: np.ndarray = output.detach().cpu().numpy()
+    with torch.inference_mode():
+        output = model_pytorch(**inputs_pytorch)
+        output = output.logits  # extract the value of interest
+        output_pytorch: np.ndarray = output.detach().cpu().numpy()
 
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
@@ -94,7 +96,6 @@ def main():
     runtime: Runtime = trt.Runtime(trt_logger)
     engine = build_engine(runtime=runtime, onnx_file_path=onnx_model_path, logger=trt_logger, min_shape=tensor_shapes[0], optimal_shape=tensor_shapes[1], max_shape=tensor_shapes[2], workspace_size=args.workspace_size * 1024 * 1024)
     save_engine(engine=engine, engine_file_path=tensorrt_path)
-    # noinspection DuplicatedCode
     stream: Stream = pycuda.driver.Stream()
     context: IExecutionContext = engine.create_execution_context()
     profile_index = 0
@@ -126,10 +127,10 @@ def main():
         model = create_model_for_provider(path=model_path, provider_to_use=provider)
         time_buffer = []
         for _ in range(args.warmup):
-            model.run(None, inputs_onnx)
+            _ = model.run(None, inputs_onnx)
         for _ in range(args.nb_measures):
             with track_infer_time(time_buffer):
-                model.run(None, inputs_onnx)
+                _ = model.run(None, inputs_onnx)
         timings[f"[{provider}] {model_path}"] = time_buffer
     del model
 

@@ -1,12 +1,13 @@
 from typing import List, Tuple, OrderedDict
+
+import numpy as np
 import pycuda.driver as cuda
+import tensorrt as trt
 from numpy import ndarray
 from pycuda._driver import Stream
 from tensorrt import ICudaEngine, IExecutionContext
-import tensorrt as trt
-import numpy as np
 from tensorrt.tensorrt import Runtime, Logger, INetworkDefinition, IBuilderConfig, IOptimizationProfile, Builder, \
-    OnnxParser
+    OnnxParser, ILayer, IElementWiseLayer
 
 
 def setup_binding_shapes(context: trt.IExecutionContext, host_inputs: List[np.ndarray], input_binding_idxs: List[int], output_binding_idxs: List[int]):
@@ -44,11 +45,12 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
 
 def build_engine(runtime: Runtime, onnx_file_path: str, logger: Logger, min_shape: Tuple[int, int], optimal_shape: Tuple[int, int], max_shape: Tuple[int, int], workspace_size: int) -> ICudaEngine:
     with trt.Builder(logger) as builder:  # type: Builder
-        with builder.create_network(flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)) as network:  # type: INetworkDefinition
-            with trt.OnnxParser(network, logger) as parser:  # type: OnnxParser
+        with builder.create_network(flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)) as network_definition:  # type: INetworkDefinition
+            with trt.OnnxParser(network_definition, logger) as parser:  # type: OnnxParser
                 builder.max_batch_size = max_shape[0]  # max batch size
                 config: IBuilderConfig = builder.create_builder_config()
                 config.max_workspace_size = workspace_size
+                # to enable complete trt inspector debugging
                 config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
                 # CUBLAS_LT only for TensorRT >= 8
                 config.set_tactic_sources(tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT))
@@ -58,11 +60,29 @@ def build_engine(runtime: Runtime, onnx_file_path: str, logger: Logger, min_shap
                 with open(onnx_file_path, 'rb') as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
-                for num_input in range(network.num_inputs):
-                    profile.set_shape(input=network.get_input(num_input).name, min=min_shape, opt=optimal_shape, max=max_shape)
+                for num_input in range(network_definition.num_inputs):
+                    profile.set_shape(input=network_definition.get_input(num_input).name, min=min_shape, opt=optimal_shape, max=max_shape)
                     config.add_optimization_profile(profile)
+                # for i in range(network.num_layers):
+                #     layer: ILayer = network.get_layer(i)
+                #     if "gemm" in str(layer.name).lower():
+                #         for g in range(layer.num_outputs):
+                #             layer.precision = trt.DataType.FLOAT
 
-                trt_engine = builder.build_serialized_network(network, config)
+                # search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes
+                for layer_index in range(network_definition.num_layers-1):
+                    layer: ILayer = network_definition.get_layer(layer_index)
+                    next_layer: ILayer = network_definition.get_layer(layer_index+1)
+                    # POW operation usually followed by mean reduce
+                    if layer.type == trt.LayerType.ELEMENTWISE and next_layer.type == trt.LayerType.REDUCE:
+                        # dirty casting to get access to op attribute
+                        layer.__class__ = IElementWiseLayer
+                        if layer.op == trt.ElementWiseOperation.POW:
+                            layer.precision = trt.DataType.FLOAT
+                            next_layer.precision = trt.DataType.FLOAT
+                        layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                        next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
                 assert engine is not None, "error during engine generation :-("
                 return engine

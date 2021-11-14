@@ -29,7 +29,7 @@ import pycuda.autoinit
 # TODO script shell to run all commands including the benchmark
 # TODO format code
 
-
+torch.manual_seed(123)
 setup_logging()
 
 
@@ -49,7 +49,6 @@ def main():
     Path(args.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(args.output, "model-original.onnx")
     onnx_optim_fp16_path = os.path.join(args.output, "model.onnx")
-    # onnx_fp16_path = os.path.join(args.output, "model-half.onnx")
     tensorrt_path = os.path.join(args.output, "model.plan")
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"

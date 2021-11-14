@@ -137,22 +137,22 @@ def main():
         with torch.inference_mode():
             for _ in range(args.warmup):
                 _ = model_pytorch(**inputs_pytorch)
-            torch.cuda.synchronize()
+                torch.cuda.synchronize()
             time_buffer = []
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
-                    model_pytorch(**inputs_pytorch)
+                    _ = model_pytorch(**inputs_pytorch)
+                    torch.cuda.synchronize()
             timings["Pytorch_fp32"] = time_buffer
-            torch.cuda.synchronize()
             with autocast():
                 for _ in range(args.warmup):
-                    model_pytorch(**inputs_pytorch)
-                torch.cuda.synchronize()
+                    _ = model_pytorch(**inputs_pytorch)
+                    torch.cuda.synchronize()
                 time_buffer = []
                 for _ in range(args.nb_measures):
                     with track_infer_time(time_buffer):
-                        model_pytorch(**inputs_pytorch)
-                torch.cuda.synchronize()
+                        _ = model_pytorch(**inputs_pytorch)
+                        torch.cuda.synchronize()
                 timings["Pytorch_fp16"] = time_buffer
 
     logging.info(f"inference done on {get_device_name(0)}")

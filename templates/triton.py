@@ -8,7 +8,7 @@ class ModelType(Enum):
 
 
 class Configuration:
-    def __init__(self, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int):
+    def __init__(self, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int, include_token_type: bool):
         self.model_name = model_name
         self.model_folder_name = f"{self.model_name}_model"
         self.tokenizer_folder_name = f"{self.model_name}_tokenize"
@@ -17,31 +17,59 @@ class Configuration:
         self.nb_model_output = nb_output
         assert nb_instance > 0, f"nb_instance=={nb_instance}: nb model instances should be positive"
         self.nb_instance = nb_instance
+        self.include_token_type = include_token_type
         if model_type == ModelType.ONNX:
             self.input_type = "TYPE_INT64"
-            self.platform = "onnxruntime_onnx"
+            self.inference_platform = "onnxruntime_onnx"
         else:
             self.input_type = "TYPE_INT32"
-            self.platform = "tensorrt_plan"
+            self.inference_platform = "tensorrt_plan"
 
-    def get_model_conf(self) -> str:
-        # TODO manage input_type axis
+    def __conf_header(self):
         return f"""
 name: "{self.model_folder_name}"
-platform: "{self.platform}"
 max_batch_size: {self.batch_size}
+""".strip()
 
-input [
-    {{
+    def __get_tokens(self):
+        token_type = ""
+        if self.include_token_type:
+            token_type = f"""    {{
+        name: "token_type_ids"
+        data_type: {self.input_type}
+        dims: [-1, -1]
+    }},
+"""
+        return f"""{{
         name: "input_ids"
         data_type: {self.input_type}
         dims: [-1, -1]
     }},
+    {token_type}
     {{
         name: "attention_mask"
         data_type: {self.input_type}
         dims: [-1, -1]
     }}
+"""
+
+    def __instance_group(self):
+        return f"""
+instance_group [
+    {{
+      count: {self.nb_instance}
+      kind: KIND_GPU
+    }}
+]   
+""".strip()
+
+    def get_model_conf(self) -> str:
+        return f"""
+{self.__conf_header()}
+platform: "{self.inference_platform}"
+
+input [
+    {self.__get_tokens()}
 ]
 
 output {{
@@ -50,20 +78,13 @@ output {{
     dims: [-1, {self.nb_model_output}]
 }}
 
-instance_group [
-    {{
-      count: {self.nb_instance}
-      kind: KIND_GPU
-    }}
-]
-"""
+{self.__instance_group()}
+""".strip()
 
     def get_tokenize_conf(self):
-        # TODO manage input_type axis
         return f"""
-name: "{self.tokenizer_folder_name}"
+{self.__conf_header()}
 backend: "python"
-max_batch_size: {self.batch_size}
 
 input [
     {{
@@ -74,32 +95,32 @@ input [
 ]
 
 output [
-    {{
-        name: "INPUT_IDS"
-        data_type: {self.input_type}
-        dims: [ -1, -1 ]
-    }},
-    {{
-        name: "ATTENTION"
-        data_type: {self.input_type}
-        dims: [ -1, -1 ]
-    }}
+    {self.__get_tokens()}
 ]
 
-instance_group [
-    {{
-      count: {self.nb_instance}
-      kind: KIND_CPU
-    }}
-]
-"""
+{self.__instance_group()}
+""".strip()
 
     def get_inference_conf(self):
-        # TODO manage input_type axis
+        input_token_type_ids = ""
+        if self.include_token_type:
+            input_token_type_ids = """
+            {{
+                key: "TOKEN_TYPE_IDS"
+                value: "TOKEN_TYPE_IDS"
+            }},
+        """.strip()
+        output_token_type_ids = ""
+        if self.include_token_type:
+            output_token_type_ids = """
+            {{
+                key: "token_type_ids"
+                value: "TOKEN_TYPE_IDS"
+            }}
+        """.strip()
         return f"""
-name: "{self.inference_folder_name}"
+{self.__conf_header()}
 platform: "ensemble"
-max_batch_size: {self.batch_size}
 
 input [
     {{
@@ -110,7 +131,7 @@ input [
 ]
 
 output {{
-    name: "score"
+    name: "OUTPUT"
     data_type: {self.input_type}
     dims: [-1, {self.nb_model_output}]
 }}
@@ -129,6 +150,7 @@ ensemble_scheduling {{
                 key: "INPUT_IDS"
                 value: "INPUT_IDS"
             }},
+            {input_token_type_ids}
             {{
                 key: "ATTENTION"
                 value: "ATTENTION"
@@ -143,6 +165,7 @@ ensemble_scheduling {{
                     key: "input_ids"
                     value: "INPUT_IDS"
                 }},
+                {output_token_type_ids}
                 {{
                     key: "attention_mask"
                     value: "ATTENTION"
@@ -150,16 +173,16 @@ ensemble_scheduling {{
             ]
         output_map {{
                 key: "output"
-                value: "score"
+                value: "OUTPUT"
             }}
         }}
     ]
 }}
-"""
+""".strip()
 
     def create_folders(self, workind_directory: str):
         wd_path = Path(workind_directory)
-        wd_path.mkdir(parents=True, exist_ok=True)
+        wd_path.mkdir(parents=True, exist_ok=False)
         for folder_name, conf_func in [(self.model_folder_name, self.get_model_conf),
                                        (self.tokenizer_folder_name, self.get_tokenize_conf),
                                        (self.inference_folder_name, self.get_inference_conf)]:

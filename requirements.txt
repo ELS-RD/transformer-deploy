@@ -11,7 +11,11 @@ onnxruntime-gpu
 sympy
 coloredlogs
 pycuda
+nvidia-pyindex
+pytest
 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 torch==1.10.0+cu113
---extra-index-url https://pypi.ngc.nvidia.com
-nvidia-tensorrt
+nvidia-tensorrt==8.0.3.4
+onnx_graphsurgeon
+polygraphy==0.33.0
+triton-model-analyzer

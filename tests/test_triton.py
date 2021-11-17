@@ -51,7 +51,7 @@ instance_group [
 
 def test_tokenizer_conf(conf: Configuration):
     expected = """
-name: "test_model"
+name: "test_tokenize"
 max_batch_size: 0
 backend: "python"
 
@@ -90,7 +90,7 @@ instance_group [
 
 def test_inference_conf(conf: Configuration):
     expected = """
-name: "test_model"
+name: "test_inference"
 max_batch_size: 0
 platform: "ensemble"
 
@@ -103,8 +103,8 @@ input [
 ]
 
 output {
-    name: "OUTPUT"
-    data_type: TYPE_INT64
+    name: "output"
+    data_type: TYPE_FP32
     dims: [-1, 2]
 }
 
@@ -119,33 +119,33 @@ ensemble_scheduling {
         }
         output_map [
             {
-                key: "INPUT_IDS"
-                value: "INPUT_IDS"
+                key: "input_ids"
+                value: "input_ids"
             },
             
             {
-                key: "ATTENTION"
-                value: "ATTENTION"
+                key: "attention_mask"
+                value: "attention_mask"
             }
         ]
         },
         {
-            model_name: "test"
+            model_name: "test_model"
             model_version: -1
             input_map [
                 {
                     key: "input_ids"
-                    value: "INPUT_IDS"
+                    value: "input_ids"
                 },
                 
                 {
                     key: "attention_mask"
-                    value: "ATTENTION"
+                    value: "attention_mask"
                 }
             ]
         output_map {
                 key: "output"
-                value: "OUTPUT"
+                value: "output"
             }
         }
     ]

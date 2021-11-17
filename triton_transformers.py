@@ -4,7 +4,7 @@ import tritonclient.http
 from benchmarks.utils import setup_logging, track_infer_time, print_timings
 
 setup_logging()
-model_name = 'transformers'
+model_name = 'sts_tensorrt_inference'
 url = '127.0.0.1:8000'
 model_version = '1'
 batch_size = 1
@@ -23,16 +23,16 @@ model_metadata = triton_client.get_model_metadata(model_name=model_name, model_v
 model_config = triton_client.get_model_config(model_name=model_name, model_version=model_version)
 
 query = tritonclient.http.InferInput(name='TEXT', shape=(batch_size,), datatype="BYTES")
-model_score = tritonclient.http.InferRequestedOutput(name='score', binary_data=False)
+model_score = tritonclient.http.InferRequestedOutput(name='output', binary_data=False)
 time_buffer = list()
 for _ in range(10000):
     query.set_data_from_numpy(np.asarray([text_16]*batch_size, dtype=object))
-    response = triton_client.infer(model_name=model_name, model_version=model_version, inputs=[query], outputs=[model_score])
-for _ in range(100):
+    _ = triton_client.infer(model_name=model_name, model_version=model_version, inputs=[query], outputs=[model_score])
+for _ in range(1000):
     with track_infer_time(time_buffer):
         query.set_data_from_numpy(np.asarray([text_16]*batch_size, dtype=object))
         response = triton_client.infer(model_name=model_name, model_version=model_version, inputs=[query], outputs=[model_score])
 
 
 print_timings(name="triton transformers", timings=time_buffer)
-print(response.as_numpy('score'))
+print(response.as_numpy('output'))

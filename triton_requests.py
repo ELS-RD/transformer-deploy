@@ -51,13 +51,12 @@ session = requests.Session()
 for _ in range(10000):
     bytes_message = bytes(json.dumps(message), encoding="raw_unicode_escape")
     request_body = zlib.compress(bytes_message)
-    x = session.post(url, data=request_body, headers={"Content-Encoding": "gzip", "Accept-Encoding": "gzip", "Inference-Header-Content-Length": str(len(bytes_message))})
+    _ = session.post(url, data=request_body, headers={"Content-Encoding": "gzip", "Accept-Encoding": "gzip", "Inference-Header-Content-Length": str(len(bytes_message))})
 
 for _ in range(100):
     with track_infer_time(time_buffer):
         bytes_message = bytes(json.dumps(message), encoding="raw_unicode_escape")
         request_body = zlib.compress(bytes_message)
-        x = session.post(url, data=request_body, headers={"Content-Encoding": "gzip", "Accept-Encoding": "gzip", "Inference-Header-Content-Length": str(len(bytes_message))})
+        _ = session.post(url, data=request_body, headers={"Content-Encoding": "gzip", "Accept-Encoding": "gzip", "Inference-Header-Content-Length": str(len(bytes_message))})
 
-print(x.text)
 print_timings(name="triton (onnx backend) - requests", timings=time_buffer)

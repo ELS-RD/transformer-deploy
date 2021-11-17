@@ -12,7 +12,16 @@ class ModelType(Enum):
 
 
 class Configuration:
-    def __init__(self, workind_directory: str, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int, include_token_type: bool):
+    def __init__(
+        self,
+        workind_directory: str,
+        model_name: str,
+        model_type: ModelType,
+        batch_size: int,
+        nb_output: int,
+        nb_instance: int,
+        include_token_type: bool,
+    ):
         self.model_name = model_name
         self.model_name += "_onnx" if model_type == ModelType.ONNX else "_tensorrt"
         self.model_folder_name = f"{self.model_name}_model"
@@ -189,9 +198,11 @@ ensemble_scheduling {{
     def create_folders(self, tokenizer: PreTrainedTokenizer, model_path: str):
         wd_path = Path(self.workind_directory)
         wd_path.mkdir(parents=True, exist_ok=True)
-        for folder_name, conf_func in [(self.model_folder_name, self.get_model_conf),
-                                       (self.tokenizer_folder_name, self.get_tokenize_conf),
-                                       (self.inference_folder_name, self.get_inference_conf)]:
+        for folder_name, conf_func in [
+            (self.model_folder_name, self.get_model_conf),
+            (self.tokenizer_folder_name, self.get_tokenize_conf),
+            (self.inference_folder_name, self.get_inference_conf),
+        ]:
             current_folder = wd_path.joinpath(folder_name)
             current_folder.mkdir(exist_ok=True)
             conf = conf_func()

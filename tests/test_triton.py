@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from transformers import PreTrainedTokenizer, AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from templates.triton import Configuration, ModelType
 
@@ -15,7 +15,15 @@ def working_directory() -> tempfile.TemporaryDirectory:
 
 @pytest.fixture
 def conf(working_directory: tempfile.TemporaryDirectory):
-    conf = Configuration(model_name="test", model_type=ModelType.ONNX, batch_size=0, nb_output=2, nb_instance=1, include_token_type=False, workind_directory=working_directory.name)
+    conf = Configuration(
+        model_name="test",
+        model_type=ModelType.ONNX,
+        batch_size=0,
+        nb_output=2,
+        nb_instance=1,
+        include_token_type=False,
+        workind_directory=working_directory.name,
+    )
     return conf
 
 
@@ -164,7 +172,7 @@ ensemble_scheduling {
 
 def test_create_folders(conf: Configuration, working_directory: tempfile.TemporaryDirectory):
     fake_model_path = os.path.join(working_directory.name, "fake_model")
-    open(fake_model_path, 'a').close()
+    open(file=fake_model_path, mode="a").close()
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
     conf.create_folders(model_path=fake_model_path, tokenizer=tokenizer)
     for folder_name in [conf.model_folder_name, conf.tokenizer_folder_name, conf.inference_folder_name]:

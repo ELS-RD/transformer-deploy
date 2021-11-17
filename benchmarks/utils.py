@@ -1,8 +1,9 @@
 import logging
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
-import time
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 import numpy as np
 import torch
 
@@ -25,8 +26,8 @@ def print_timings(name: str, timings: List[float]):
     )
 
 
-def setup_logging():
-    logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO)
+def setup_logging(level: int = logging.INFO):
+    logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=level)
 
 
 @contextmanager
@@ -37,7 +38,9 @@ def track_infer_time(buffer: [int]):
     buffer.append(end - start)
 
 
-def prepare_input(seq_len: int, batch_size: int, include_token_ids: bool) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
+def prepare_input(
+    seq_len: int, batch_size: int, include_token_ids: bool
+) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
     shape = (batch_size, seq_len)
     # input_ids = torch.tensor([[101, 2023, 2444, 2724, 2003, 2307, 1012, 1045, 2097, 3696, 1011, 2039, 2005, 15579, 1012, 102]], dtype=torch.long, device="cuda")
     # attention_mask = torch.ones((1, 16), dtype=torch.long, device="cuda")

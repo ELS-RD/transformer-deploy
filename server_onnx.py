@@ -1,7 +1,8 @@
 import numpy as np
 from fastapi import FastAPI
-from onnxruntime import SessionOptions, GraphOptimizationLevel, InferenceSession
+from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 from transformers import AutoTokenizer, BatchEncoding, TensorType
+
 
 app = FastAPI()
 options = SessionOptions()

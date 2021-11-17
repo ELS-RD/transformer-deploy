@@ -1,10 +1,10 @@
-from typing import OrderedDict as OD
 import logging
 import multiprocessing
 from collections import OrderedDict
+from typing import OrderedDict as OD
 
 import torch
-from onnxruntime import InferenceSession, SessionOptions, GraphOptimizationLevel
+from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel

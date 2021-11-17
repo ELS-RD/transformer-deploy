@@ -1,4 +1,4 @@
-from typing import List, Tuple, OrderedDict
+from typing import List, OrderedDict, Tuple
 
 import numpy as np
 import pycuda.driver as cuda
@@ -6,11 +6,25 @@ import tensorrt as trt
 from numpy import ndarray
 from pycuda._driver import Stream
 from tensorrt import ICudaEngine, IExecutionContext
-from tensorrt.tensorrt import Runtime, Logger, INetworkDefinition, IBuilderConfig, IOptimizationProfile, Builder, \
-    OnnxParser, ILayer, IElementWiseLayer
+from tensorrt.tensorrt import (
+    Builder,
+    IBuilderConfig,
+    IElementWiseLayer,
+    ILayer,
+    INetworkDefinition,
+    IOptimizationProfile,
+    Logger,
+    OnnxParser,
+    Runtime,
+)
 
 
-def setup_binding_shapes(context: trt.IExecutionContext, host_inputs: List[np.ndarray], input_binding_idxs: List[int], output_binding_idxs: List[int]):
+def setup_binding_shapes(
+    context: trt.IExecutionContext,
+    host_inputs: List[np.ndarray],
+    input_binding_idxs: List[int],
+    output_binding_idxs: List[int],
+):
     # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
         context.set_binding_shape(binding_index, host_input.shape)
@@ -43,25 +57,42 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
     return input_binding_idxs, output_binding_idxs
 
 
-def build_engine(runtime: Runtime, onnx_file_path: str, logger: Logger, min_shape: Tuple[int, int], optimal_shape: Tuple[int, int], max_shape: Tuple[int, int], workspace_size: int) -> ICudaEngine:
+def build_engine(
+    runtime: Runtime,
+    onnx_file_path: str,
+    logger: Logger,
+    min_shape: Tuple[int, int],
+    optimal_shape: Tuple[int, int],
+    max_shape: Tuple[int, int],
+    workspace_size: int,
+) -> ICudaEngine:
     with trt.Builder(logger) as builder:  # type: Builder
-        with builder.create_network(flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)) as network_definition:  # type: INetworkDefinition
+        with builder.create_network(
+            flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        ) as network_definition:  # type: INetworkDefinition
             with trt.OnnxParser(network_definition, logger) as parser:  # type: OnnxParser
                 builder.max_batch_size = max_shape[0]  # max batch size
                 config: IBuilderConfig = builder.create_builder_config()
                 config.max_workspace_size = workspace_size
                 # to enable complete trt inspector debugging
-                config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
+                # config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
                 # CUBLAS_LT only for TensorRT >= 8
-                config.set_tactic_sources(tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT))
+                config.set_tactic_sources(
+                    tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
+                )
                 config.set_flag(trt.BuilderFlag.FP16)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when going in FP16)
                 config.set_flag(trt.BuilderFlag.STRICT_TYPES)
-                with open(onnx_file_path, 'rb') as f:
+                with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
                 for num_input in range(network_definition.num_inputs):
-                    profile.set_shape(input=network_definition.get_input(num_input).name, min=min_shape, opt=optimal_shape, max=max_shape)
+                    profile.set_shape(
+                        input=network_definition.get_input(num_input).name,
+                        min=min_shape,
+                        opt=optimal_shape,
+                        max=max_shape,
+                    )
                     config.add_optimization_profile(profile)
                 # for i in range(network.num_layers):
                 #     layer: ILayer = network.get_layer(i)
@@ -70,9 +101,9 @@ def build_engine(runtime: Runtime, onnx_file_path: str, logger: Logger, min_shap
                 #             layer.precision = trt.DataType.FLOAT
 
                 # search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes
-                for layer_index in range(network_definition.num_layers-1):
+                for layer_index in range(network_definition.num_layers - 1):
                     layer: ILayer = network_definition.get_layer(layer_index)
-                    next_layer: ILayer = network_definition.get_layer(layer_index+1)
+                    next_layer: ILayer = network_definition.get_layer(layer_index + 1)
                     # POW operation usually followed by mean reduce
                     if layer.type == trt.LayerType.ELEMENTWISE and next_layer.type == trt.LayerType.REDUCE:
                         # dirty casting to get access to op attribute
@@ -98,7 +129,13 @@ def load_engine(runtime: Runtime, engine_file_path: str) -> ICudaEngine:
         return runtime.deserialize_cuda_engine(f.read())
 
 
-def infer_tensorrt(context: IExecutionContext, host_inputs: OrderedDict[str, np.ndarray], input_binding_idxs: List[int], output_binding_idxs: List[int], stream: Stream) -> np.ndarray:
+def infer_tensorrt(
+    context: IExecutionContext,
+    host_inputs: OrderedDict[str, np.ndarray],
+    input_binding_idxs: List[int],
+    output_binding_idxs: List[int],
+    stream: Stream,
+) -> np.ndarray:
     # warning: small change in output if int64 is used instead of int32
     input_list: List[ndarray] = [tensor.astype(np.int32) for tensor in host_inputs.values()]
     # allocate GPU memory for input tensors

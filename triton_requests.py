@@ -2,21 +2,17 @@ import json
 import zlib
 
 import requests
-from transformers import AutoTokenizer, TensorType
+from transformers import AutoTokenizer, TensorType, PreTrainedTokenizer
 
 from benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 setup_logging()
-tokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
+tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
 
-text = "This live event is great. I will sign-up for Infinity."
-
-tokens = tokenizer(text=text,
+tokens = tokenizer(text="This live event is great. I will sign-up for Infinity.",
                    max_length=16,
                    truncation=True,
-                   return_token_type_ids=False,
-                   return_tensors=TensorType.NUMPY,
-                   )
+                   return_tensors=TensorType.NUMPY)
 
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md
 url = 'http://127.0.0.1:8000/v2/models/sts_inference/versions/1/infer'
@@ -28,6 +24,12 @@ message = {
             "shape": tokens['input_ids'].shape,
             "datatype": "INT64",
             "data": tokens['input_ids'].tolist()
+        },
+        {
+            "name": "token_type_ids",
+            "shape": tokens['token_type_ids'].shape,
+            "datatype": "INT64",
+            "data": tokens['token_type_ids'].tolist()
         },
         {
             "name": "attention_mask",

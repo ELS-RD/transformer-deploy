@@ -1,5 +1,9 @@
+import os
+import shutil
 from enum import Enum
 from pathlib import Path
+
+from transformers import PreTrainedTokenizer
 
 
 class ModelType(Enum):
@@ -8,7 +12,7 @@ class ModelType(Enum):
 
 
 class Configuration:
-    def __init__(self, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int, include_token_type: bool):
+    def __init__(self, workind_directory: str, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int, include_token_type: bool):
         self.model_name = model_name
         self.model_folder_name = f"{self.model_name}_model"
         self.tokenizer_folder_name = f"{self.model_name}_tokenize"
@@ -18,6 +22,7 @@ class Configuration:
         assert nb_instance > 0, f"nb_instance=={nb_instance}: nb model instances should be positive"
         self.nb_instance = nb_instance
         self.include_token_type = include_token_type
+        self.workind_directory = workind_directory
         if model_type == ModelType.ONNX:
             self.input_type = "TYPE_INT64"
             self.inference_platform = "onnxruntime_onnx"
@@ -64,6 +69,7 @@ instance_group [
 name: "{self.model_folder_name}"
 max_batch_size: {self.batch_size}
 platform: "{self.inference_platform}"
+default_model_filename: "model.bin"
 
 input [
     {self.__get_tokens()}
@@ -179,8 +185,8 @@ ensemble_scheduling {{
 }}
 """.strip()
 
-    def create_folders(self, workind_directory: str):
-        wd_path = Path(workind_directory)
+    def create_folders(self, tokenizer: PreTrainedTokenizer, model_path: str):
+        wd_path = Path(self.workind_directory)
         wd_path.mkdir(parents=True, exist_ok=True)
         for folder_name, conf_func in [(self.model_folder_name, self.get_model_conf),
                                        (self.tokenizer_folder_name, self.get_tokenize_conf),
@@ -191,3 +197,10 @@ ensemble_scheduling {{
             current_folder.joinpath("config.pbtxt").write_text(conf)
             version_folder = current_folder.joinpath("1")
             version_folder.mkdir(exist_ok=True)
+
+        tokenizer_model_folder_path = wd_path.joinpath(self.tokenizer_folder_name).joinpath("1")
+        tokenizer.save_pretrained(str(tokenizer_model_folder_path.absolute()))
+        tokenizer_model_path = Path(__file__).absolute().parent.parent.joinpath("utils").joinpath("python_tokenizer.py")
+        shutil.copy(str(tokenizer_model_path), str(Path(tokenizer_model_folder_path).joinpath("model.py")))
+        model_folder_path = wd_path.joinpath(self.model_folder_name).joinpath("1")
+        shutil.copy(model_path, os.path.join(model_folder_path, "model.bin"))

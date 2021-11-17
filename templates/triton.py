@@ -14,6 +14,7 @@ class ModelType(Enum):
 class Configuration:
     def __init__(self, workind_directory: str, model_name: str, model_type: ModelType, batch_size: int, nb_output: int, nb_instance: int, include_token_type: bool):
         self.model_name = model_name
+        self.model_name += "_onnx" if model_type == ModelType.ONNX else "_tensorrt"
         self.model_folder_name = f"{self.model_name}_model"
         self.tokenizer_folder_name = f"{self.model_name}_tokenize"
         self.inference_folder_name = f"{self.model_name}_inference"

@@ -48,7 +48,7 @@ def main():
     parser.add_argument("-w", "--workspace-size", default=10000, help="workspace size in MiB (TensorRT)", type=int)
     parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
     parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")
-    parser.add_argument("-v", "--verbose", required=True, help="display detailed information")
+    parser.add_argument("-v", "--verbose", action="store_true", help="display detailed information")
     parser.add_argument(
         "--backend",
         default=["onnx"],
@@ -56,6 +56,7 @@ def main():
         nargs="*",
         choices=["onnx", "tensorrt", "pytorch"],
     )
+    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
     parser.add_argument("--warmup", default=100, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
@@ -160,7 +161,7 @@ def main():
             model_type=ModelType.TensorRT,
             batch_size=0,
             nb_output=output_pytorch.shape[1],
-            nb_instance=1,
+            nb_instance=args.nb_instances,
             include_token_type=include_token_ids,
             workind_directory=args.output,
         )
@@ -200,7 +201,7 @@ def main():
             model_type=ModelType.ONNX,
             batch_size=0,
             nb_output=output_pytorch.shape[1],
-            nb_instance=1,
+            nb_instance=args.nb_instances,
             include_token_type=include_token_ids,
             workind_directory=args.output,
         )

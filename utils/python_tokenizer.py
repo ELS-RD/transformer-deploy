@@ -2,10 +2,10 @@ import os
 from typing import Dict
 
 import numpy as np
-from transformers import AutoTokenizer, PreTrainedTokenizer, TensorType
 
 # noinspection PyUnresolvedReferences
 import triton_python_backend_utils as pb_utils
+from transformers import AutoTokenizer, PreTrainedTokenizer, TensorType
 
 
 class TritonPythonModel:

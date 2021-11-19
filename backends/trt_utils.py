@@ -4,7 +4,7 @@ import numpy as np
 import pycuda.driver as cuda
 import tensorrt as trt
 from numpy import ndarray
-from pycuda._driver import Stream
+from pycuda._driver import DeviceAllocation, Stream
 from tensorrt import ICudaEngine, IExecutionContext
 from tensorrt.tensorrt import (
     Builder,
@@ -17,6 +17,44 @@ from tensorrt.tensorrt import (
     OnnxParser,
     Runtime,
 )
+
+
+class Calibrator(trt.IInt8Calibrator):
+    def __init__(self):
+        trt.IInt8Calibrator.__init__(self)
+        self.algorithm = trt.CalibrationAlgoType.MINMAX_CALIBRATION
+        self.batch_size = 32
+
+        input_list: List[ndarray] = [np.zeros((32, 512), dtype=np.int32) for _ in range(3)]
+        # allocate GPU memory for input tensors
+        self.device_inputs: List[DeviceAllocation] = [cuda.mem_alloc(tensor.nbytes) for tensor in input_list]
+        for h_input, d_input in zip(input_list, self.device_inputs):
+            cuda.memcpy_htod_async(d_input, h_input)  # host to GPU
+        self.count = 0
+
+    def get_algorithm(self):
+        return trt.CalibrationAlgoType.MINMAX_CALIBRATION
+
+    def get_batch_size(self):
+        return self.batch_size
+
+    def get_batch(self, names, p_str=None):
+        self.count += 1
+        if self.count > 20:
+            return []
+        # return pointers to arrays
+        return [int(d) for d in self.device_inputs]
+
+    def read_calibration_cache(self):
+        return None
+
+    def write_calibration_cache(self, cache):
+        with open("calibration_cache.bin", "wb") as f:
+            f.write(cache)
+
+    def free(self):
+        for dinput in self.device_inputs:
+            dinput.free()
 
 
 def setup_binding_shapes(
@@ -57,6 +95,22 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
     return input_binding_idxs, output_binding_idxs
 
 
+def fix_fp16_network(network_definition: INetworkDefinition):
+    # search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes
+    for layer_index in range(network_definition.num_layers - 1):
+        layer: ILayer = network_definition.get_layer(layer_index)
+        next_layer: ILayer = network_definition.get_layer(layer_index + 1)
+        # POW operation usually followed by mean reduce
+        if layer.type == trt.LayerType.ELEMENTWISE and next_layer.type == trt.LayerType.REDUCE:
+            # dirty casting to get access to op attribute
+            layer.__class__ = IElementWiseLayer
+            if layer.op == trt.ElementWiseOperation.POW:
+                layer.precision = trt.DataType.FLOAT
+                next_layer.precision = trt.DataType.FLOAT
+            layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+            next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+
+
 def build_engine(
     runtime: Runtime,
     onnx_file_path: str,
@@ -73,15 +127,21 @@ def build_engine(
             with trt.OnnxParser(network_definition, logger) as parser:  # type: OnnxParser
                 builder.max_batch_size = max_shape[0]  # max batch size
                 config: IBuilderConfig = builder.create_builder_config()
+                # config.min_timing_iterations = 1
+                # config.avg_timing_iterations = 1
                 config.max_workspace_size = workspace_size
-                # to enable complete trt inspector debugging
+                # to enable complete trt inspector debugging, only for TensorRT >= 8.2
                 # config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
                 # CUBLAS_LT only for TensorRT >= 8
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
                 )
+                # config.set_flag(trt.BuilderFlag.INT8)
+                # config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
+                # config.int8_calibrator = Calibrator()
                 config.set_flag(trt.BuilderFlag.FP16)
-                # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when going in FP16)
+                config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
+                # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.STRICT_TYPES)
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
@@ -99,20 +159,7 @@ def build_engine(
                 #     if "gemm" in str(layer.name).lower():
                 #         for g in range(layer.num_outputs):
                 #             layer.precision = trt.DataType.FLOAT
-
-                # search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes
-                for layer_index in range(network_definition.num_layers - 1):
-                    layer: ILayer = network_definition.get_layer(layer_index)
-                    next_layer: ILayer = network_definition.get_layer(layer_index + 1)
-                    # POW operation usually followed by mean reduce
-                    if layer.type == trt.LayerType.ELEMENTWISE and next_layer.type == trt.LayerType.REDUCE:
-                        # dirty casting to get access to op attribute
-                        layer.__class__ = IElementWiseLayer
-                        if layer.op == trt.ElementWiseOperation.POW:
-                            layer.precision = trt.DataType.FLOAT
-                            next_layer.precision = trt.DataType.FLOAT
-                        layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-                        next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                fix_fp16_network(network_definition)
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
                 assert engine is not None, "error during engine generation :-("

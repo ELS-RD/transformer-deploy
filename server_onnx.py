@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, BatchEncoding, TensorType
 app = FastAPI()
 options = SessionOptions()
 options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
-model = InferenceSession("./onnx_models/model-optimized.onnx", options, providers=["CUDAExecutionProvider"])
+model = InferenceSession("./triton_models/model.onnx", options, providers=["CUDAExecutionProvider"])
 tokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
 
 
@@ -17,7 +17,6 @@ def predict(query: str):
         text=query,
         max_length=128,
         truncation=True,
-        return_token_type_ids=False,
         return_tensors=TensorType.NUMPY,
     )
     result: np.ndarray = model.run(None, dict(encode_dict))[0]

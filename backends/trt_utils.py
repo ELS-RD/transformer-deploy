@@ -95,7 +95,7 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
     return input_binding_idxs, output_binding_idxs
 
 
-def fix_fp16_network(network_definition: INetworkDefinition):
+def fix_fp16_network(network_definition: INetworkDefinition) -> INetworkDefinition:
     # search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes
     for layer_index in range(network_definition.num_layers - 1):
         layer: ILayer = network_definition.get_layer(layer_index)
@@ -109,6 +109,7 @@ def fix_fp16_network(network_definition: INetworkDefinition):
                 next_layer.precision = trt.DataType.FLOAT
             layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
             next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+    return network_definition
 
 
 def build_engine(
@@ -153,13 +154,13 @@ def build_engine(
                         opt=optimal_shape,
                         max=max_shape,
                     )
-                    config.add_optimization_profile(profile)
+                config.add_optimization_profile(profile)
                 # for i in range(network.num_layers):
                 #     layer: ILayer = network.get_layer(i)
                 #     if "gemm" in str(layer.name).lower():
                 #         for g in range(layer.num_outputs):
                 #             layer.precision = trt.DataType.FLOAT
-                fix_fp16_network(network_definition)
+                network_definition = fix_fp16_network(network_definition)
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
                 assert engine is not None, "error during engine generation :-("

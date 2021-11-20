@@ -19,7 +19,6 @@ from backends.trt_utils import build_engine, get_binding_idxs, infer_tensorrt, l
 from benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
 
 # TODO adapt README to show command line to type to launch and benchmark the server
-# TODO script shell to run all commands including the benchmark
 from templates.triton import Configuration, ModelType
 
 
@@ -153,7 +152,7 @@ def main():
                     output_binding_idxs=output_binding_idxs,
                     stream=stream,
                 )
-            timings["tensorrt_fp16"] = time_buffer
+            timings["TensorRT (FP16)"] = time_buffer
         del engine, context, runtime  # delete all tensorrt objects
 
         conf = Configuration(
@@ -180,12 +179,10 @@ def main():
         del onnx_model
         assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=1e-1)
 
-        providers = [
-            ("CUDAExecutionProvider", onnx_model_path),
-            ("CUDAExecutionProvider", onnx_optim_fp16_path),
-        ]
-
-        for provider, model_path in providers:
+        for provider, model_path, benchmar_name in [
+            ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),
+            ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (optimized)"),
+        ]:
             model = create_model_for_provider(path=model_path, provider_to_use=provider)
             time_buffer = []
             for _ in range(args.warmup):
@@ -193,7 +190,7 @@ def main():
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
                     _ = model.run(None, inputs_onnx)
-            timings[f"[{provider}] {model_path}"] = time_buffer
+            timings[benchmar_name] = time_buffer
         del model
 
         conf = Configuration(
@@ -217,7 +214,7 @@ def main():
                 with track_infer_time(time_buffer):
                     _ = model_pytorch(**inputs_pytorch)
                     torch.cuda.synchronize()
-            timings["Pytorch_fp32"] = time_buffer
+            timings["Pytorch (FP32)"] = time_buffer
             with autocast():
                 for _ in range(args.warmup):
                     _ = model_pytorch(**inputs_pytorch)
@@ -227,9 +224,9 @@ def main():
                     with track_infer_time(time_buffer):
                         _ = model_pytorch(**inputs_pytorch)
                         torch.cuda.synchronize()
-                timings["Pytorch_fp16"] = time_buffer
+                timings["Pytorch (FP16)"] = time_buffer
 
-    logging.info(f"inference done on {get_device_name(0)}")
+    print(f"Inference done on {get_device_name(0)}")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
 

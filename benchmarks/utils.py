@@ -15,7 +15,7 @@ def print_timings(name: str, timings: List[float]):
     max_time = 1e3 * np.max(timings)
     median, percent_95_time, percent_99_time = 1e3 * np.percentile(timings, [50, 95, 99])
     print(
-        f"timing [{name}]: "
+        f"[{name}] "
         f"mean={mean_time:.2f}ms, "
         f"sd={std_time:.2f}ms, "
         f"min={min_time:.2f}ms, "

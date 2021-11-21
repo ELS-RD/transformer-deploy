@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
-from templates.triton import Configuration, ModelType
+from transformer_deploy.templates.triton import Configuration, ModelType
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def conf(working_directory: tempfile.TemporaryDirectory):
 
 def test_model_conf(conf: Configuration):
     expected = """
-name: "test_model"
+name: "test_onnx_model"
 max_batch_size: 0
 platform: "onnxruntime_onnx"
 default_model_filename: "model.bin"
@@ -67,7 +67,7 @@ instance_group [
 
 def test_tokenizer_conf(conf: Configuration):
     expected = """
-name: "test_tokenize"
+name: "test_onnx_tokenize"
 max_batch_size: 0
 backend: "python"
 
@@ -106,7 +106,7 @@ instance_group [
 
 def test_inference_conf(conf: Configuration):
     expected = """
-name: "test_inference"
+name: "test_onnx_inference"
 max_batch_size: 0
 platform: "ensemble"
 
@@ -127,7 +127,7 @@ output {
 ensemble_scheduling {
     step [
         {
-            model_name: "test_tokenize"
+            model_name: "test_onnx_tokenize"
             model_version: -1
             input_map {
             key: "TEXT"
@@ -146,7 +146,7 @@ ensemble_scheduling {
         ]
         },
         {
-            model_name: "test_model"
+            model_name: "test_onnx_model"
             model_version: -1
             input_map [
                 {

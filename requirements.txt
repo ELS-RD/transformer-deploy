@@ -16,7 +16,6 @@ pytest
 black
 isort
 flake8
--f https://download.pytorch.org/whl/cu113/torch_stable.html
 torch==1.10.0+cu113
 nvidia-tensorrt==8.0.3.4
 onnx_graphsurgeon

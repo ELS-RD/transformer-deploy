@@ -1,10 +1,10 @@
 import numpy as np
 import tritonclient.http
 
-from benchmarks.utils import print_timings, setup_logging, track_infer_time
+from src.transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 
-model_name = "sts_model"
+model_name = "sts_onnx_model"
 url = "127.0.0.1:8000"
 model_version = "1"
 nb_tokens = 16  # edit to check longer sequence length

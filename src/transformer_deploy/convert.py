@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import logging
 import os
@@ -14,12 +16,16 @@ from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
-from backends.trt_utils import build_engine, get_binding_idxs, infer_tensorrt, load_engine, save_engine
-from benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
-
-# TODO adapt README to show command line to type to launch and benchmark the server
-from templates.triton import Configuration, ModelType
+from transformer_deploy.backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.trt_utils import (
+    build_engine,
+    get_binding_idxs,
+    infer_tensorrt,
+    load_engine,
+    save_engine,
+)
+from transformer_deploy.benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
+from transformer_deploy.templates.triton import Configuration, ModelType
 
 
 def main():
@@ -59,6 +65,7 @@ def main():
     parser.add_argument("--warmup", default=100, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
+    parser.add_argument("--atol", default=1e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
     args, _ = parser.parse_known_args()
 
     setup_logging(level=logging.INFO if args.verbose else logging.WARNING)
@@ -95,7 +102,7 @@ def main():
     convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
-    assert np.allclose(a=output_onnx, b=output_pytorch, atol=1e-1)
+    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
     del onnx_model
     if "pytorch" not in args.backend:
         del model_pytorch
@@ -130,7 +137,7 @@ def main():
             output_binding_idxs=output_binding_idxs,
             stream=stream,
         )
-        assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=1e-1), (
+        assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol), (
             f"tensorrt accuracy is too low:\n" f"Pythorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
         )
 
@@ -177,7 +184,7 @@ def main():
         # run the model (None = get all the outputs)
         output_onnx_optimised = onnx_model.run(None, inputs_onnx)
         del onnx_model
-        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=1e-1)
+        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
 
         for provider, model_path, benchmar_name in [
             ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),

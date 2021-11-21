@@ -133,7 +133,7 @@ def build_engine(
                 config.max_workspace_size = workspace_size
                 # to enable complete trt inspector debugging, only for TensorRT >= 8.2
                 # config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
-                # CUBLAS_LT only for TensorRT >= 8
+                # disable CUDNN optimizations
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
                 )

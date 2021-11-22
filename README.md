@@ -9,7 +9,7 @@ It optimizes your transformer model with Microsoft [ONNX Runtime](https://github
 Then it will generate all templates to launch Nvidia [Triton inference server](https://github.com/triton-inference-server/server).  
 
 > Want to understand how it works under the hood?  
-> read [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
+> **read** [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
 
 **Table Of Contents**
 

@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, BatchEncoding, TensorType
 app = FastAPI()
 options = SessionOptions()
 options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
-model = InferenceSession("../triton_models/model.onnx", options, providers=["CUDAExecutionProvider"])
+model = InferenceSession("triton_models/model.onnx", options, providers=["CUDAExecutionProvider"])
 tokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
 
 

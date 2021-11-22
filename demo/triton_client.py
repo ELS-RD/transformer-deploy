@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import tritonclient.http
 
-from src.transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
+from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 
 if __name__ == "__main__":
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     setup_logging()
-    model_name = f"sts_{args.model}_inference"
+    model_name = f"transformer_{args.model}_inference"
     url = "127.0.0.1:8000"
     model_version = "1"
     batch_size = 1

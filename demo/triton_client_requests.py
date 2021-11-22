@@ -18,7 +18,7 @@ tokens = tokenizer(
 )
 
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_classification.md
-url = "http://127.0.0.1:8000/v2/models/sts_onnx_model/versions/1/infer"
+url = "http://127.0.0.1:8000/v2/models/transformer_onnx_model/versions/1/infer"
 message = {
     "id": "42",
     "inputs": [

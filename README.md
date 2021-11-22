@@ -1,5 +1,7 @@
 # From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
 
+[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml)
+
 *Optimize and deploy in **production** Hugging Face Transformer models in a single command line!*  
 
 It includes specific transformer tricks not easy to come with to get the best inference performance ever.  

@@ -42,9 +42,6 @@ def prepare_input(
     seq_len: int, batch_size: int, include_token_ids: bool
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
     shape = (batch_size, seq_len)
-    # input_ids = torch.tensor([[101, 2023, 2444, 2724, 2003, 2307, 1012, 1045, 2097, 3696, 1011, 2039, 2005, 15579, 1012, 102]], dtype=torch.long, device="cuda")
-    # attention_mask = torch.ones((1, 16), dtype=torch.long, device="cuda")
-
     inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
     inputs_pytorch["input_ids"] = torch.randint(high=100, size=shape, dtype=torch.long, device="cuda")
     if include_token_ids:

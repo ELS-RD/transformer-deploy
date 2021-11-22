@@ -71,7 +71,7 @@ instance_group [
       count: {self.nb_instance}
       kind: KIND_GPU
     }}
-]   
+]
 """.strip()
 
     def get_model_conf(self) -> str:

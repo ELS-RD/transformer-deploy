@@ -24,9 +24,10 @@ if __name__ == "__main__":
         # from https://venturebeat.com/2021/08/25/how-hugging-face-is-tackling-bias-in-nlp/, text used in the HF demo
         text = """Today, Hugging Face has expanded to become a robust NLP startup, 
         known primarily for making open-source software such as Transformers and Datasets, 
-        used for building NLP systems. “The software Hugging Face develops can be used for classification, question answering, 
-        translation, and many other NLP tasks,” Rush said. Hugging Face also hosts a range of pretrained NLP models, 
-        on GitHub, that practitioners can download and apply for their problems, Rush added."""  # noqa: W291
+        used for building NLP systems. “The software Hugging Face develops can be used for 
+        classification, question answering, translation, and many other NLP tasks,” Rush said. 
+        Hugging Face also hosts a range of pretrained NLP models, on GitHub, that practitioners can download 
+        and apply for their problems, Rush added."""  # noqa: W291
     else:
         text = "This live event is great. I will sign-up for Infinity."
 

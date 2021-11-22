@@ -61,7 +61,7 @@ instance_group [
       kind: KIND_GPU
     }
 ]
-"""
+"""  # noqa: W293
     assert expected.strip() == conf.get_model_conf()
 
 
@@ -100,7 +100,7 @@ instance_group [
       kind: KIND_GPU
     }
 ]
-"""
+"""  # noqa: W293
     assert expected.strip() == conf.get_tokenize_conf()
 
 
@@ -166,7 +166,7 @@ ensemble_scheduling {
         }
     ]
 }
-"""
+"""  # noqa: W293
     assert expected.strip() == conf.get_inference_conf()
 
 

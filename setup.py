@@ -17,8 +17,8 @@ setup(
     author="Michaël Benesty",
     author_email="m.benesty@lefebvre-sarrut.eu",
     classifiers=[
-        'Intended Audience :: Developers',
-        'Programming Language :: Python :: 3',
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3",
     ],
     description="Simple transformer model optimizer and deployment tool",
     long_description=open("README.md", "r", encoding="utf-8").read(),

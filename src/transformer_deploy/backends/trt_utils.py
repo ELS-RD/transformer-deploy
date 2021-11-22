@@ -13,6 +13,7 @@ from tensorrt.tensorrt import (
     ILayer,
     INetworkDefinition,
     IOptimizationProfile,
+    IReduceLayer,
     Logger,
     OnnxParser,
     Runtime,
@@ -102,8 +103,9 @@ def fix_fp16_network(network_definition: INetworkDefinition) -> INetworkDefiniti
         next_layer: ILayer = network_definition.get_layer(layer_index + 1)
         # POW operation usually followed by mean reduce
         if layer.type == trt.LayerType.ELEMENTWISE and next_layer.type == trt.LayerType.REDUCE:
-            # dirty casting to get access to op attribute
+            # casting to get access to op attribute
             layer.__class__ = IElementWiseLayer
+            next_layer.__class__ = IReduceLayer
             if layer.op == trt.ElementWiseOperation.POW:
                 layer.precision = trt.DataType.FLOAT
                 next_layer.precision = trt.DataType.FLOAT

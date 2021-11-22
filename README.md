@@ -1,205 +1,160 @@
-# from 🤗 to 🤯 : Hugging Face Transformer submillisecond inference and deployment to production
+# From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
 
-*Optimize and deploy in **production** Hugging Face Transformer models in a single command line.*  
+*Optimize and deploy in **production** Hugging Face Transformer models in a single command line!*  
+
+It includes specific transformer tricks not easy to come with to get the best inference performance ever.  
+It optimizes your transformer model with Microsoft [ONNX Runtime](https://github.com/microsoft/onnxruntime/) and/or Nvidia [TensorRT](https://github.com/NVIDIA/TensorRT/).
+Then it will generate all templates to launch Nvidia [Triton inference server](https://github.com/triton-inference-server/server).  
+
+> Want to understand how it works under the hood?  
+> read [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
 
 **Table Of Contents**
 
-* [benchmarks](#benchmarks) (GPU: T4, 3090 RTX)
-* [run in Docker](#docker-build) (simple)
-* [end to end reproduction of Infinity Hugging Face demo benchmark](#infinity-hugging-face-demo-benchmark)
-* [build from sources](#build-from-sources) (complete)
-
-> Want to understand how it work under the hood?  
-> => check [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
-
-The tool optimize your model with Microsoft [ONNX Runtime](https://github.com/microsoft/onnxruntime/) or Nvidia [TensorRT](https://github.com/NVIDIA/TensorRT/).  
-Then it will generate all templates to launch Nvidia [Triton inference server](https://github.com/triton-inference-server/server).  
+* [benchmarks ⏱](#benchmarks)
+* [1 command process 🤓](#single-command)
+* [end to end reproduction of Infinity Hugging Face demo 🤗](./demo/README.md) 
+* [build from sources](#build-from-sources)
 
 ## Benchmarks
 
-TODO complete
+Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc. 
 
-* Bert-base 
-* GPU T4
-* GPU 3090 RTX
-
-* miniLM V2 L6
-* GPU T4
-* GPU 3090 RTX
-
-## Infinity Hugging Face demo benchmark
-
-### Infinity demo information
-
-Hugging Face has announced a commercial product called Infinity to perform enterprise scale inference solution.  
-More information available [here](https://huggingface.co/infinity).
-
-There are very few information about its performances outside this video: [demo video (Youtube)](https://www.youtube.com/watch?v=jiftCAhOYQA)
-
-Setup they used for their demo:
-
-* AWS virtual machine: `g4dn.xlarge` (T4 GPU)
-* model: `"philschmid/MiniLM-L6-H384-uncased-sst2"` (Hugging Face hub URL)
-* experience 1 : batch size 1, seq len 16 tokens -> `1.7ms`/query
-* experience 2 : batch size 1, seq len 128 tokens -> `2.5ms`/query
-
-![](./resources/infinity.png)
-
-### Model optimization
-
-We will optimize `philschmid/MiniLM-L6-H384-uncased-sst2` model from the Hugging Face hub.
-We will the 3 backends for that: ONNX Runtime, TensorRT and Pytorch.
-Usually, ONNX Runtime provide a good trade-off between simplicity and performance, TensorRT the best performances
-and Pytorch the simplicity.
+### Small architecture, batch 16, seq length 384
 
 ```shell
-# add -v $PWD/src:/opt/tritonserver/src to apply source code modification to the container
-docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
-  bash -c "cd /project && \
-    convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
-    --backend tensorrt onnx pytorch \
-    --seq-len 16 16 16 \
-    --verbose"
+convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
 ```
 
-> We are using a prebuilt Docker image `ghcr.io/els-rd/transformer-deploy`.
-> See below for instructions on how to build it.
-
-It should produce something like that:
-
-# TODO update scores with T4
+#### GPU Nvidia T4
 
 ```log
-inference done on NVIDIA GeForce RTX 3090
-[TensorRT (FP16)] mean=0.44ms, sd=0.07ms, min=0.41ms, max=2.27ms, median=0.43ms, 95p=0.48ms, 99p=0.66ms
-[ONNX Runtime (vanilla)] mean=1.55ms, sd=0.68ms, min=1.12ms, max=4.40ms, median=1.21ms, 95p=3.06ms, 99p=4.00ms
-[ONNX Runtime (optimized)] mean=1.22ms, sd=0.73ms, min=0.76ms, max=4.58ms, median=0.83ms, 95p=2.84ms, 99p=3.58ms
-[Pytorch (FP32)] mean=5.36ms, sd=0.52ms, min=4.96ms, max=9.12ms, median=5.18ms, 95p=6.65ms, 99p=7.38ms
-[Pytorch (FP16)] mean=5.92ms, sd=0.45ms, min=5.49ms, max=9.76ms, median=5.77ms, 95p=6.73ms, 99p=7.61ms
+Inference done on Tesla T4
+latencies:
+[TensorRT (FP16)] mean=16.38ms, sd=0.30ms, min=15.45ms, max=17.42ms, median=16.42ms, 95p=16.83ms, 99p=17.09ms
+[ONNX Runtime (vanilla)] mean=65.12ms, sd=1.53ms, min=61.74ms, max=68.51ms, median=65.21ms, 95p=67.46ms, 99p=67.90ms
+[ONNX Runtime (optimized)] mean=26.75ms, sd=0.30ms, min=25.96ms, max=27.71ms, median=26.73ms, 95p=27.23ms, 99p=27.52ms
+[Pytorch (FP32)] mean=82.22ms, sd=1.02ms, min=78.83ms, max=85.02ms, median=82.28ms, 95p=83.80ms, 99p=84.43ms
+[Pytorch (FP16)] mean=46.29ms, sd=0.41ms, min=45.23ms, max=47.56ms, median=46.30ms, 95p=46.98ms, 99p=47.37ms
 ```
 
-Models are stored in newly generated `./triton_models/` folder.  
-Subfolders contain templates for Nvidia Triton server.
+#### GPU Nvidia 3090 RTX
 
-### Launch Nvidia Triton inference server
+```log
+# convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
+Inference done on NVIDIA GeForce RTX 3090
+latencies:
+[TensorRT (FP16)] mean=5.44ms, sd=0.45ms, min=5.03ms, max=8.91ms, median=5.20ms, 95p=6.11ms, 99p=7.39ms
+[ONNX Runtime (vanilla)] mean=16.87ms, sd=2.15ms, min=15.38ms, max=26.03ms, median=15.82ms, 95p=22.63ms, 99p=24.20ms
+[ONNX Runtime (optimized)] mean=8.07ms, sd=0.58ms, min=7.59ms, max=13.63ms, median=7.93ms, 95p=8.71ms, 99p=11.45ms
+[Pytorch (FP32)] mean=17.09ms, sd=0.21ms, min=16.87ms, max=18.99ms, median=17.04ms, 95p=17.49ms, 99p=18.08ms
+[Pytorch (FP16)] mean=14.77ms, sd=1.83ms, min=13.50ms, max=20.97ms, median=13.87ms, 95p=19.15ms, 99p=20.01ms
+```
 
-Launch `Nvidia Triton inference server`: 
+### Base architecture, batch 16, seq length 384
 
 ```shell
-# add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
+convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
+```
+
+#### GPU Nvidia T4
+
+```log
+Inference done on Tesla T4
+latencies:
+[TensorRT (FP16)] mean=80.57ms, sd=1.00ms, min=76.23ms, max=83.16ms, median=80.53ms, 95p=82.14ms, 99p=82.53ms
+[ONNX Runtime (vanilla)] mean=353.81ms, sd=14.79ms, min=335.54ms, max=390.86ms, median=348.41ms, 95p=382.09ms, 99p=386.84ms
+[ONNX Runtime (optimized)] mean=97.94ms, sd=1.66ms, min=93.83ms, max=102.11ms, median=97.84ms, 95p=100.73ms, 99p=101.57ms
+[Pytorch (FP32)] mean=398.49ms, sd=25.76ms, min=369.81ms, max=454.55ms, median=387.17ms, 95p=445.52ms, 99p=450.81ms
+[Pytorch (FP16)] mean=134.18ms, sd=1.16ms, min=131.60ms, max=138.48ms, median=133.80ms, 95p=136.57ms, 99p=137.39ms
+```
+
+#### GPU Nvidia 3090 RTX
+
+```log
+Inference done on NVIDIA GeForce RTX 3090
+latencies:
+[TensorRT (FP16)] mean=27.52ms, sd=1.61ms, min=24.49ms, max=33.78ms, median=28.01ms, 95p=30.33ms, 99p=31.22ms
+[ONNX Runtime (vanilla)] mean=65.95ms, sd=6.18ms, min=60.84ms, max=99.75ms, median=62.97ms, 95p=81.02ms, 99p=89.10ms
+[ONNX Runtime (optimized)] mean=32.73ms, sd=4.80ms, min=28.84ms, max=48.84ms, median=30.15ms, 95p=43.03ms, 99p=44.78ms
+[Pytorch (FP32)] mean=69.18ms, sd=4.79ms, min=65.97ms, max=97.74ms, median=67.16ms, 95p=77.88ms, 99p=92.43ms
+[Pytorch (FP16)] mean=48.78ms, sd=2.02ms, min=47.02ms, max=61.37ms, median=47.67ms, 95p=52.34ms, 99p=55.56ms
+```
+
+### Large architecture, batch 16, seq length 384
+
+#### GPU Nvidia T4
+
+```log
+
+```
+
+#### GPU 3090 RTX
+
+```log
+# convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
+Inference done on NVIDIA GeForce RTX 3090
+latencies:
+[TensorRT (FP16)] mean=79.54ms, sd=5.99ms, min=74.47ms, max=113.25ms, median=76.87ms, 95p=88.02ms, 99p=104.48ms
+[ONNX Runtime (vanilla)] mean=202.88ms, sd=16.21ms, min=187.91ms, max=277.85ms, median=194.80ms, 95p=239.58ms, 99p=261.44ms
+[ONNX Runtime (optimized)] mean=97.04ms, sd=5.55ms, min=90.83ms, max=121.88ms, median=94.04ms, 95p=104.81ms, 99p=107.75ms
+[Pytorch (FP32)] mean=202.80ms, sd=11.16ms, min=194.47ms, max=284.70ms, median=198.46ms, 95p=221.72ms, 99p=257.31ms
+[Pytorch (FP16)] mean=142.63ms, sd=6.35ms, min=136.24ms, max=189.95ms, median=139.90ms, 95p=154.10ms, 99p=160.16ms
+```
+
+## Single command
+
+With the single command below, you will:
+
+* **download** the model and its tokenizer from Hugging Face hub, 
+* **convert** the model to ONNX,
+* **optimize** the model with ONNX Runtime and save artefact (`model.onnx`),
+* **optimize** the model with TensorRT and save artefact (`model.plan`),
+* **benchmark** each backend,
+* **generate** configuration files for the inference server
+
+```shell
+docker run -it --rm \
+  --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
+  bash -c "cd /project && \
+    convert_model -m roberta-large-mnli \
+    --backend tensorrt onnx pytorch \
+    --seq-len 16 128 128 \
+    --batch-size 1 32 32"
+```
+
+> **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  
+> **1 32 32** -> batch size, same as above
+
+* Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:
+
+```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
   -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 
-> ⚠️**WARNING**⚠️: if you ran the model conversion *outside* Docker container, check that your TensorRT version is the same than the Triton backend one.
-> As you can see we install Transformers and then launch the server itself.
-> This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
-
-### Performance analysis
-
-Measures:
-
-* 16 tokens + TensorRT:
-```shell
-# need a local installation of the package
-# pip install .[GPU]
-ubuntu@ip-XXX:~/triton_transformers$ python3 demo/triton_client.py --length 16 --model tensorrt
-10/31/2021 12:09:34 INFO     timing [triton transformers]: mean=1.53ms, sd=0.06ms, min=1.48ms, max=1.78ms, median=1.51ms, 95p=1.66ms, 99p=1.74ms
-[[-3.4355469  3.2753906]]
-```
-
-* 128 tokens + TensorRT:
-```shell
-ubuntu@ip-XXX:~/triton_transformers$ python3 demo/triton_client.py --length 128 --model tensorrt
-10/31/2021 12:12:00 INFO     timing [triton transformers]: mean=1.96ms, sd=0.08ms, min=1.88ms, max=2.24ms, median=1.93ms, 95p=2.17ms, 99p=2.23ms
-[[-3.4589844  3.3027344]]
-```
-
-There is also a more serious performance analysis tool called perf_analyzer (it will take care to check that measures are stable, etc.).
-[documentation](https://github.com/triton-inference-server/server/blob/main/docs/perf_analyzer.md)
-The tool need to be run on Ubuntu >= 20.04 (and won't work on Ubuntu 18.04 used for the AWS official Ubuntu deep learning image):
+* Query the inference server:
 
 ```shell
-# perf_analyzer needs this dependency
-sudo apt install libb64-dev
-# add -a for async measures, and -i grpc to use that protocol instead of http 
-~/.local/bin/perf_analyzer -m transformer_tensorrt_inference \
-  --percentile=95 \
-  --string-data "This live event is great. I will sign-up for Infinity." \
-  --shape TEXT:1 \
-  --concurrency-range 1:4 \
-  -i grpc \
-  -a \
-  -f perf.csv
-
-# just test the model part (easier to get random input)
-~/.local/bin/perf_analyzer --input-data zero -m transformer_tensorrt_model \
-  --shape input_ids:1,128 \
-  --shape attention_mask:1,128 \
-  --shape token_type_ids:1,128 \
-  --concurrency-range 1:4 \
-  -i grpc \
-  -a \
-  -f perf.csv
+# @ means no data conversion (curl feature)
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
+  --data-binary "@demo/query_body.bin" \
+  --header "Inference-Header-Content-Length: 160"
 ```
 
-### FastAPI server baseline
-
-This is our baseline, easy to run, but not very performant.
-
-```shell
-# launch server, disable logging for best performances
-python3 -m uvicorn --log-level warning demo.fast_api_server_onnx:app --port 8000 --host 0.0.0.0
-# other variation, 1 worker per CPU for best latency (plus not a good idea to have several times the same model on a single GPU):
-python3 -m gunicorn -w 1 -k uvicorn.workers.UvicornWorker --log-level warning demo.fast_api_server_onnx --bind 0.0.0.0:8000
-
-# simple inference timing
-time curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict
-# slightly more serious measure
-sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
-sudo perf stat -r 50 -d curl -G --data-urlencode query="This live event is great. I will sign-up for Infinity." localhost:8000/predict -s > /dev/null
-```
-
-It should produce:
-
-```shell
-Performance counter stats for 'curl -G --data-urlencode query=This live event is great. I will sign-up for Infinity. localhost:8000/predict' (50 runs):
-
-              6.14 msec task-clock                #    0.494 CPUs utilized            ( +-  0.59% )
-                 3      context-switches          #    0.462 K/sec                    ( +-  1.84% )
-                 0      cpu-migrations            #    0.000 K/sec                  
-               577      page-faults               #    0.094 M/sec                    ( +-  0.06% )
-   <not supported>      cycles                                                      
-   <not supported>      instructions                                                
-   <not supported>      branches                                                    
-   <not supported>      branch-misses                                               
-   <not supported>      L1-dcache-loads                                             
-   <not supported>      L1-dcache-load-misses                                       
-   <not supported>      LLC-loads                                                   
-   <not supported>      LLC-load-misses                                             
-
-         0.0124429 +- 0.0000547 seconds time elapsed  ( +-  0.44% )
-```
+> check `demo` folder to discover more performant ways to query the server from Python or elsewhere.
 
 ## Build from sources
 
 ```shell
 git clone git@github.com:ELS-RD/triton_transformers.git
 cd triton_transformers
-pip3 install . -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
-## Prerequisites
-
-There are 2 ways to run this package:
-
-* *simple method*: inside a `Docker` container (dependencies are managed for you)
-* without container, you need to check you have installed all dependencies
-
-
-### Required dependencies
+### Prerequisites
 
 To run this package locally, you need:
 
@@ -216,41 +171,10 @@ To run this package locally, you need:
 * [python](<https://www.python.org/downloads/>) >= v3.6.9
 * [pip](https://pypi.org/project/pip/#history) >= v19.0
 
-
-By running this package inside docker we guarantee all dependencies are installed as expected.  
-First we build the image:
-
-```shell
-
-```
-
 ### Docker build
 
-```shell
-# install Python dependencies inside the docker image
-docker build --tag transformer_deploy:latest -f Dockerfile .
-```
-
-
-## model analyzer
+You can also build your own version of the Docker image:
 
 ```shell
-# inside triton docker image
-
-docker run -it --rm --gpus all -v $PWD:/project fast_transformer:latest bash
-model-analyzer profile -f /project/config_analyzer.yaml
-```
-
-## Call Triton HTTP API directly
-
-If you don't want to use the `tritonclient` API, you can call the Triton server those ways:
-
-```shell
-# if you like Python requests library
-python3 triton_client_requests.py
-
-# if you want generic HTTP template, the @ means no data conversion
-curl -X POST  http://localhost:8000/v2/models/transformers/versions/1/infer \
-  --data-binary "@query_body.bin" \
-  --header "Inference-Header-Content-Length: 160"
+make docker_build
 ```

@@ -99,7 +99,9 @@ def main():
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
+    convert_to_onnx(
+        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch
+    )
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)

@@ -1,6 +1,7 @@
+onnx
+onnxruntime-gpu
 nvidia-pyindex
 tritonclient[all]
-onnxruntime-gpu
 pycuda
 torch==1.10.0+cu113
 nvidia-tensorrt==8.0.3.4

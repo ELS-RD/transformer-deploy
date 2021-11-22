@@ -37,38 +37,38 @@ jobs:
       shell: bash
       run: echo ${{ steps.getversion.outputs.version }} | grep -P "^\d+\.\d+\.\d+$"
 
-    - name: Docker meta
-      id: meta
-      uses: docker/metadata-action@v3
-      with:
-        images: |
-          ghcr.io/els-rd/transformer-deploy
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Login to GHCR
-      uses: docker/login-action@v1
-      with:
-        registry: ghcr.io
-        username: els-lab-ci
-        password: ${{ secrets.DOCKER_PAT }}
-
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        # We push only for main and tags
-        push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+#    - name: Docker meta
+#      id: meta
+#      uses: docker/metadata-action@v3
+#      with:
+#        images: |
+#          ghcr.io/els-rd/transformer-deploy
+#        tags: |
+#          type=ref,event=branch
+#          type=ref,event=pr
+#          type=semver,pattern={{version}}
+#          type=semver,pattern={{major}}.{{minor}}
+#          type=semver,pattern={{major}}
+#          type=sha
+#
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@v1
+#
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@v1
+#
+#    - name: Login to GHCR
+#      uses: docker/login-action@v1
+#      with:
+#        registry: ghcr.io
+#        username: els-lab-ci
+#        password: ${{ secrets.XXX }}
+#
+#    - name: Build and push
+#      uses: docker/build-push-action@v2
+#      with:
+#        context: .
+#        # We push only for main and tags
+#        push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+#        tags: ${{ steps.meta.outputs.tags }}
+#        labels: ${{ steps.meta.outputs.labels }}

@@ -24,13 +24,13 @@ test:
 build_docker:
 	DOCKER_BUILDKIT=1 docker build \
 	--rm \
-	-t ghcr.io/els-rd/transformer_deploy:latest \
-	-t ghcr.io/els-rd/transformer_deploy:$(VERSION) \
+	-t ghcr.io/els-rd/transformer-deploy:latest \
+	-t ghcr.io/els-rd/transformer-deploy:$(VERSION) \
 	-f Dockerfile .
 
-.PHONY: manual_build_push_docker
+.PHONY: build_push_docker
 build_push_docker:
-	! docker manifest inspect ghcr.io/els-rd/transformer_deploy:$(shell cat VERSION) > /dev/null || exit 1
-	${MAKE} build_docker
-	docker push ghcr.io/els-rd/transformer_deploy:latest || exit 1
-	docker push ghcr.io/els-rd/transformer_deploy:$(VERSION) || exit 1
+	! docker manifest inspect ghcr.io/els-rd/transformer-deploy:$(shell cat VERSION) > /dev/null || exit 1
+	${MAKE} build_docker || exit 1
+	docker push ghcr.io/els-rd/transformer-deploy:latest || exit 1
+	docker push ghcr.io/els-rd/transformer-deploy:$(VERSION) || exit 1

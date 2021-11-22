@@ -11,14 +11,16 @@ Then it will generate all templates to launch Nvidia [Triton inference server](h
 
 **Table Of Contents**
 
-* [benchmarks ⏱](#benchmarks)
-* [1 command process 🤓](#single-command)
-* [end to end reproduction of Infinity Hugging Face demo 🤗](./demo/README.md) 
-* [build from sources](#build-from-sources)
+* [⏱ benchmarks](#benchmarks)
+* [🤓 1 command process](#single-command)
+* [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
+* [🏗️ build from sources](#build-from-sources)
 
 ## Benchmarks
 
-Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc. 
+Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
+Below examples are representative of the performance gain to expect from this library.  
+Other aspects not shown here are improved like GPU memory used, etc.
 
 ### Small architecture, batch 16, seq length 384
 

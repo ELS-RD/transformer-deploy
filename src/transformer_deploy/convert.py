@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+#  Copyright 2021, Lefebvre Sarrut Services
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import argparse
 import logging
 import os
@@ -99,9 +113,7 @@ def main():
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
-    convert_to_onnx(
-        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch
-    )
+    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)

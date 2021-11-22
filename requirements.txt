@@ -8,7 +8,6 @@ sentencepiece
 onnx
 sympy
 coloredlogs
-pycuda
 pytest
 colored
 black

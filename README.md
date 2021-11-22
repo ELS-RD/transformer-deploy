@@ -2,14 +2,16 @@
 
 [![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml)
 
-*Optimize and deploy in **production** Hugging Face Transformer models in a single command line!*  
+*Optimize and deploy in **production** Hugging Face Transformer models in a single command line*  
+
+=> Up to 10X faster inference! <=
 
 It includes specific transformer tricks not easy to come with to get the best inference performance ever.  
 It optimizes your transformer model with Microsoft [ONNX Runtime](https://github.com/microsoft/onnxruntime/) and/or Nvidia [TensorRT](https://github.com/NVIDIA/TensorRT/).
 Then it will generate all templates to launch Nvidia [Triton inference server](https://github.com/triton-inference-server/server).  
 
 > Want to understand how it works under the hood?  
-> **read** [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
+> read [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="130">
 
 **Table Of Contents**
@@ -91,7 +93,13 @@ latencies:
 #### GPU Nvidia T4
 
 ```log
-
+Inference done on Tesla T4
+latencies:
+[TensorRT (FP16)] mean=240.39ms, sd=11.01ms, min=217.59ms, max=259.57ms, median=242.68ms, 95p=255.03ms, 99p=257.04ms
+[ONNX Runtime (vanilla)] mean=1176.73ms, sd=63.51ms, min=1020.00ms, max=1225.03ms, median=1210.08ms, 95p=1217.54ms, 99p=1220.25ms
+[ONNX Runtime (optimized)] mean=295.03ms, sd=19.69ms, min=255.74ms, max=314.78ms, median=307.07ms, 95p=311.20ms, 99p=312.47ms
+[Pytorch (FP32)] mean=1220.41ms, sd=75.93ms, min=1119.93ms, max=1342.10ms, median=1216.23ms, 95p=1329.08ms, 99p=1336.47ms
+[Pytorch (FP16)] mean=438.26ms, sd=13.71ms, min=398.29ms, max=459.97ms, median=442.36ms, 95p=453.96ms, 99p=457.57ms
 ```
 
 #### GPU 3090 RTX
@@ -151,7 +159,7 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 
 > check `demo` folder to discover more performant ways to query the server from Python or elsewhere.
 
-## Build from sources
+## Install from sources
 
 ```shell
 git clone git@github.com:ELS-RD/triton_transformers.git

@@ -10,3 +10,8 @@ source_code_check_format:
 	black --check --line-length 120 --target-version py37 . && \
 	isort --check-only . && \
 	flake8 .
+
+.PHONY: test
+test:
+	${MAKE} source_code_check_format || exit 1
+	pytest

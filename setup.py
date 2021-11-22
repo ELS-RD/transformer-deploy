@@ -4,8 +4,12 @@ import pkg_resources
 from setuptools import find_packages, setup
 
 
-with pathlib.Path("requirements.txt").open() as requirements_txt:
-    install_requires = [str(requirement) for requirement in pkg_resources.parse_requirements(requirements_txt)]
+with pathlib.Path("requirements.txt").open() as f:
+    install_requires = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
+
+with pathlib.Path("requirements_gpu.txt").open() as f:
+    extra_gpu = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
+
 
 setup(
     name="transformer-deploy",
@@ -18,6 +22,9 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=install_requires,
+    extras_require={
+        "GPU": extra_gpu,
+    },
     python_requires=">=3.6.0",
     entry_points={
         "console_scripts": [

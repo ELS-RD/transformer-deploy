@@ -4,6 +4,6 @@ FROM nvcr.io/nvidia/tritonserver:21.11-py3
 COPY . ./
 RUN pip3 install -U pip && \
     pip3 install nvidia-pyindex && \
-    pip3 install -r requirements.txt -f https://download.pytorch.org/whl/cu113/torch_stable.html
+    pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
 RUN pip3 install . -f https://download.pytorch.org/whl/cu113/torch_stable.html

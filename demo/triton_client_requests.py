@@ -4,7 +4,7 @@ import zlib
 import requests
 from transformers import AutoTokenizer, PreTrainedTokenizer, TensorType
 
-from src.transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
+from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 
 setup_logging()

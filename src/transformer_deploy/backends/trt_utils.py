@@ -163,7 +163,7 @@ def build_engine(
                 network_definition = fix_fp16_network(network_definition)
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
-                assert engine is not None, "error during engine generation :-("
+                assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 
 

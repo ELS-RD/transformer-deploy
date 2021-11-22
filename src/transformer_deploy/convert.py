@@ -80,7 +80,7 @@ def main():
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(args.model)
     input_names: List[str] = tokenizer.model_input_names
-    logging.info(input_names)
+    logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
     model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(args.model)
     model_pytorch.cuda()
@@ -234,6 +234,7 @@ def main():
                 timings["Pytorch (FP16)"] = time_buffer
 
     print(f"Inference done on {get_device_name(0)}")
+    print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
 

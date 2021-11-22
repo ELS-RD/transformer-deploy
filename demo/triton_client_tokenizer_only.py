@@ -1,7 +1,7 @@
 import numpy as np
 import tritonclient.http
 
-from src.transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
+from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 
 model_name = "transformer_onnx_tokenize"

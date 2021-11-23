@@ -17,15 +17,15 @@
 
 #### Why this tool?
 
-* [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/) = 🐢  
+[`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/) = 🐢  
 Most tutorials on transformer deployment in production are built over Pytorch and FastAPI.
 Both are great tools but not very performant in inference.  
 
-* [`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ️🏃💨  
+[`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ️🏃💨  
 Then, if you spend some time, you can build something over ONNX Runtime and Triton inference server.
 You will usually get from 2X to 4X faster inference compared to vanilla Pytorch. It's cool!  
 
-* [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ⚡️🏃💨💨  
+[`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ⚡️🏃💨💨  
 However, if you want the best in class performances on GPU, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch. 
 Sometimes it can raises up to **10X faster inference**.

@@ -1,0 +1,30 @@
+model_repository: /project/triton_models/
+override_output_model_repository: true
+
+triton_launch_mode: 'local'
+client_protocol: 'http'
+triton_http_endpoint: 'localhost:8000'
+
+profile_models:
+  sts:
+    parameters:
+      batch_sizes: 0
+
+concurrency:
+    start: 1
+    stop: 2
+    step: 1
+
+batch_sizes:
+    start: 1
+    stop: 32
+    step: 8
+
+run_config_search_max_instance_count: 1
+
+perf_analyzer_flags:
+  percentile: 95
+  measurement-mode: time_windows
+  input-data: zero
+#  shape: |
+#    input_ids:1,16 attention_mask:1,16

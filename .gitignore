@@ -215,3 +215,4 @@ cython_debug/
 *.onnx
 .idea/
 TensorRT/
+triton_models/

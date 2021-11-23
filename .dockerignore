@@ -1,0 +1,7 @@
+*
+!src
+!setup.py
+!requirements.txt
+!requirements_gpu.txt
+!README.md
+!VERSION

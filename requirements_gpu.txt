@@ -1,0 +1,10 @@
+onnx
+onnxruntime-gpu
+nvidia-pyindex
+tritonclient[all]
+pycuda
+torch==1.10.0+cu113
+nvidia-tensorrt==8.0.3.4
+onnx_graphsurgeon
+polygraphy==0.33.0
+triton-model-analyzer

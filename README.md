@@ -1,6 +1,6 @@
 # From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
 
-[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENCE)
+[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENCE) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 ### Optimize and deploy in **production** Hugging Face Transformer models in a single command line.  
 
@@ -51,7 +51,7 @@ With the single command below, you will:
 ```shell
 docker run -it --rm \
   --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.1.0 \
   bash -c "cd /project && \
     convert_model -m roberta-large-mnli \
     --backend tensorrt onnx pytorch \
@@ -272,13 +272,13 @@ If you just want to perform inference inside your Python script (without any ser
 * [convert.py](./src/transformer_deploy/convert.py)
 * [trt_utils.py](./src/transformer_deploy/backends/trt_utils.py)
 
-The hight level way it works:
+#### High level explanations
 
 * call `load_engine()` to parse an existing TensorRT engine
 * setup a stream (for async call), a TensorRT runtime and a context
 * load your profile(s)
 * call `infer_tensorrt()`
 
-And you are done.
+... and you are done! 🎉
 
 > if you are looking for inspiration, check [onnx-tensorrt](https://github.com/onnx/onnx-tensorrt)

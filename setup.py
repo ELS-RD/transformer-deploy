@@ -38,7 +38,7 @@ setup(
     description="Simple transformer model optimizer and deployment tool",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/ELS-RD/triton_transformers",
+    url="https://github.com/ELS-RD/transformer-deploy",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=install_requires,

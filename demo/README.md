@@ -74,7 +74,7 @@ Launch `Nvidia Triton inference server`:
 ```shell
 # add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.11-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 
@@ -89,14 +89,14 @@ Measures:
 ```shell
 # need a local installation of the package
 # pip install .[GPU]
-ubuntu@ip-XXX:~/triton_transformers$ python3 demo/triton_client.py --length 16 --model tensorrt
+ubuntu@ip-XXX:~/transformer-deploy$ python3 demo/triton_client.py --length 16 --model tensorrt
 10/31/2021 12:09:34 INFO     timing [triton transformers]: mean=1.53ms, sd=0.06ms, min=1.48ms, max=1.78ms, median=1.51ms, 95p=1.66ms, 99p=1.74ms
 [[-3.4355469  3.2753906]]
 ```
 
 * 128 tokens + TensorRT:
 ```shell
-ubuntu@ip-XXX:~/triton_transformers$ python3 demo/triton_client.py --length 128 --model tensorrt
+ubuntu@ip-XXX:~/transformer-deploy$ python3 demo/triton_client.py --length 128 --model tensorrt
 10/31/2021 12:12:00 INFO     timing [triton transformers]: mean=1.96ms, sd=0.08ms, min=1.88ms, max=2.24ms, median=1.93ms, 95p=2.17ms, 99p=2.23ms
 [[-3.4589844  3.3027344]]
 ```

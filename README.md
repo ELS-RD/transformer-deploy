@@ -35,13 +35,45 @@ Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it r
 
 ## Benchmarks
 
-Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
+Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.
+Best results are obtained with TensorRT 8.2 (preview).  
 Below examples are representative of the performance gain to expect from this library.  
-Other aspects not shown here are improved like GPU memory used, etc.
+Other improvements not shown here include GPU memory usage decrease, multi stream, etc.
 
-### Small architecture, batch 16, seq length 384
+### Small architecture
 
-<details><summary>latencies</summary>
+<details><summary>batch 1, seq length 16 on T4/3090RTX GPUs (up to 10X faster with TensorRT vs Pytorch)</summary>
+
+```shell
+convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 16 16 16 --batch-size 1 1 1
+```
+
+#### GPU Nvidia T4
+
+```log
+Inference done on Tesla T4
+[TensorRT (FP16)] mean=0.65ms, sd=0.11ms, min=0.57ms, max=0.96ms, median=0.59ms, 95p=0.93ms, 99p=0.94ms
+[ONNX Runtime (vanilla)] mean=1.31ms, sd=0.05ms, min=1.27ms, max=1.48ms, median=1.30ms, 95p=1.44ms, 99p=1.45ms
+[ONNX Runtime (optimized)] mean=0.71ms, sd=0.01ms, min=0.69ms, max=0.74ms, median=0.70ms, 95p=0.73ms, 99p=0.74ms
+[Pytorch (FP32)] mean=5.01ms, sd=0.06ms, min=4.94ms, max=6.72ms, median=5.01ms, 95p=5.07ms, 99p=5.13ms
+[Pytorch (FP16)] mean=5.44ms, sd=0.07ms, min=5.36ms, max=6.80ms, median=5.43ms, 95p=5.49ms, 99p=5.55ms
+```
+
+#### GPU Nvidia 3090 RTX
+
+```log
+Inference done on NVIDIA GeForce RTX 3090
+latencies:
+[TensorRT (FP16)] mean=0.45ms, sd=0.05ms, min=0.41ms, max=0.78ms, median=0.45ms, 95p=0.55ms, 99p=0.73ms
+[ONNX Runtime (vanilla)] mean=1.32ms, sd=0.11ms, min=1.24ms, max=2.36ms, median=1.30ms, 95p=1.50ms, 99p=1.74ms
+[ONNX Runtime (optimized)] mean=0.84ms, sd=0.11ms, min=0.76ms, max=2.03ms, median=0.81ms, 95p=1.10ms, 99p=1.25ms
+[Pytorch (FP32)] mean=4.68ms, sd=0.28ms, min=4.38ms, max=7.83ms, median=4.65ms, 95p=4.97ms, 99p=6.16ms
+[Pytorch (FP16)] mean=5.25ms, sd=0.60ms, min=4.83ms, max=8.54ms, median=5.03ms, 95p=6.54ms, 99p=7.77ms
+```
+
+</details>
+
+<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
 
 ```shell
 convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -62,7 +94,6 @@ latencies:
 #### GPU Nvidia 3090 RTX
 
 ```log
-# convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
 Inference done on NVIDIA GeForce RTX 3090
 latencies:
 [TensorRT (FP16)] mean=5.44ms, sd=0.45ms, min=5.03ms, max=8.91ms, median=5.20ms, 95p=6.11ms, 99p=7.39ms
@@ -71,11 +102,12 @@ latencies:
 [Pytorch (FP32)] mean=17.09ms, sd=0.21ms, min=16.87ms, max=18.99ms, median=17.04ms, 95p=17.49ms, 99p=18.08ms
 [Pytorch (FP16)] mean=14.77ms, sd=1.83ms, min=13.50ms, max=20.97ms, median=13.87ms, 95p=19.15ms, 99p=20.01ms
 ```
+
 </details>
 
-### Base architecture, batch 16, seq length 384
+### Base architecture
 
-<details><summary>latencies</summary>
+<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
 
 ```shell
 convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -107,9 +139,9 @@ latencies:
 
 </details>
 
-### Large architecture, batch 16, seq length 384
+### Large architecture
 
-<details><summary>latencies</summary>
+<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
 
 #### GPU Nvidia T4
 
@@ -126,7 +158,6 @@ latencies:
 #### GPU 3090 RTX
 
 ```log
-# convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
 Inference done on NVIDIA GeForce RTX 3090
 latencies:
 [TensorRT (FP16)] mean=79.54ms, sd=5.99ms, min=74.47ms, max=113.25ms, median=76.87ms, 95p=88.02ms, 99p=104.48ms

@@ -13,11 +13,12 @@
 * [⏱ benchmarks](#benchmarks)
 * [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
 * [🏗️ build from sources](#install-from-sources)
+* [🐍 TensorRT usage in Python script](#usage-in-python-script)
 
 #### Why this tool?
 
 🐢  
-Most tutorials on transformer deployment in producion are built over [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/).
+Most tutorials on transformer deployment in production are built over [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/).
 Both are great tools but not very performant in inference.  
 
 ️🏃💨  
@@ -80,7 +81,7 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
   --header "Inference-Header-Content-Length: 160"
 ```
 
-> check `demo` folder to discover more performant ways to query the server from Python or elsewhere.
+> check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
 
 ## Benchmarks
 
@@ -91,7 +92,9 @@ Other improvements not shown here include GPU memory usage decrease, multi strea
 
 ### Small architecture
 
-<details><summary>batch 1, seq length 16 on T4/3090RTX GPUs (up to 10X faster with TensorRT vs Pytorch)</summary>
+<details><summary>batch 1, seq length 16 on T4/RTX 3090 GPUs (up to 10X faster with TensorRT vs Pytorch)</summary>
+
+command:
 
 ```shell
 convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 16 16 16 --batch-size 1 1 1
@@ -109,7 +112,7 @@ latencies:
 [Pytorch (FP16)] mean=5.44ms, sd=0.07ms, min=5.36ms, max=6.80ms, median=5.43ms, 95p=5.49ms, 99p=5.55ms
 ```
 
-#### GPU Nvidia 3090 RTX
+#### GPU Nvidia RTX 3090
 
 ```log
 Inference done on NVIDIA GeForce RTX 3090
@@ -123,7 +126,9 @@ latencies:
 
 </details>
 
-<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+<details><summary>batch 16, seq length 384 on T4/RTX 3090 GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+
+command:
 
 ```shell
 convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -141,7 +146,7 @@ latencies:
 [Pytorch (FP16)] mean=46.29ms, sd=0.41ms, min=45.23ms, max=47.56ms, median=46.30ms, 95p=46.98ms, 99p=47.37ms
 ```
 
-#### GPU Nvidia 3090 RTX
+#### GPU Nvidia RTX 3090
 
 ```log
 Inference done on NVIDIA GeForce RTX 3090
@@ -157,7 +162,9 @@ latencies:
 
 ### Base architecture
 
-<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+<details><summary>batch 16, seq length 384 on T4/RTX 3090 GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+
+command:
 
 ```shell
 convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -175,7 +182,7 @@ latencies:
 [Pytorch (FP16)] mean=134.18ms, sd=1.16ms, min=131.60ms, max=138.48ms, median=133.80ms, 95p=136.57ms, 99p=137.39ms
 ```
 
-#### GPU Nvidia 3090 RTX
+#### GPU Nvidia RTX 3090
 
 ```log
 Inference done on NVIDIA GeForce RTX 3090
@@ -191,7 +198,9 @@ latencies:
 
 ### Large architecture
 
-<details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+<details><summary>batch 16, seq length 384 on T4/RTX 3090 GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
+
+command:
 
 ```shell
 convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -209,7 +218,7 @@ latencies:
 [Pytorch (FP16)] mean=438.26ms, sd=13.71ms, min=398.29ms, max=459.97ms, median=442.36ms, 95p=453.96ms, 99p=457.57ms
 ```
 
-#### GPU 3090 RTX
+#### GPU Nvidia RTX 3090
 
 ```log
 Inference done on NVIDIA GeForce RTX 3090
@@ -255,3 +264,21 @@ You can also build your own version of the Docker image:
 ```shell
 make docker_build
 ```
+
+### Usage in Python script
+
+If you just want to perform inference inside your Python script (without any server) and still get the best TensorRT performance, check:
+
+* [convert.py](./src/transformer_deploy/convert.py)
+* [trt_utils.py](./src/transformer_deploy/backends/trt_utils.py)
+
+The hight level way it works:
+
+* call `load_engine()` to parse an existing TensorRT engine
+* setup a stream (for async call), a TensorRT runtime and a context
+* load your profile(s)
+* call `infer_tensorrt()`
+
+And you are done.
+
+> if you are looking for inspiration, check [onnx-tensorrt](https://github.com/onnx/onnx-tensorrt)

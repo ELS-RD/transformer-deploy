@@ -135,7 +135,7 @@ Model analyzer is a powerful tool to adjust the Triton server configuration.
 To run it:
 
 ```shell
-docker run -it --rm --gpus all -v $PWD:/project fast_transformer:0.1.0 \
+docker run -it --rm --gpus all -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.1.0 \
   bash -c "model-analyzer profile -f /project/demo/config_analyzer.yaml"
 ```
 

@@ -6,7 +6,7 @@ client_protocol: 'http'
 triton_http_endpoint: 'localhost:8000'
 
 profile_models:
-  sts:
+  transformer_tensorrt_model:
     parameters:
       batch_sizes: 0
 
@@ -25,6 +25,9 @@ run_config_search_max_instance_count: 1
 perf_analyzer_flags:
   percentile: 95
   measurement-mode: time_windows
-  input-data: zero
-#  shape: |
-#    input_ids:1,16 attention_mask:1,16
+  input-data:
+    - zero
+  shape:
+    - input_ids:1,16
+    - attention_mask:1,16
+    - token_type_ids:1,16

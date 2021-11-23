@@ -1,12 +1,20 @@
 # From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
 
-[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENCE)
+[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENCE)
 
 ### Optimize and deploy in **production** Hugging Face Transformer models in a single command line.  
 
 => Up to 10X faster inference! <=
 
-**Why this tool?**
+#### Table of Contents
+
+* [🤔 why this tool?](#why-this-tool)
+* [🤓 1 command process](#single-command)
+* [⏱ benchmarks](#benchmarks)
+* [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
+* [🏗️ build from sources](#install-from-sources)
+
+#### Why this tool?
 
 🐢  
 Most tutorials on transformer deployment in producion are built over [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/).
@@ -14,11 +22,12 @@ Both are great tools but not very performant in inference.
 
 ️🏃💨  
 Then, if you spend some time, you can build something over [`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
-You will usually get 3X or 4X faster inference compared to vanilla Pytorch. It's cool!  
+You will usually get from 2X to 4X faster inference compared to vanilla Pytorch. It's cool!  
 
 ⚡️🏃💨💨  
 However, if you want the best in class performances on GPU, there is only a single choice: [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
-You can expect up to **10X faster inference** compared to vanilla Pytorch.
+You will usually get 5X faster inference compared to vanilla Pytorch. 
+Sometimes it can raises up to **10X faster inference**.
 Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it requires specific tricks not easy to come with.  
 
 
@@ -26,12 +35,52 @@ Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it r
 > read [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="120">
 
-### Table of Contents
+## Single command
 
-* [⏱ benchmarks](#benchmarks)
-* [🤓 1 command process](#single-command)
-* [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
-* [🏗️ build from sources](#install-from-sources)
+With the single command below, you will:
+
+* **download** the model and its tokenizer from Hugging Face hub, 
+* **convert** the model to ONNX graph,
+* **optimize** 
+  * the model with ONNX Runtime and save artefact (`model.onnx`),
+  * the model with TensorRT and save artefact (`model.plan`),
+* **benchmark** each backend (including Pytorch),
+* **generate** configuration files for Triton inference server
+
+```shell
+docker run -it --rm \
+  --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
+  bash -c "cd /project && \
+    convert_model -m roberta-large-mnli \
+    --backend tensorrt onnx pytorch \
+    --seq-len 16 128 128 \
+    --batch-size 1 32 32"
+```
+
+> **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  
+> **1 32 32** -> batch size, same as above
+
+* Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:
+
+```shell
+docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
+  bash -c "pip install transformers && tritonserver --model-repository=/models"
+```
+
+> As you can see we install Transformers and then launch the server itself. This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
+
+* Query the inference server:
+
+```shell
+# @ means no data conversion (curl feature)
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
+  --data-binary "@demo/query_body.bin" \
+  --header "Inference-Header-Content-Length: 160"
+```
+
+> check `demo` folder to discover more performant ways to query the server from Python or elsewhere.
 
 ## Benchmarks
 
@@ -52,6 +101,7 @@ convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx 
 
 ```log
 Inference done on Tesla T4
+latencies:
 [TensorRT (FP16)] mean=0.65ms, sd=0.11ms, min=0.57ms, max=0.96ms, median=0.59ms, 95p=0.93ms, 99p=0.94ms
 [ONNX Runtime (vanilla)] mean=1.31ms, sd=0.05ms, min=1.27ms, max=1.48ms, median=1.30ms, 95p=1.44ms, 99p=1.45ms
 [ONNX Runtime (optimized)] mean=0.71ms, sd=0.01ms, min=0.69ms, max=0.74ms, median=0.70ms, 95p=0.73ms, 99p=0.74ms
@@ -143,6 +193,10 @@ latencies:
 
 <details><summary>batch 16, seq length 384 on T4/3090RTX GPUs (up to 5X faster with TensorRT vs Pytorch)</summary>
 
+```shell
+convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
+```
+
 #### GPU Nvidia T4
 
 ```log
@@ -168,50 +222,6 @@ latencies:
 ```
 
 </details>
-
-## Single command
-
-With the single command below, you will:
-
-* **download** the model and its tokenizer from Hugging Face hub, 
-* **convert** the model to ONNX,
-* **optimize** the model with ONNX Runtime and save artefact (`model.onnx`),
-* **optimize** the model with TensorRT and save artefact (`model.plan`),
-* **benchmark** each backend,
-* **generate** configuration files for the inference server
-
-```shell
-docker run -it --rm \
-  --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
-  bash -c "cd /project && \
-    convert_model -m roberta-large-mnli \
-    --backend tensorrt onnx pytorch \
-    --seq-len 16 128 128 \
-    --batch-size 1 32 32"
-```
-
-> **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  
-> **1 32 32** -> batch size, same as above
-
-* Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:
-
-```shell
-docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
-  bash -c "pip install transformers && tritonserver --model-repository=/models"
-```
-
-* Query the inference server:
-
-```shell
-# @ means no data conversion (curl feature)
-curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
-  --data-binary "@demo/query_body.bin" \
-  --header "Inference-Header-Content-Length: 160"
-```
-
-> check `demo` folder to discover more performant ways to query the server from Python or elsewhere.
 
 ## Install from sources
 

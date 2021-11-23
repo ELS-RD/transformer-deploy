@@ -1,6 +1,6 @@
 # Demo scripts
 
-To undersand why this demo, read [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
+To understand why this demo, read [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
 
 This folder contains scripts to run different benchmarks:
 
@@ -49,16 +49,17 @@ docker run -it --rm --gpus all \
 
 After a few minutes, it should display something like this:
 
-# TODO update scores with T4
-
 ```log
-inference done on NVIDIA GeForce RTX 3090
-[TensorRT (FP16)] mean=0.44ms, sd=0.07ms, min=0.41ms, max=2.27ms, median=0.43ms, 95p=0.48ms, 99p=0.66ms
-[ONNX Runtime (vanilla)] mean=1.55ms, sd=0.68ms, min=1.12ms, max=4.40ms, median=1.21ms, 95p=3.06ms, 99p=4.00ms
-[ONNX Runtime (optimized)] mean=1.22ms, sd=0.73ms, min=0.76ms, max=4.58ms, median=0.83ms, 95p=2.84ms, 99p=3.58ms
-[Pytorch (FP32)] mean=5.36ms, sd=0.52ms, min=4.96ms, max=9.12ms, median=5.18ms, 95p=6.65ms, 99p=7.38ms
-[Pytorch (FP16)] mean=5.92ms, sd=0.45ms, min=5.49ms, max=9.76ms, median=5.77ms, 95p=6.73ms, 99p=7.61ms
+Inference done on Tesla T4
+latencies:
+[TensorRT (FP16)] mean=1.00ms, sd=0.13ms, min=0.92ms, max=1.34ms, median=0.95ms, 95p=1.31ms, 99p=1.33ms
+[ONNX Runtime (vanilla)] mean=1.67ms, sd=0.08ms, min=1.59ms, max=3.48ms, median=1.65ms, 95p=1.85ms, 99p=1.87ms
+[ONNX Runtime (optimized)] mean=0.73ms, sd=0.01ms, min=0.71ms, max=0.87ms, median=0.73ms, 95p=0.75ms, 99p=0.76ms
+[Pytorch (FP32)] mean=5.13ms, sd=0.06ms, min=5.06ms, max=6.85ms, median=5.13ms, 95p=5.18ms, 99p=5.22ms
+[Pytorch (FP16)] mean=5.39ms, sd=0.10ms, min=5.31ms, max=8.39ms, median=5.39ms, 95p=5.45ms, 99p=5.48ms
 ```
+
+> interesting to note that ONNX Runtime provide better performances than TensorRT for this setup, it's quite rare... 
 
 Models are stored in newly generated `./triton_models/` folder.  
 Subfolders contain templates for Nvidia Triton server.

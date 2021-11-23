@@ -1,25 +1,37 @@
 # From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
 
-[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml)
+[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENCE)
 
-*Optimize and deploy in **production** Hugging Face Transformer models in a single command line*  
+### Optimize and deploy in **production** Hugging Face Transformer models in a single command line.  
 
 => Up to 10X faster inference! <=
 
-It includes specific transformer tricks not easy to come with to get the best inference performance ever.  
-It optimizes your transformer model with Microsoft [ONNX Runtime](https://github.com/microsoft/onnxruntime/) and/or Nvidia [TensorRT](https://github.com/NVIDIA/TensorRT/).
-Then it will generate all templates to launch Nvidia [Triton inference server](https://github.com/triton-inference-server/server).  
+**Why this tool?**
+
+🐢  
+Most tutorials on transformer deployment in producion are built over [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/).
+Both are great tools but not very performant in inference.  
+
+️🏃💨  
+Then, if you spend some time, you can build something over [`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
+You will usually get 3X or 4X faster inference compared to vanilla Pytorch. It's cool!  
+
+⚡️🏃💨💨  
+However, if you want the best in class performances on GPU, there is only a single choice: [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
+You can expect up to **10X faster inference** compared to vanilla Pytorch.
+Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it requires specific tricks not easy to come with.  
+
 
 > Want to understand how it works under the hood?  
 > read [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
-> <img src="resources/rabbit.jpg" width="130">
+> <img src="resources/rabbit.jpg" width="120">
 
-**Table Of Contents**
+### Table of Contents
 
 * [⏱ benchmarks](#benchmarks)
 * [🤓 1 command process](#single-command)
 * [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
-* [🏗️ build from sources](#build-from-sources)
+* [🏗️ build from sources](#install-from-sources)
 
 ## Benchmarks
 
@@ -28,6 +40,8 @@ Below examples are representative of the performance gain to expect from this li
 Other aspects not shown here are improved like GPU memory used, etc.
 
 ### Small architecture, batch 16, seq length 384
+
+<details><summary>latencies</summary>
 
 ```shell
 convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -57,8 +71,11 @@ latencies:
 [Pytorch (FP32)] mean=17.09ms, sd=0.21ms, min=16.87ms, max=18.99ms, median=17.04ms, 95p=17.49ms, 99p=18.08ms
 [Pytorch (FP16)] mean=14.77ms, sd=1.83ms, min=13.50ms, max=20.97ms, median=13.87ms, 95p=19.15ms, 99p=20.01ms
 ```
+</details>
 
 ### Base architecture, batch 16, seq length 384
+
+<details><summary>latencies</summary>
 
 ```shell
 convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len 384 384 384 --batch-size 16 16 16
@@ -88,7 +105,11 @@ latencies:
 [Pytorch (FP16)] mean=48.78ms, sd=2.02ms, min=47.02ms, max=61.37ms, median=47.67ms, 95p=52.34ms, 99p=55.56ms
 ```
 
+</details>
+
 ### Large architecture, batch 16, seq length 384
+
+<details><summary>latencies</summary>
 
 #### GPU Nvidia T4
 
@@ -114,6 +135,8 @@ latencies:
 [Pytorch (FP32)] mean=202.80ms, sd=11.16ms, min=194.47ms, max=284.70ms, median=198.46ms, 95p=221.72ms, 99p=257.31ms
 [Pytorch (FP16)] mean=142.63ms, sd=6.35ms, min=136.24ms, max=189.95ms, median=139.90ms, 95p=154.10ms, 99p=160.16ms
 ```
+
+</details>
 
 ## Single command
 

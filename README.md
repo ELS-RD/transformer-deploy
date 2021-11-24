@@ -42,8 +42,8 @@ Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it r
 
 To install this package locally, you need:
 
-**TensorRT GA build**
-* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.0.6
+**TensorRT**
+* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.1 (GA)
 
 **System Packages**
 * [CUDA](https://developer.nvidia.com/cuda-toolkit)
@@ -100,8 +100,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 > This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
 Right now, only TensorRT 8.0.3 backend is available in Triton.  
-Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.  
-TensorRT 8.2 is already available in preview and should be released at the end of november 2021.  
+Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.   
 
 * Query the inference server:
 
@@ -135,7 +134,7 @@ If you just want to perform inference inside your Python script (without any ser
 ## Benchmarks
 
 Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
-**Best results are obtained with TensorRT 8.2 (preview).**  
+**Best results are obtained with TensorRT 8.2.**  
 Below examples are representative of the performance gain to expect from this library.  
 Other improvements not shown here include GPU memory usage decrease, multi stream, etc.
 

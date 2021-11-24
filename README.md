@@ -60,13 +60,13 @@ To install this package locally, you need:
 ```shell
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
-pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
 To build your own version of the Docker image:
 
 ```shell
-make docker_build
+make build_docker
 ```
 
 ## Run in a single command

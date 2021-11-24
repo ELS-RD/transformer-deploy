@@ -9,24 +9,24 @@
 #### Table of Contents
 
 * [🤔 why this tool?](#why-this-tool)
-* [🤓 1 command process](#single-command)
+* [🏗️ Installation](#installation) 
+* [🤓 run (1 command)](#run-in-a-single-command)
+* [🐍 TensorRT usage in Python script](#tensorrt-usage-in-python-script)
 * [⏱ benchmarks](#benchmarks)
-* [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) 
-* [🏗️ build from sources](#install-from-sources)
-* [🐍 TensorRT usage in Python script](#usage-in-python-script)
+* [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) (to replay [Medium article](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915))
 
 #### Why this tool?
 
-🐢  
-Most tutorials on transformer deployment in production are built over [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/).
+[`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/) = 🐢  
+Most tutorials on transformer deployment in production are built over Pytorch and FastAPI.
 Both are great tools but not very performant in inference.  
 
-️🏃💨  
-Then, if you spend some time, you can build something over [`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
+[`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ️🏃💨  
+Then, if you spend some time, you can build something over ONNX Runtime and Triton inference server.
 You will usually get from 2X to 4X faster inference compared to vanilla Pytorch. It's cool!  
 
-⚡️🏃💨💨  
-However, if you want the best in class performances on GPU, there is only a single choice: [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server).
+[`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ⚡️🏃💨💨  
+However, if you want the best in class performances on GPU, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch. 
 Sometimes it can raises up to **10X faster inference**.
 Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it requires specific tricks not easy to come with.  
@@ -36,7 +36,40 @@ Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it r
 > read [📕 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="120">
 
-## Single command
+## Installation
+
+<details><summary>Required dependencies</summary>
+
+To install this package locally, you need:
+
+**TensorRT GA build**
+* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.0.6
+
+**System Packages**
+* [CUDA](https://developer.nvidia.com/cuda-toolkit)
+  * Recommended versions:
+  * cuda-11.4.x + cuDNN-8.2
+  * cuda-10.2 + cuDNN-8.2
+* [GNU make](https://ftp.gnu.org/gnu/make/) >= v4.1
+* [cmake](https://github.com/Kitware/CMake/releases) >= v3.13
+* [python](<https://www.python.org/downloads/>) >= v3.6.9
+* [pip](https://pypi.org/project/pip/#history) >= v19.0
+
+</details>
+
+```shell
+git clone git@github.com:ELS-RD/transformer-deploy.git
+cd transformer-deploy
+pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
+```
+
+To build your own version of the Docker image:
+
+```shell
+make docker_build
+```
+
+## Run in a single command
 
 With the single command below, you will:
 
@@ -49,14 +82,7 @@ With the single command below, you will:
 * **generate** configuration files for Triton inference server
 
 ```shell
-docker run -it --rm \
-  --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.1.0 \
-  bash -c "cd /project && \
-    convert_model -m roberta-large-mnli \
-    --backend tensorrt onnx pytorch \
-    --seq-len 16 128 128 \
-    --batch-size 1 32 32"
+convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 16 128 128 --batch-size 1 32 32
 ```
 
 > **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  
@@ -66,11 +92,16 @@ docker run -it --rm \
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.10-py3 \
-  bash -c "pip install transformers && tritonserver --model-repository=/models"
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.11-py3 \
+  bash -c "pip install transformers sentencepiece && tritonserver --model-repository=/models"
 ```
 
-> As you can see we install Transformers and then launch the server itself. This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
+> As you can see we install Transformers and then launch the server itself.  
+> This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
+
+Right now, only TensorRT 8.0.3 backend is available in Triton.  
+Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.  
+TensorRT 8.2 is already available in preview and should be released at the end of november 2021.  
 
 * Query the inference server:
 
@@ -83,10 +114,28 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 
 > check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
 
+### TensorRT usage in Python script
+
+If you just want to perform inference inside your Python script (without any server) and still get the best TensorRT performance, check:
+
+* [convert.py](./src/transformer_deploy/convert.py)
+* [trt_utils.py](./src/transformer_deploy/backends/trt_utils.py)
+
+#### High level explanations
+
+* call `load_engine()` to parse an existing TensorRT engine
+* setup a stream (for async call), a TensorRT runtime and a context
+* load your profile(s)
+* call `infer_tensorrt()`
+
+... and you are done! 🎉
+
+> if you are looking for inspiration, check [onnx-tensorrt](https://github.com/onnx/onnx-tensorrt)
+
 ## Benchmarks
 
-Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.
-Best results are obtained with TensorRT 8.2 (preview).  
+Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
+**Best results are obtained with TensorRT 8.2 (preview).**  
 Below examples are representative of the performance gain to expect from this library.  
 Other improvements not shown here include GPU memory usage decrease, multi stream, etc.
 
@@ -231,54 +280,3 @@ latencies:
 ```
 
 </details>
-
-## Install from sources
-
-```shell
-git clone git@github.com:ELS-RD/triton_transformers.git
-cd triton_transformers
-pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
-```
-
-### Prerequisites
-
-To run this package locally, you need:
-
-**TensorRT GA build**
-* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.0.6
-
-**System Packages**
-* [CUDA](https://developer.nvidia.com/cuda-toolkit)
-  * Recommended versions:
-  * cuda-11.4.x + cuDNN-8.2
-  * cuda-10.2 + cuDNN-8.2
-* [GNU make](https://ftp.gnu.org/gnu/make/) >= v4.1
-* [cmake](https://github.com/Kitware/CMake/releases) >= v3.13
-* [python](<https://www.python.org/downloads/>) >= v3.6.9
-* [pip](https://pypi.org/project/pip/#history) >= v19.0
-
-### Docker build
-
-You can also build your own version of the Docker image:
-
-```shell
-make docker_build
-```
-
-### Usage in Python script
-
-If you just want to perform inference inside your Python script (without any server) and still get the best TensorRT performance, check:
-
-* [convert.py](./src/transformer_deploy/convert.py)
-* [trt_utils.py](./src/transformer_deploy/backends/trt_utils.py)
-
-#### High level explanations
-
-* call `load_engine()` to parse an existing TensorRT engine
-* setup a stream (for async call), a TensorRT runtime and a context
-* load your profile(s)
-* call `infer_tensorrt()`
-
-... and you are done! 🎉
-
-> if you are looking for inspiration, check [onnx-tensorrt](https://github.com/onnx/onnx-tensorrt)

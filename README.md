@@ -55,6 +55,9 @@ To install this package locally, you need:
 * [python](<https://www.python.org/downloads/>) >= v3.6.9
 * [pip](https://pypi.org/project/pip/#history) >= v19.0
 
+> to be able to leverage your CUDA installation by the Pycuda dependency, 
+> don't forget to add to your $PATH env variable the path to CUDA. Otherwise, Pycuda will fail to compile.
+
 </details>
 
 ```shell

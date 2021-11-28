@@ -108,10 +108,11 @@ Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runt
 * Query the inference server:
 
 ```shell
+# https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)
 curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
   --data-binary "@demo/query_body.bin" \
-  --header "Inference-Header-Content-Length: 160"
+  --header "Inference-Header-Content-Length: 161"
 ```
 
 > check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.

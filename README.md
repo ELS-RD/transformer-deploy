@@ -42,8 +42,8 @@ Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it r
 
 To install this package locally, you need:
 
-**TensorRT GA build**
-* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.0.6
+**TensorRT**
+* [TensorRT](https://developer.nvidia.com/nvidia-tensorrt-download) v8.2.1 (GA)
 
 **System Packages**
 * [CUDA](https://developer.nvidia.com/cuda-toolkit)
@@ -55,18 +55,21 @@ To install this package locally, you need:
 * [python](<https://www.python.org/downloads/>) >= v3.6.9
 * [pip](https://pypi.org/project/pip/#history) >= v19.0
 
+> to be able to leverage your CUDA installation by the Pycuda dependency, 
+> don't forget to add to your $PATH env variable the path to CUDA. Otherwise, Pycuda will fail to compile.
+
 </details>
 
 ```shell
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
-pip3 install .[GPU] -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
 To build your own version of the Docker image:
 
 ```shell
-make docker_build
+make build_docker
 ```
 
 ## Run in a single command
@@ -100,16 +103,16 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 > This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
 Right now, only TensorRT 8.0.3 backend is available in Triton.  
-Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.  
-TensorRT 8.2 is already available in preview and should be released at the end of november 2021.  
+Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.   
 
 * Query the inference server:
 
 ```shell
+# https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)
 curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
   --data-binary "@demo/query_body.bin" \
-  --header "Inference-Header-Content-Length: 160"
+  --header "Inference-Header-Content-Length: 161"
 ```
 
 > check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
@@ -135,7 +138,7 @@ If you just want to perform inference inside your Python script (without any ser
 ## Benchmarks
 
 Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
-**Best results are obtained with TensorRT 8.2 (preview).**  
+**Best results are obtained with TensorRT 8.2.**  
 Below examples are representative of the performance gain to expect from this library.  
 Other improvements not shown here include GPU memory usage decrease, multi stream, etc.
 

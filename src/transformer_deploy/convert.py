@@ -40,6 +40,7 @@ from transformer_deploy.backends.trt_utils import (
 )
 from transformer_deploy.benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
 from transformer_deploy.templates.triton import Configuration, ModelType
+from pytorch_quantization.nn import TensorQuantizer
 
 
 def main():
@@ -48,6 +49,7 @@ def main():
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face Hub")
+    parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face Hub")
     parser.add_argument(
         "-b",
         "--batch-size",
@@ -64,6 +66,7 @@ def main():
         type=int,
         nargs=3,
     )
+    parser.add_argument("-q", "--quantization", action="store_true", help="int-8 GPU quantization support")
     parser.add_argument("-w", "--workspace-size", default=10000, help="workspace size in MiB (TensorRT)", type=int)
     parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
     parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")
@@ -92,10 +95,12 @@ def main():
     tensorrt_path = os.path.join(args.output, "model.plan")
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
-    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer_path = args.tokenizer if args.tokenizer else args.model
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
+
     model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(args.model)
     model_pytorch.cuda()
     model_pytorch.eval()
@@ -113,15 +118,40 @@ def main():
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
+    if args.quantization:
+        TensorQuantizer.use_fb_fake_quant = True
     convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
+    if args.quantization:
+        TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
     del onnx_model
-    if "pytorch" not in args.backend:
-        del model_pytorch
 
     timings = {}
+
+    if "pytorch" in args.backend:
+        with torch.inference_mode():
+            for _ in range(args.warmup):
+                _ = model_pytorch(**inputs_pytorch)
+                torch.cuda.synchronize()
+            time_buffer = []
+            for _ in range(args.nb_measures):
+                with track_infer_time(time_buffer):
+                    _ = model_pytorch(**inputs_pytorch)
+                    torch.cuda.synchronize()
+            timings["Pytorch (FP32)"] = time_buffer
+            with autocast():
+                for _ in range(args.warmup):
+                    _ = model_pytorch(**inputs_pytorch)
+                    torch.cuda.synchronize()
+                time_buffer = []
+                for _ in range(args.nb_measures):
+                    with track_infer_time(time_buffer):
+                        _ = model_pytorch(**inputs_pytorch)
+                        torch.cuda.synchronize()
+                timings["Pytorch (FP16)"] = time_buffer
+    del model_pytorch
 
     if "tensorrt" in args.backend:
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if args.verbose else trt.Logger.WARNING)
@@ -134,6 +164,8 @@ def main():
             optimal_shape=tensor_shapes[1],
             max_shape=tensor_shapes[2],
             workspace_size=args.workspace_size * 1024 * 1024,
+            fp16=True,
+            int8=args.quantization,
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
@@ -214,43 +246,21 @@ def main():
             timings[benchmar_name] = time_buffer
         del model
 
-        conf = Configuration(
-            model_name=args.name,
-            model_type=ModelType.ONNX,
-            batch_size=0,
-            nb_output=output_pytorch.shape[1],
-            nb_instance=args.nb_instances,
-            include_token_type=include_token_ids,
-            workind_directory=args.output,
-        )
-        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
-
-    if "pytorch" in args.backend:
-        with torch.inference_mode():
-            for _ in range(args.warmup):
-                _ = model_pytorch(**inputs_pytorch)
-                torch.cuda.synchronize()
-            time_buffer = []
-            for _ in range(args.nb_measures):
-                with track_infer_time(time_buffer):
-                    _ = model_pytorch(**inputs_pytorch)
-                    torch.cuda.synchronize()
-            timings["Pytorch (FP32)"] = time_buffer
-            with autocast():
-                for _ in range(args.warmup):
-                    _ = model_pytorch(**inputs_pytorch)
-                    torch.cuda.synchronize()
-                time_buffer = []
-                for _ in range(args.nb_measures):
-                    with track_infer_time(time_buffer):
-                        _ = model_pytorch(**inputs_pytorch)
-                        torch.cuda.synchronize()
-                timings["Pytorch (FP16)"] = time_buffer
-
     print(f"Inference done on {get_device_name(0)}")
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
+
+    conf = Configuration(
+        model_name=args.name,
+        model_type=ModelType.ONNX,
+        batch_size=0,
+        nb_output=output_pytorch.shape[1],
+        nb_instance=args.nb_instances,
+        include_token_type=include_token_ids,
+        workind_directory=args.output,
+    )
+    conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
 
 
 if __name__ == "__main__":

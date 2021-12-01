@@ -136,6 +136,8 @@ def build_engine(
     optimal_shape: Tuple[int, int],
     max_shape: Tuple[int, int],
     workspace_size: int,
+    fp16: bool,
+    int8: bool,
 ) -> ICudaEngine:
     with trt.Builder(logger) as builder:  # type: Builder
         with builder.create_network(
@@ -153,9 +155,11 @@ def build_engine(
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
                 )
-                # config.set_flag(trt.BuilderFlag.INT8)
-                # config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
-                # config.int8_calibrator = Calibrator()
+                if int8:
+                    config.set_flag(trt.BuilderFlag.INT8)
+                    # config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
+                    # config.int8_calibrator = Calibrator()
+                # if fp16:
                 config.set_flag(trt.BuilderFlag.FP16)
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)

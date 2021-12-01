@@ -47,7 +47,7 @@ def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pyt
             model_pytorch,  # model to optimize
             args=tuple(inputs_pytorch.values()),  # tuple of multiple inputs
             f=output_path,  # output path / file object
-            opset_version=12,  # the ONNX version to use
+            opset_version=13,  # the ONNX version to use
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
             output_names=["output"],  # output axis name

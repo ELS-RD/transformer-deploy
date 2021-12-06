@@ -90,12 +90,12 @@ def main():
 
     torch.manual_seed(args.seed)
 
-    if args.auth_token is None:
-        auth_token = None
-    elif args.auth_token.lower() in ["true", "t"]:
+    if isinstance(args.auth_token, str) and args.auth_token.lower() in ["true", "t"]:
         auth_token = True
-    else:
+    elif isinstance(args.auth_token, str):
         auth_token = args.auth_token
+    else:
+        auth_token = None
 
     Path(args.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(args.output, "model-original.onnx")

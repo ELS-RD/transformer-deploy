@@ -25,6 +25,7 @@ import pycuda.autoinit
 import tensorrt as trt
 import torch
 from pycuda._driver import Stream
+from pytorch_quantization.nn import TensorQuantizer
 from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
@@ -40,7 +41,6 @@ from transformer_deploy.backends.trt_utils import (
 )
 from transformer_deploy.benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
 from transformer_deploy.templates.triton import Configuration, ModelType
-from pytorch_quantization.nn import TensorQuantizer
 
 
 def main():
@@ -130,8 +130,17 @@ def main():
 
     timings = {}
 
-    if "pytorch" in args.backend:
-        with torch.inference_mode():
+    with torch.inference_mode():
+        for _ in range(args.warmup):
+            _ = model_pytorch(**inputs_pytorch)
+            torch.cuda.synchronize()
+        time_buffer = []
+        for _ in range(args.nb_measures):
+            with track_infer_time(time_buffer):
+                _ = model_pytorch(**inputs_pytorch)
+                torch.cuda.synchronize()
+        timings["Pytorch (FP32)"] = time_buffer
+        with autocast():
             for _ in range(args.warmup):
                 _ = model_pytorch(**inputs_pytorch)
                 torch.cuda.synchronize()
@@ -140,17 +149,7 @@ def main():
                 with track_infer_time(time_buffer):
                     _ = model_pytorch(**inputs_pytorch)
                     torch.cuda.synchronize()
-            timings["Pytorch (FP32)"] = time_buffer
-            with autocast():
-                for _ in range(args.warmup):
-                    _ = model_pytorch(**inputs_pytorch)
-                    torch.cuda.synchronize()
-                time_buffer = []
-                for _ in range(args.nb_measures):
-                    with track_infer_time(time_buffer):
-                        _ = model_pytorch(**inputs_pytorch)
-                        torch.cuda.synchronize()
-                timings["Pytorch (FP16)"] = time_buffer
+            timings["Pytorch (FP16)"] = time_buffer
     del model_pytorch
 
     if "tensorrt" in args.backend:
@@ -164,7 +163,7 @@ def main():
             optimal_shape=tensor_shapes[1],
             max_shape=tensor_shapes[2],
             workspace_size=args.workspace_size * 1024 * 1024,
-            fp16=True,
+            fp16=not args.quantization,
             int8=args.quantization,
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)

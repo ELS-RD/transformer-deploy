@@ -36,10 +36,11 @@ import math
 import torch
 import torch.utils.checkpoint
 from packaging import version
+from pytorch_quantization import nn as quant_nn
+from pytorch_quantization.nn.modules.tensor_quantizer import TensorQuantizer
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 from transformers import RobertaConfig
-
 from transformers.activations import ACT2FN, gelu
 from transformers.file_utils import (
     add_code_sample_docstrings,
@@ -65,8 +66,6 @@ from transformers.modeling_utils import (
 )
 from transformers.utils import logging
 
-from pytorch_quantization import nn as quant_nn
-from pytorch_quantization.nn.modules.tensor_quantizer import TensorQuantizer
 
 logger = logging.get_logger(__name__)
 
@@ -195,9 +194,7 @@ class RobertaSelfAttention(nn.Module):
         self.value = quant_nn.QuantLinear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-        self.position_embedding_type = position_embedding_type or getattr(
-            config, "position_embedding_type", "absolute"
-        )
+        self.position_embedding_type = position_embedding_type or getattr(config, "position_embedding_type", "absolute")
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             self.max_position_embeddings = config.max_position_embeddings
             self.distance_embedding = nn.Embedding(2 * config.max_position_embeddings - 1, self.attention_head_size)
@@ -1627,7 +1624,6 @@ def create_position_ids_from_input_ids(input_ids, padding_idx, past_key_values_l
     Returns: torch.Tensor
     """
     # QDQ change below
-    # return torch.zeros(input_ids.shape, dtype=torch.long, device="cuda")
     # The series of casts and type-conversions here are carefully balanced to both work with ONNX export and XLA.
     # int() -> float() because of a limitations in cumsum operator implementation in TensorRT
     mask = input_ids.ne(padding_idx).float()

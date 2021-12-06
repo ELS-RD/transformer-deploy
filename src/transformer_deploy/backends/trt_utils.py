@@ -157,13 +157,11 @@ def build_engine(
                 )
                 if int8:
                     config.set_flag(trt.BuilderFlag.INT8)
-                    # config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
-                    # config.int8_calibrator = Calibrator()
-                # if fp16:
-                config.set_flag(trt.BuilderFlag.FP16)
+                if fp16:
+                    config.set_flag(trt.BuilderFlag.FP16)
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
-                config.set_flag(trt.BuilderFlag.STRICT_TYPES)
+                config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()

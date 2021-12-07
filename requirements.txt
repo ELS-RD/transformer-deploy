@@ -9,6 +9,6 @@ sympy
 coloredlogs
 pytest
 colored
-black
+black[jupyter]
 isort
 flake8

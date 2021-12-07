@@ -1,4 +1,4 @@
-# From 🤗 to 🤯, Hugging Face Transformer submillisecond inference️ and deployment to production
+# Hugging Face Transformer submillisecond inference️ and deployment to production: 🤗 → 🤯
 
 [![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENCE) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 

@@ -245,21 +245,21 @@ def main():
             timings[benchmar_name] = time_buffer
         del model
 
+        conf = Configuration(
+            model_name=args.name,
+            model_type=ModelType.ONNX,
+            batch_size=0,
+            nb_output=output_pytorch.shape[1],
+            nb_instance=args.nb_instances,
+            include_token_type=include_token_ids,
+            workind_directory=args.output,
+        )
+        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
+
     print(f"Inference done on {get_device_name(0)}")
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
-
-    conf = Configuration(
-        model_name=args.name,
-        model_type=ModelType.ONNX,
-        batch_size=0,
-        nb_output=output_pytorch.shape[1],
-        nb_instance=args.nb_instances,
-        include_token_type=include_token_ids,
-        workind_directory=args.output,
-    )
-    conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
 
 
 if __name__ == "__main__":

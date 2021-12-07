@@ -4,6 +4,7 @@ nvidia-pyindex
 tritonclient[all]
 pycuda
 torch==1.10.0+cu113
+nvidia-pyindex
 nvidia-tensorrt
 onnx_graphsurgeon
 polygraphy

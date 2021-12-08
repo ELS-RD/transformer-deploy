@@ -14,6 +14,7 @@
 * [🐍 TensorRT usage in Python script](#tensorrt-usage-in-python-script)
 * [⏱ benchmarks](#benchmarks)
 * [🤗 end to end reproduction of Infinity Hugging Face demo](./demo/README.md) (to replay [Medium article](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915))
+* [🏎️ end to end GPU quantization tutorial](./demo/quantization_end_to_end.ipynb)
 
 #### Why this tool?
 

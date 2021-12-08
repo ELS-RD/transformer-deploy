@@ -48,10 +48,14 @@ def main():
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face Hub")
-    parser.add_argument("--auth-token", default=None, help=(
-        "HuggingFace Hub auth token. Set to `None` (default) for public models. "
-        "For private models, use `True` to use local cached token, or a string of your HF API token"
-    ))
+    parser.add_argument(
+        "--auth-token",
+        default=None,
+        help=(
+            "HuggingFace Hub auth token. Set to `None` (default) for public models. "
+            "For private models, use `True` to use local cached token, or a string of your HF API token"
+        ),
+    )
     parser.add_argument(
         "-b",
         "--batch-size",
@@ -103,9 +107,7 @@ def main():
     tensorrt_path = os.path.join(args.output, "model.plan")
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
-    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-        args.model, use_auth_token=auth_token
-    )
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names

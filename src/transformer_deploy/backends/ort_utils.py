@@ -36,7 +36,9 @@ def create_model_for_provider(path: str, provider_to_use: str) -> InferenceSessi
     return InferenceSession(path, options, providers=provider_to_use)
 
 
-def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor]) -> None:
+def convert_to_onnx(
+    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor], opset: int = 12
+) -> None:
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():
@@ -47,7 +49,7 @@ def convert_to_onnx(model_pytorch: PreTrainedModel, output_path: str, inputs_pyt
             model_pytorch,  # model to optimize
             args=tuple(inputs_pytorch.values()),  # tuple of multiple inputs
             f=output_path,  # output path / file object
-            opset_version=13,  # the ONNX version to use
+            opset_version=opset,  # the ONNX version to use, 13 if quantized model, 12 for not quantized ones
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
             output_names=["output"],  # output axis name
@@ -65,7 +67,7 @@ def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> 
         model_type="bert",
         use_gpu=use_cuda,
         opt_level=1,
-        num_heads=0,  # automatic detection
+        num_heads=0,  # automatic detection don't work with opset 13
         hidden_size=0,  # automatic detection
         optimization_options=optimization_options,
     )

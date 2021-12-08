@@ -85,7 +85,7 @@ With the single command below, you will:
 * **generate** configuration files for Triton inference server
 
 ```shell
-convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len 16 128 128 --batch-size 1 32 32
+convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 16 128 128 --batch-size 1 32 32
 ```
 
 > **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  

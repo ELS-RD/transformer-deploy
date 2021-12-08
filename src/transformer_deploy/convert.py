@@ -76,7 +76,7 @@ def main():
         default=["onnx"],
         help="backend to use. One of [onnx,tensorrt, pytorch] or all",
         nargs="*",
-        choices=["onnx", "tensorrt", "pytorch"],
+        choices=["onnx", "tensorrt"],
     )
     parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
     parser.add_argument("--warmup", default=100, help="# of inferences to warm each model", type=int)
@@ -118,9 +118,14 @@ def main():
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
+    opset = 12
     if args.quantization:
         TensorQuantizer.use_fb_fake_quant = True
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
+        opset = 13
+
+    convert_to_onnx(
+        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch, opset=opset
+    )
     if args.quantization:
         TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")

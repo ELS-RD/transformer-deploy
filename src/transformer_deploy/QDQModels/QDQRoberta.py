@@ -135,7 +135,7 @@ class RobertaEmbeddings(nn.Module):
         seq_length = input_shape[1]
 
         # Setting the token_type_ids to the registered buffer in constructor where it is all zeros, which usually occurs
-        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves
+        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves # noqa: E501
         # issue #5664
         if token_type_ids is None:
             if hasattr(self, "token_type_ids"):
@@ -477,7 +477,7 @@ class RobertaLayer(nn.Module):
         if self.is_decoder and encoder_hidden_states is not None:
             if not hasattr(self, "crossattention"):
                 raise ValueError(
-                    f"If `encoder_hidden_states` are passed, {self} has to be instantiated with cross-attention layers by setting `config.add_cross_attention=True`"
+                    f"If `encoder_hidden_states` are passed, {self} has to be instantiated with cross-attention layers by setting `config.add_cross_attention=True`"  # noqa: E501
                 )
 
             # cross_attn cached key/values tuple is at positions 3,4 of past_key_value tuple
@@ -831,7 +831,7 @@ class RobertaModel(RobertaPreTrainedModel):
         use_cache (:obj:`bool`, `optional`):
             If set to :obj:`True`, :obj:`past_key_values` key value states are returned and can be used to speed up
             decoding (see :obj:`past_key_values`).
-        """
+        """  # noqa: E501
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -1015,7 +1015,7 @@ class RobertaForCausalLM(RobertaPreTrainedModel):
             >>> outputs = model(**inputs)
 
             >>> prediction_logits = outputs.logits
-        """
+        """  # noqa: E501
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         if labels is not None:
             use_cache = False

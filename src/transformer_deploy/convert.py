@@ -51,6 +51,14 @@ def main():
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
     parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
     parser.add_argument(
+        "--auth-token",
+        default=None,
+        help=(
+            "Hugging Face Hub auth token. Set to `None` (default) for public models. "
+            "For private models, use `True` to use local cached token, or a string of your HF API token"
+        ),
+    )
+    parser.add_argument(
         "-b",
         "--batch-size",
         default=[1, 1, 1],
@@ -89,6 +97,13 @@ def main():
 
     torch.manual_seed(args.seed)
 
+    if isinstance(args.auth_token, str) and args.auth_token.lower() in ["true", "t"]:
+        auth_token = True
+    elif isinstance(args.auth_token, str):
+        auth_token = args.auth_token
+    else:
+        auth_token = None
+
     Path(args.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(args.output, "model-original.onnx")
     onnx_optim_fp16_path = os.path.join(args.output, "model.onnx")
@@ -96,12 +111,13 @@ def main():
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
     tokenizer_path = args.tokenizer if args.tokenizer else args.model
-    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
-
-    model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(args.model)
+    model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
+        args.model, use_auth_token=auth_token
+    )
     model_pytorch.cuda()
     model_pytorch.eval()
 

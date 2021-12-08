@@ -48,8 +48,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face Hub")
-    parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face Hub")
+    parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
+    parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
     parser.add_argument(
         "-b",
         "--batch-size",

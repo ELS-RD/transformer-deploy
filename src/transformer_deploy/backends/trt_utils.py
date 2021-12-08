@@ -209,7 +209,7 @@ def infer_tensorrt(
     # calculate input shape, bind it, allocate GPU memory for the output
     host_outputs, device_outputs = setup_binding_shapes(context, input_list, input_binding_idxs, output_binding_idxs)
     bindings = device_inputs + device_outputs
-    assert context.execute_async_v2(bindings, stream_handle=stream.handle), "failure during execute inference call"
+    assert context.execute_async_v2(bindings, stream_handle=stream.handle), "failure during execution of inference"
     for h_output, d_output in zip(host_outputs, device_outputs):
         cuda.memcpy_dtoh_async(h_output, d_output)  # GPU to host
     stream.synchronize()  # sync all CUDA ops

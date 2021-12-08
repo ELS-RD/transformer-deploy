@@ -87,6 +87,15 @@ With the single command below, you will:
 
 ```shell
 convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 16 128 128 --batch-size 1 32 32
+# ...
+# Inference done on NVIDIA GeForce RTX 3090
+# latencies:
+# [Pytorch (FP32)] mean=123.26ms, sd=3.35ms, min=117.84ms, max=136.12ms, median=122.09ms, 95p=129.50ms, 99p=131.24ms
+# [Pytorch (FP16)] mean=78.41ms, sd=2.83ms, min=75.58ms, max=88.48ms, median=77.28ms, 95p=84.66ms, 99p=85.97ms
+# [TensorRT (FP16)] mean=182.99ms, sd=3.15ms, min=175.75ms, max=191.58ms, median=182.32ms, 95p=188.37ms, 99p=190.80ms
+# [ONNX Runtime (vanilla)] mean=119.03ms, sd=8.27ms, min=112.15ms, max=185.57ms, median=116.51ms, 95p=129.18ms, 99p=167.70ms
+# [ONNX Runtime (optimized)] mean=53.82ms, sd=0.81ms, min=52.79ms, max=58.27ms, median=53.74ms, 95p=55.38ms, 99p=57.29ms
+
 ```
 
 > **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  

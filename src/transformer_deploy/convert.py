@@ -98,6 +98,7 @@ def main():
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
     parser.add_argument("--atol", default=1e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
+    parser.add_argument("--not-strict", action="store_true", help="If converted model isn't within atol, still continue if this flag is set")
     args, _ = parser.parse_known_args()
 
     setup_logging(level=logging.INFO if args.verbose else logging.WARNING)
@@ -164,9 +165,16 @@ def main():
     output_onnx = onnx_model.run(None, inputs_onnx)
     if args.task == "TokenClassification":
         output_onnx = output_onnx[0]
-    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol), (
-            f"onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx}"
-        )
+
+    all_close = np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
+    close_message = (
+        f"onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx}"
+    )
+    if args.not_strict:
+        if not all_close:
+            logging.warning(close_message)
+    else:
+        assert all_close, close_message
     del onnx_model
 
     timings = {}
@@ -223,9 +231,16 @@ def main():
             output_binding_idxs=output_binding_idxs,
             stream=stream,
         )
-        assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol), (
+
+        all_close = np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol)
+        close_message = (
             f"tensorrt accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
         )
+        if args.not_strict:
+            if not all_close:
+                logging.warning(close_message)
+        else:
+            assert all_close, close_message
 
         for _ in range(args.warmup):
             _ = infer_tensorrt(
@@ -272,10 +287,17 @@ def main():
         del onnx_model
         if args.task == "TokenClassification":
             output_onnx_optimised = output_onnx_optimised[0]
-        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol), (
+
+        all_close = np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
+        close_message = (
             f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n"
             f"ONNX:\n{output_onnx_optimised}\n\n"
         )
+        if args.not_strict:
+            if not all_close:
+                logging.warning(close_message)
+        else:
+            assert all_close, close_message
 
         for provider, model_path, benchmar_name in [
             ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),

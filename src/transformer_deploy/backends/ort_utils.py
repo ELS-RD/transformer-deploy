@@ -15,7 +15,9 @@
 import logging
 import multiprocessing
 from collections import OrderedDict
-from typing import OrderedDict as OD, Union, List
+from typing import List
+from typing import OrderedDict as OD
+from typing import Union
 
 import torch
 from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions

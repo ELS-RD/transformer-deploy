@@ -62,7 +62,7 @@ def main():
         "--task",
         default="SequenceClassification",
         help='One of ["SequenceClassification", "TokenClassification"]',
-        nargs=1,
+        type=str,
         choices=["SequenceClassification", "TokenClassification"],
     )
     parser.add_argument(

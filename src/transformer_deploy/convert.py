@@ -49,6 +49,13 @@ def main():
     )
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face Hub")
     parser.add_argument(
+        "--task",
+        default="SequenceClassification",
+        help='One of ["SequenceClassification", "TokenClassification"]',
+        nargs=1,
+        choices=["SequenceClassification", "TokenClassification"],
+    )
+    parser.add_argument(
         "--auth-token",
         default=None,
         help=(
@@ -111,9 +118,16 @@ def main():
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
-    model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
-        args.model, use_auth_token=auth_token
-    )
+
+    if args.task == "TokenClassification":
+        from transformers import AutoModelForTokenClassification
+        model_pytorch: PreTrainedModel = AutoModelForTokenClassification.from_pretrained(
+            args.model, use_auth_token=auth_token
+        )
+    else:
+        model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
+            args.model, use_auth_token=auth_token
+        )
     model_pytorch.cuda()
     model_pytorch.eval()
 
@@ -134,6 +148,7 @@ def main():
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
+    print("created onnx model with acceptable accuracy")
     del onnx_model
     if "pytorch" not in args.backend:
         del model_pytorch
@@ -169,7 +184,7 @@ def main():
             stream=stream,
         )
         assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol), (
-            f"tensorrt accuracy is too low:\n" f"Pythorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
+            f"tensorrt accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
         )
 
         for _ in range(args.warmup):
@@ -215,7 +230,9 @@ def main():
         # run the model (None = get all the outputs)
         output_onnx_optimised = onnx_model.run(None, inputs_onnx)
         del onnx_model
-        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
+        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol), (
+            f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx_optimised}"
+        )
 
         for provider, model_path, benchmar_name in [
             ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),

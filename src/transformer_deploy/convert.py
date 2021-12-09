@@ -136,10 +136,12 @@ def main():
         model_pytorch: PreTrainedModel = AutoModelForTokenClassification.from_pretrained(
             args.model, use_auth_token=auth_token
         )
+        logging.info(f"task: TokenClassification")
     else:
         model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
             args.model, use_auth_token=auth_token
         )
+        logging.info(f"task: SequenceClassification")
     model_pytorch.cuda()
     model_pytorch.eval()
 
@@ -168,8 +170,12 @@ def main():
         TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
-    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
-    print("created onnx model with acceptable accuracy")
+    if args.task == "TokenClassification":
+            output_pytorch = np.argmax(output_pytorch, axis=1)
+            output_onnx = np.argmax(output_onnx, axis=1)
+    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol), (
+            f"onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx}"
+        )
     del onnx_model
 
     timings = {}

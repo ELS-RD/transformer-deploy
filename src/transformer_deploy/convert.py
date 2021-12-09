@@ -252,7 +252,7 @@ def main():
         del onnx_model
         assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
 
-        for provider, model_path, benchmar_name in [
+        for provider, model_path, benchmark_name in [
             ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),
             ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (optimized)"),
         ]:
@@ -263,7 +263,7 @@ def main():
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
                     _ = model.run(None, inputs_onnx)
-            timings[benchmar_name] = time_buffer
+            timings[benchmark_name] = time_buffer
         del model
 
         conf = Configuration(

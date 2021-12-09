@@ -15,7 +15,7 @@
 import logging
 import multiprocessing
 from collections import OrderedDict
-from typing import OrderedDict as OD
+from typing import OrderedDict as OD, Union, List
 
 import torch
 from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
@@ -26,13 +26,13 @@ from torch.onnx import TrainingMode
 from transformers import PreTrainedModel
 
 
-def create_model_for_provider(path: str, provider_to_use: str) -> InferenceSession:
+def create_model_for_provider(path: str, provider_to_use: Union[str, List]) -> InferenceSession:
     options = SessionOptions()
     options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
-    if type(provider_to_use) == list and provider_to_use == "CPUExecutionProvider":
-        options.intra_op_num_threads = multiprocessing.cpu_count()
     if type(provider_to_use) != list:
         provider_to_use = [provider_to_use]
+    if provider_to_use == ["CPUExecutionProvider"]:
+        options.intra_op_num_threads = multiprocessing.cpu_count()
     return InferenceSession(path, options, providers=provider_to_use)
 
 

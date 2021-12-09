@@ -66,14 +66,6 @@ def main():
         choices=["SequenceClassification", "TokenClassification"],
     )
     parser.add_argument(
-        "--auth-token",
-        default=None,
-        help=(
-            "HuggingFace Hub auth token. Set to `None` (default) for public models. "
-            "For private models, use `True` to use local cached token, or a string of your HF API token"
-        ),
-    )
-    parser.add_argument(
         "-b",
         "--batch-size",
         default=[1, 1, 1],

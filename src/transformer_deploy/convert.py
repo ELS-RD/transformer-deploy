@@ -163,9 +163,10 @@ def main():
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     if args.task == "TokenClassification":
-            output_pytorch = np.argmax(output_pytorch, axis=1)
-            output_onnx = np.argmax(output_onnx, axis=1)
-    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol), (
+        print(output_pytorch)
+        print(output_onnx)
+        print(output_onnx[0])
+    assert np.allclose(a=output_onnx[0], b=output_pytorch, atol=args.atol), (
             f"onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx}"
         )
     del onnx_model

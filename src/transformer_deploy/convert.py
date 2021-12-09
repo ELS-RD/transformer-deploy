@@ -225,6 +225,7 @@ def main():
         )
         assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol), (
             f"tensorrt accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
+            f"differs in {sum([1 for _ in np.isclose(a=tensorrt_output, b=output_pytorch, atol=args.atol) if _ == False ])} indexes"
         )
 
         for _ in range(args.warmup):
@@ -273,8 +274,9 @@ def main():
         if args.task == "TokenClassification":
             output_onnx_optimised = output_onnx_optimised[0]
         assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol), (
-            f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx_optimised}\n\n"
-            f"{np.isclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)}"
+            f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n"
+            f"ONNX:\n{output_onnx_optimised}\n\n"
+            f"differs in {sum([1 for _ in np.isclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol) if _ == False ])} indexes"
         )
 
         for provider, model_path, benchmar_name in [

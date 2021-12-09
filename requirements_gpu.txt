@@ -1,5 +1,5 @@
 onnx
-onnxruntime-gpu
+onnxruntime-gpu==1.9.0
 nvidia-pyindex
 tritonclient[all]
 pycuda

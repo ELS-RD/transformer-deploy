@@ -25,6 +25,7 @@ import pycuda.autoinit
 import tensorrt as trt
 import torch
 from pycuda._driver import Stream
+from pytorch_quantization.nn import TensorQuantizer
 from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
@@ -47,7 +48,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face Hub")
+    parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
+    parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
+    parser.add_argument(
+        "--auth-token",
+        default=None,
+        help=(
+            "Hugging Face Hub auth token. Set to `None` (default) for public models. "
+            "For private models, use `True` to use local cached token, or a string of your HF API token"
+        ),
+    )
     parser.add_argument(
         "--task",
         default="SequenceClassification",
@@ -79,6 +89,7 @@ def main():
         type=int,
         nargs=3,
     )
+    parser.add_argument("-q", "--quantization", action="store_true", help="int-8 GPU quantization support")
     parser.add_argument("-w", "--workspace-size", default=10000, help="workspace size in MiB (TensorRT)", type=int)
     parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
     parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")
@@ -88,7 +99,7 @@ def main():
         default=["onnx"],
         help="backend to use. One of [onnx,tensorrt, pytorch] or all",
         nargs="*",
-        choices=["onnx", "tensorrt", "pytorch"],
+        choices=["onnx", "tensorrt"],
     )
     parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
     parser.add_argument("--warmup", default=100, help="# of inferences to warm each model", type=int)
@@ -114,7 +125,8 @@ def main():
     tensorrt_path = os.path.join(args.output, "model.plan")
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
-    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(args.model, use_auth_token=auth_token)
+    tokenizer_path = args.tokenizer if args.tokenizer else args.model
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
@@ -144,16 +156,45 @@ def main():
     logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch)
+    opset = 12
+    if args.quantization:
+        TensorQuantizer.use_fb_fake_quant = True
+        opset = 13
+
+    convert_to_onnx(
+        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch, opset=opset
+    )
+    if args.quantization:
+        TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
     output_onnx = onnx_model.run(None, inputs_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
     print("created onnx model with acceptable accuracy")
     del onnx_model
-    if "pytorch" not in args.backend:
-        del model_pytorch
 
     timings = {}
+
+    with torch.inference_mode():
+        for _ in range(args.warmup):
+            _ = model_pytorch(**inputs_pytorch)
+            torch.cuda.synchronize()
+        time_buffer = []
+        for _ in range(args.nb_measures):
+            with track_infer_time(time_buffer):
+                _ = model_pytorch(**inputs_pytorch)
+                torch.cuda.synchronize()
+        timings["Pytorch (FP32)"] = time_buffer
+        with autocast():
+            for _ in range(args.warmup):
+                _ = model_pytorch(**inputs_pytorch)
+                torch.cuda.synchronize()
+            time_buffer = []
+            for _ in range(args.nb_measures):
+                with track_infer_time(time_buffer):
+                    _ = model_pytorch(**inputs_pytorch)
+                    torch.cuda.synchronize()
+            timings["Pytorch (FP16)"] = time_buffer
+    del model_pytorch
 
     if "tensorrt" in args.backend:
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if args.verbose else trt.Logger.WARNING)
@@ -166,6 +207,8 @@ def main():
             optimal_shape=tensor_shapes[1],
             max_shape=tensor_shapes[2],
             workspace_size=args.workspace_size * 1024 * 1024,
+            fp16=not args.quantization,
+            int8=args.quantization,
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
@@ -258,28 +301,6 @@ def main():
             workind_directory=args.output,
         )
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
-
-    if "pytorch" in args.backend:
-        with torch.inference_mode():
-            for _ in range(args.warmup):
-                _ = model_pytorch(**inputs_pytorch)
-                torch.cuda.synchronize()
-            time_buffer = []
-            for _ in range(args.nb_measures):
-                with track_infer_time(time_buffer):
-                    _ = model_pytorch(**inputs_pytorch)
-                    torch.cuda.synchronize()
-            timings["Pytorch (FP32)"] = time_buffer
-            with autocast():
-                for _ in range(args.warmup):
-                    _ = model_pytorch(**inputs_pytorch)
-                    torch.cuda.synchronize()
-                time_buffer = []
-                for _ in range(args.nb_measures):
-                    with track_infer_time(time_buffer):
-                        _ = model_pytorch(**inputs_pytorch)
-                        torch.cuda.synchronize()
-                timings["Pytorch (FP16)"] = time_buffer
 
     print(f"Inference done on {get_device_name(0)}")
     print("latencies:")

@@ -77,20 +77,20 @@ def setup_binding_shapes(
     host_inputs: List[np.ndarray],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
-):
+) -> Tuple[List[np.ndarray], List[DeviceAllocation]]:
     # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
         context.set_binding_shape(binding_index, host_input.shape)
     assert context.all_binding_shapes_specified
-    host_outputs = []
-    device_outputs = []
+    host_outputs: List[np.ndarray] = []
+    device_outputs: List[DeviceAllocation] = []
     for binding_index in output_binding_idxs:
         output_shape = context.get_binding_shape(binding_index)
-    # allocate buffers to hold output results after copying back to host
-    buffer = np.empty(output_shape, dtype=np.float32)
-    host_outputs.append(buffer)
-    # allocate output buffers on device
-    device_outputs.append(cuda.mem_alloc(buffer.nbytes))
+        # allocate buffers to hold output results after copying back to host
+        buffer = np.empty(output_shape, dtype=np.float32)
+        host_outputs.append(buffer)
+        # allocate output buffers on device
+        device_outputs.append(cuda.mem_alloc(buffer.nbytes))
     return host_outputs, device_outputs
 
 
@@ -136,6 +136,8 @@ def build_engine(
     optimal_shape: Tuple[int, int],
     max_shape: Tuple[int, int],
     workspace_size: int,
+    fp16: bool,
+    int8: bool,
 ) -> ICudaEngine:
     with trt.Builder(logger) as builder:  # type: Builder
         with builder.create_network(
@@ -144,8 +146,6 @@ def build_engine(
             with trt.OnnxParser(network_definition, logger) as parser:  # type: OnnxParser
                 builder.max_batch_size = max_shape[0]  # max batch size
                 config: IBuilderConfig = builder.create_builder_config()
-                # config.min_timing_iterations = 1
-                # config.avg_timing_iterations = 1
                 config.max_workspace_size = workspace_size
                 # to enable complete trt inspector debugging, only for TensorRT >= 8.2
                 # config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
@@ -153,13 +153,13 @@ def build_engine(
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
                 )
-                # config.set_flag(trt.BuilderFlag.INT8)
-                # config.set_quantization_flag(trt.QuantizationFlag.CALIBRATE_BEFORE_FUSION)
-                # config.int8_calibrator = Calibrator()
-                config.set_flag(trt.BuilderFlag.FP16)
+                if int8:
+                    config.set_flag(trt.BuilderFlag.INT8)
+                if fp16:
+                    config.set_flag(trt.BuilderFlag.FP16)
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
-                config.set_flag(trt.BuilderFlag.STRICT_TYPES)
+                config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
@@ -171,12 +171,8 @@ def build_engine(
                         max=max_shape,
                     )
                 config.add_optimization_profile(profile)
-                # for i in range(network.num_layers):
-                #     layer: ILayer = network.get_layer(i)
-                #     if "gemm" in str(layer.name).lower():
-                #         for g in range(layer.num_outputs):
-                #             layer.precision = trt.DataType.FLOAT
-                network_definition = fix_fp16_network(network_definition)
+                if fp16:
+                    network_definition = fix_fp16_network(network_definition)
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
                 assert engine is not None, "error during engine generation, check error messages above :-("
@@ -200,16 +196,20 @@ def infer_tensorrt(
     output_binding_idxs: List[int],
     stream: Stream,
 ) -> np.ndarray:
-    # warning: small change in output if int64 is used instead of int32
-    input_list: List[ndarray] = [tensor.astype(np.int32) for tensor in host_inputs.values()]
-    # allocate GPU memory for input tensors
-    device_inputs = [cuda.mem_alloc(tensor.nbytes) for tensor in input_list]
-    for h_input, d_input in zip(input_list, device_inputs):
-        cuda.memcpy_htod_async(d_input, h_input)  # host to GPU
+    input_list: List[ndarray] = list()
+    device_inputs: List[DeviceAllocation] = list()
+    for tensor in host_inputs.values():
+        # warning: small change in output if int64 is used instead of int32
+        tensor_int32: np.ndarray = np.asarray(tensor, dtype=np.int32)
+        input_list.append(tensor_int32)
+        # allocate GPU memory for input tensors
+        device_input: DeviceAllocation = cuda.mem_alloc(tensor_int32.nbytes)
+        device_inputs.append(device_input)
+        cuda.memcpy_htod_async(device_input, tensor_int32.ravel(), stream)
     # calculate input shape, bind it, allocate GPU memory for the output
     host_outputs, device_outputs = setup_binding_shapes(context, input_list, input_binding_idxs, output_binding_idxs)
     bindings = device_inputs + device_outputs
-    context.execute_async_v2(bindings, stream.handle)
+    assert context.execute_async_v2(bindings, stream_handle=stream.handle), "failure during execution of inference"
     for h_output, d_output in zip(host_outputs, device_outputs):
         cuda.memcpy_dtoh_async(h_output, d_output)  # GPU to host
     stream.synchronize()  # sync all CUDA ops

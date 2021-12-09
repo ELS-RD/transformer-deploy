@@ -40,7 +40,7 @@ docker run -it --rm --gpus all \
   -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.1.1 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
-    --backend tensorrt onnx pytorch \
+    --backend tensorrt onnx \
     --seq-len 16 128 128"
 ```
 

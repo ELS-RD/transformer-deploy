@@ -273,7 +273,8 @@ def main():
         if args.task == "TokenClassification":
             output_onnx_optimised = output_onnx_optimised[0]
         assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol), (
-            f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx_optimised}"
+            f"optimised onnx accuracy is too low:\n" f"PyTorch:\n{output_pytorch}\n" f"VS\n" f"ONNX:\n{output_onnx_optimised}\n\n"
+            f"{np.isclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)}"
         )
 
         for provider, model_path, benchmar_name in [

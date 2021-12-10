@@ -8,3 +8,4 @@ nvidia-tensorrt
 onnx_graphsurgeon
 polygraphy
 triton-model-analyzer
+pytorch-quantization

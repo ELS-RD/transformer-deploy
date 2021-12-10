@@ -25,7 +25,6 @@ import pycuda.autoinit
 import tensorrt as trt
 import torch
 from pycuda._driver import Stream
-from pytorch_quantization.nn import TensorQuantizer
 from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
@@ -62,7 +61,7 @@ def main():
         "-b",
         "--batch-size",
         default=[1, 1, 1],
-        help="batch sizes to optimize for (min, optimal, max)",
+        help="batch sizes to optimize for (min, optimal, max). For TensorRT and benchmarks.",
         type=int,
         nargs=3,
     )
@@ -70,7 +69,7 @@ def main():
         "-s",
         "--seq-len",
         default=[16, 16, 16],
-        help="sequence lengths to optimize for (min, opt, max)",
+        help="sequence lengths to optimize for (min, opt, max). For TensorRT and benchmarks.",
         type=int,
         nargs=3,
     )
@@ -94,6 +93,9 @@ def main():
     args, _ = parser.parse_known_args()
 
     setup_logging(level=logging.INFO if args.verbose else logging.WARNING)
+
+    if len(args.seq_len) == len(set(args.seq_len)) and "tensorrt" in args.backend:
+        logging.warning("having different sequence lengths may make TensorRT slower")
 
     torch.manual_seed(args.seed)
 
@@ -122,8 +124,9 @@ def main():
     model_pytorch.eval()
 
     tensor_shapes = list(zip(args.batch_size, args.seq_len))
+    # take optimial size
     inputs_pytorch, inputs_onnx = prepare_input(
-        batch_size=tensor_shapes[-1][0], seq_len=tensor_shapes[-1][1], include_token_ids=include_token_ids
+        batch_size=tensor_shapes[1][0], seq_len=tensor_shapes[1][1], include_token_ids=include_token_ids
     )
 
     with torch.inference_mode():
@@ -136,6 +139,8 @@ def main():
     # create onnx model and compare results
     opset = 12
     if args.quantization:
+        from pytorch_quantization.nn import TensorQuantizer
+
         TensorQuantizer.use_fb_fake_quant = True
         opset = 13
 

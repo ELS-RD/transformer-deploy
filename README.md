@@ -86,16 +86,15 @@ With the single command below, you will:
 * **generate** configuration files for Triton inference server
 
 ```shell
-convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 16 128 128 --batch-size 1 32 32
+convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 128 128 128 --batch-size 1 32 32
 # ...
 # Inference done on NVIDIA GeForce RTX 3090
 # latencies:
-# [Pytorch (FP32)] mean=123.26ms, sd=3.35ms, min=117.84ms, max=136.12ms, median=122.09ms, 95p=129.50ms, 99p=131.24ms
-# [Pytorch (FP16)] mean=78.41ms, sd=2.83ms, min=75.58ms, max=88.48ms, median=77.28ms, 95p=84.66ms, 99p=85.97ms
-# [TensorRT (FP16)] mean=182.99ms, sd=3.15ms, min=175.75ms, max=191.58ms, median=182.32ms, 95p=188.37ms, 99p=190.80ms
-# [ONNX Runtime (vanilla)] mean=119.03ms, sd=8.27ms, min=112.15ms, max=185.57ms, median=116.51ms, 95p=129.18ms, 99p=167.70ms
-# [ONNX Runtime (optimized)] mean=53.82ms, sd=0.81ms, min=52.79ms, max=58.27ms, median=53.74ms, 95p=55.38ms, 99p=57.29ms
-
+# [Pytorch (FP32)] mean=129.57ms, sd=8.73ms, min=119.10ms, max=192.44ms, median=129.81ms, 95p=137.11ms, 99p=173.64ms
+# [Pytorch (FP16)] mean=82.68ms, sd=3.92ms, min=76.39ms, max=97.42ms, median=83.59ms, 95p=89.58ms, 99p=94.09ms
+# [TensorRT (FP16)] mean=51.84ms, sd=2.66ms, min=46.42ms, max=59.03ms, median=52.10ms, 95p=56.18ms, 99p=57.68ms
+# [ONNX Runtime (vanilla)] mean=116.98ms, sd=3.67ms, min=111.96ms, max=130.20ms, median=116.23ms, 95p=127.03ms, 99p=128.58ms
+# [ONNX Runtime (optimized)] mean=55.14ms, sd=2.17ms, min=52.85ms, max=61.65ms, median=53.94ms, 95p=59.45ms, 99p=60.27ms
 ```
 
 > **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  

@@ -43,6 +43,10 @@ class Configuration:
         self.inference_folder_name = f"{self.model_name}_inference"
         self.batch_size = batch_size
         self.nb_model_output = nb_output
+        if len(nb_output) == 1:
+            self.dims = nb_output[0]
+        else:
+            self.dims = f"-1, {nb_output[1]}"
         assert nb_instance > 0, f"nb_instance=={nb_instance}: nb model instances should be positive"
         self.nb_instance = nb_instance
         self.include_token_type = include_token_type
@@ -102,7 +106,7 @@ input [
 output {{
     name: "output"
     data_type: TYPE_FP32
-    dims: [-1, {", ".join(self.nb_model_output)}]
+    dims: [-1, {self.dims}]
 }}
 
 {self.__instance_group()}
@@ -162,7 +166,7 @@ input [
 output {{
     name: "output"
     data_type: TYPE_FP32
-    dims: [-1, {", ".join(self.nb_model_output)}]
+    dims: [-1, {self.dims}]
 }}
 
 ensemble_scheduling {{

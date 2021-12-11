@@ -317,7 +317,7 @@ def main():
             model_name=args.name,
             model_type=ModelType.ONNX,
             batch_size=0,
-            nb_output=output_pytorch.shape[1],
+            nb_output=output_pytorch.shape[1:],
             nb_instance=args.nb_instances,
             include_token_type=include_token_ids,
             workind_directory=args.output,

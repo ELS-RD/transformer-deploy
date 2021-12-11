@@ -102,7 +102,7 @@ input [
 output {{
     name: "output"
     data_type: TYPE_FP32
-    dims: [-1, {self.nb_model_output}]
+    dims: [-1, {", ".join(self.nb_model_output)}]
 }}
 
 {self.__instance_group()}
@@ -162,7 +162,7 @@ input [
 output {{
     name: "output"
     data_type: TYPE_FP32
-    dims: [-1, {self.nb_model_output}]
+    dims: [-1, {", ".join(self.nb_model_output)}]
 }}
 
 ensemble_scheduling {{

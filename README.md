@@ -116,6 +116,21 @@ Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runt
 
 * Query the inference server:
 
+First you need to convert your strings to a binary file following the format of `demo/query_body.bin`.  
+The `Json` part is straightforward, the second part a bit less.  
+Please follow the code below for the recipe for a single string.  
+If you have several strings, just concatenate the results.
+
+```python
+import struct
+
+text: str = "This live event is great. I will sign-up for Infinity.\n"
+text_b = text.encode('UTF-8')
+print(struct.pack("<I", len(text_b))+text_b)  # <I means little-endian unsigned integers, followed by the number of elements
+```
+
+> check implementation from https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187
+
 ```shell
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)

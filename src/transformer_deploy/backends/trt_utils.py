@@ -153,6 +153,7 @@ def build_engine(
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS) | 1 << int(trt.TacticSource.CUBLAS_LT)
                 )
+                config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)
                 if int8:
                     config.set_flag(trt.BuilderFlag.INT8)
                 if fp16:

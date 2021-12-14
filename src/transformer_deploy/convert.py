@@ -24,6 +24,7 @@ import numpy as np
 import pycuda.autoinit
 import tensorrt as trt
 import torch
+from numpy import ndarray
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
@@ -253,26 +254,13 @@ def main():
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
-        engine = load_engine(runtime=runtime, engine_file_path=tensorrt_path)
-        stream: Stream = pycuda.driver.Stream()
-        context: IExecutionContext = engine.create_execution_context()
-        profile_index = 0
-        context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
-        # retrieve input/output IDs
-        input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
-
-        def infer_tensorrt_fp16(inputs: Dict[str, np.ndarray]) -> np.ndarray:
-            return infer_tensorrt(
-                context=context,
-                host_inputs=inputs,
-                input_binding_idxs=input_binding_idxs,
-                output_binding_idxs=output_binding_idxs,
-                stream=stream,
-            )
+        tensorrt_model: Callable[[Dict[str, ndarray]], ndarray] = load_engine(
+            runtime=runtime, engine_file_path=tensorrt_path
+        )
 
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=infer_tensorrt_fp16, inputs=inputs_onnx, nb_measures=args.nb_measures
+            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=args.nb_measures
         )
         check_accuracy(
             engine_name=engine_name,
@@ -281,7 +269,7 @@ def main():
             tolerance=args.atol,
         )
         timings[engine_name] = time_buffer
-        del engine, context, runtime  # delete all tensorrt objects
+        del engine, tensorrt_model, runtime  # delete all tensorrt objects
         conf = Configuration(
             model_name=args.name,
             model_type=ModelType.TensorRT,

@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import List, OrderedDict, Tuple
+from typing import Callable, Dict, List, OrderedDict, Tuple
 
 import numpy as np
 import pycuda.driver as cuda
@@ -184,9 +184,27 @@ def save_engine(engine: ICudaEngine, engine_file_path: str):
         f.write(engine.serialize())
 
 
-def load_engine(runtime: Runtime, engine_file_path: str) -> ICudaEngine:
-    with open(engine_file_path, "rb") as f:
-        return runtime.deserialize_cuda_engine(f.read())
+def load_engine(
+    runtime: Runtime, engine_file_path: str, profile_index: int = 0
+) -> Callable[[Dict[str, np.ndarray]], np.ndarray]:
+    with open(file=engine_file_path, mode="rb") as f:
+        engine: ICudaEngine = runtime.deserialize_cuda_engine(f.read())
+        stream: Stream = cuda.Stream()
+        context: IExecutionContext = engine.create_execution_context()
+        context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
+        # retrieve input/output IDs
+        input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
+
+        def tensorrt_model(inputs: Dict[str, np.ndarray]) -> np.ndarray:
+            return infer_tensorrt(
+                context=context,
+                host_inputs=inputs,
+                input_binding_idxs=input_binding_idxs,
+                output_binding_idxs=output_binding_idxs,
+                stream=stream,
+            )
+
+        return tensorrt_model
 
 
 def infer_tensorrt(

@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
-import pycuda.autoinit
 import tensorrt as trt
 import torch
 from numpy import ndarray
@@ -30,13 +29,7 @@ from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 from transformer_deploy.backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
-from transformer_deploy.backends.trt_utils import (
-    build_engine,
-    get_binding_idxs,
-    infer_tensorrt,
-    load_engine,
-    save_engine,
-)
+from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
     generate_multiple_inputs,
@@ -195,18 +188,13 @@ def main():
     convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=input_pytorch, opset=opset)
     if args.quantization:
         TensorQuantizer.use_fb_fake_quant = False
-    onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
-    output_onnx = onnx_model.run(None, input_onnx)
-    assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
-    del onnx_model
 
     timings = {}
 
     def infer_classification_pytorch(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        output = model_pytorch(**inputs)
-        output_formated = output.logits.detach().cpu().numpy()
+        model_output = model_pytorch(**inputs).logits.detach().cpu().numpy()  # noqa: F821
         torch.cuda.synchronize()
-        return output_formated
+        return model_output
 
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
@@ -229,8 +217,7 @@ def main():
 
     if "tensorrt" in args.backend:
         try:
-            from pycuda._driver import Stream
-            from tensorrt.tensorrt import ICudaEngine, IExecutionContext, Logger, Runtime
+            from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
         except ImportError:
             raise ImportError(
                 "It seems that pycuda and TensorRT are not yet installed. "

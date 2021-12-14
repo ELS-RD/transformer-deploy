@@ -38,7 +38,8 @@ from transformer_deploy.backends.trt_utils import (
     load_engine,
     save_engine,
 )
-from transformer_deploy.benchmarks.utils import prepare_input, print_timings, setup_logging, track_infer_time
+from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time, \
+    generate_multiple_inputs, compare_outputs
 from transformer_deploy.templates.triton import Configuration, ModelType
 
 
@@ -86,10 +87,10 @@ def main():
         choices=["onnx", "tensorrt"],
     )
     parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
-    parser.add_argument("--warmup", default=100, help="# of inferences to warm each model", type=int)
+    parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
-    parser.add_argument("--atol", default=1e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
+    parser.add_argument("--atol", default=3e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
     args, _ = parser.parse_known_args()
 
     setup_logging(level=logging.INFO if args.verbose else logging.WARNING)
@@ -125,16 +126,17 @@ def main():
 
     tensor_shapes = list(zip(args.batch_size, args.seq_len))
     # take optimial size
-    inputs_pytorch, inputs_onnx = prepare_input(
-        batch_size=tensor_shapes[1][0], seq_len=tensor_shapes[1][1], include_token_ids=include_token_ids
+    inputs_pytorch, inputs_onnx = generate_multiple_inputs(
+        batch_size=tensor_shapes[1][0], seq_len=tensor_shapes[1][1], include_token_ids=include_token_ids, device="cuda", nb_inputs_to_gen=args.warmup  # TODO replace hard coded value
     )
+    input_pytorch = inputs_pytorch[0]
+    input_onnx = inputs_onnx[0]
 
     with torch.inference_mode():
-        output = model_pytorch(**inputs_pytorch)
-        output = output.logits  # extract the value of interest
-        output_pytorch: np.ndarray = output.detach().cpu().numpy()
+        output = model_pytorch(**input_pytorch)
+        output_pytorch: np.ndarray = output.logits.detach().cpu().numpy()
 
-    logging.info(f"[Pytorch] input shape {inputs_pytorch['input_ids'].shape}")
+    logging.info(f"[Pytorch] input shape {input_pytorch['input_ids'].shape}")
     logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
     opset = 12
@@ -145,35 +147,36 @@ def main():
         opset = 13
 
     convert_to_onnx(
-        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch, opset=opset
+        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=input_pytorch, opset=opset
     )
     if args.quantization:
         TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
-    output_onnx = onnx_model.run(None, inputs_onnx)
+    output_onnx = onnx_model.run(None, input_onnx)
     assert np.allclose(a=output_onnx, b=output_pytorch, atol=args.atol)
     del onnx_model
 
     timings = {}
-
+    pytorch_output = list()
     with torch.inference_mode():
-        for _ in range(args.warmup):
-            _ = model_pytorch(**inputs_pytorch)
+        for inputs in inputs_pytorch:
+            output = model_pytorch(**inputs)
+            pytorch_output.append(output.logits.detach().cpu().numpy())
             torch.cuda.synchronize()
         time_buffer = []
         for _ in range(args.nb_measures):
             with track_infer_time(time_buffer):
-                _ = model_pytorch(**inputs_pytorch)
+                _ = model_pytorch(**input_pytorch)
                 torch.cuda.synchronize()
         timings["Pytorch (FP32)"] = time_buffer
         with autocast():
             for _ in range(args.warmup):
-                _ = model_pytorch(**inputs_pytorch)
+                _ = model_pytorch(**input_pytorch)
                 torch.cuda.synchronize()
             time_buffer = []
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
-                    _ = model_pytorch(**inputs_pytorch)
+                    _ = model_pytorch(**input_pytorch)
                     torch.cuda.synchronize()
             timings["Pytorch (FP16)"] = time_buffer
     del model_pytorch
@@ -201,31 +204,31 @@ def main():
         context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
         # retrieve input/output IDs
         input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
-        tensorrt_output = infer_tensorrt(
-            context=context,
-            host_inputs=inputs_onnx,
-            input_binding_idxs=input_binding_idxs,
-            output_binding_idxs=output_binding_idxs,
-            stream=stream,
-        )
-        assert np.allclose(a=tensorrt_output, b=output_pytorch, atol=args.atol), (
-            f"tensorrt accuracy is too low:\n" f"Pythorch:\n{output_pytorch}\n" f"VS\n" f"TensorRT:\n{tensorrt_output}"
-        )
-
-        for _ in range(args.warmup):
-            _ = infer_tensorrt(
+        tensorrt_output = list()
+        for input_onnx in inputs_onnx:
+            output = infer_tensorrt(
                 context=context,
-                host_inputs=inputs_onnx,
+                host_inputs=input_onnx,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
                 stream=stream,
             )
+            tensorrt_output.append(output)
+        discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=tensorrt_output)
+        assert discrepency < args.atol, (
+            f"TensorRT discrepency is too high ({discrepency:.2f}):\n"
+            f"Pythorch:\n{pytorch_output}\n"
+            f"VS\n" f"TensorRT:\n{tensorrt_output}\n"
+            f"Diff:\n"
+            f"{np.asarray(pytorch_output) - np.asarray(tensorrt_output)}"
+        )
+
         time_buffer = list()
         for _ in range(args.nb_measures):
             with track_infer_time(time_buffer):
                 _ = infer_tensorrt(
                     context=context,
-                    host_inputs=inputs_onnx,
+                    host_inputs=input_onnx,
                     input_binding_idxs=input_binding_idxs,
                     output_binding_idxs=output_binding_idxs,
                     stream=stream,
@@ -253,7 +256,7 @@ def main():
         )
         onnx_model = create_model_for_provider(path=onnx_optim_fp16_path, provider_to_use="CUDAExecutionProvider")
         # run the model (None = get all the outputs)
-        output_onnx_optimised = onnx_model.run(None, inputs_onnx)
+        output_onnx_optimised = onnx_model.run(None, input_onnx)
         del onnx_model
         assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
 
@@ -262,12 +265,22 @@ def main():
             ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (optimized)"),
         ]:
             model = create_model_for_provider(path=model_path, provider_to_use=provider)
+            ort_output = list()
             time_buffer = []
-            for _ in range(args.warmup):
-                _ = model.run(None, inputs_onnx)
+            for input_onnx in inputs_onnx:
+                output = model.run(None, input_onnx)
+                ort_output.append(output)
+            discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=ort_output)
+            assert discrepency < args.atol, (
+                f"TensorRT discrepency is too high ({discrepency:.2f}):\n"
+                f"Pythorch:\n{pytorch_output}\n"
+                f"VS\n" f"TensorRT:\n{ort_output}\n"
+                f"Diff:\n"
+                f"{np.asarray(pytorch_output) - np.asarray(ort_output)}"
+            )
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
-                    _ = model.run(None, inputs_onnx)
+                    _ = model.run(None, input_onnx)
             timings[benchmark_name] = time_buffer
         del model
 

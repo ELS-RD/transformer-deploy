@@ -24,8 +24,6 @@ import numpy as np
 import pycuda.autoinit
 import tensorrt as trt
 import torch
-from pycuda._driver import Stream
-from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
@@ -38,13 +36,29 @@ from transformer_deploy.backends.trt_utils import (
     load_engine,
     save_engine,
 )
-from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time, \
-    generate_multiple_inputs, compare_outputs
+from transformer_deploy.benchmarks.utils import (
+    compare_outputs,
+    generate_multiple_inputs,
+    print_timings,
+    setup_logging,
+    track_infer_time,
+)
 from transformer_deploy.templates.triton import Configuration, ModelType
 
 
-def main():
+def check_accuracy(engine: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float):
+    discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
+    assert discrepency < tolerance, (
+        f"{engine} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
+        f"Pythorch:\n{pytorch_output}\n"
+        f"VS\n"
+        f"{engine}:\n{engine_output}\n"
+        f"Diff:\n"
+        f"{np.asarray(pytorch_output) - np.asarray(engine_output)}"
+    )
 
+
+def main():
     parser = argparse.ArgumentParser(
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -99,6 +113,7 @@ def main():
         logging.warning("having different sequence lengths may make TensorRT slower")
 
     torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
     if isinstance(args.auth_token, str) and args.auth_token.lower() in ["true", "t"]:
         auth_token = True
@@ -127,7 +142,11 @@ def main():
     tensor_shapes = list(zip(args.batch_size, args.seq_len))
     # take optimial size
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
-        batch_size=tensor_shapes[1][0], seq_len=tensor_shapes[1][1], include_token_ids=include_token_ids, device="cuda", nb_inputs_to_gen=args.warmup  # TODO replace hard coded value
+        batch_size=tensor_shapes[1][0],
+        seq_len=tensor_shapes[1][1],
+        include_token_ids=include_token_ids,
+        device="cuda",
+        nb_inputs_to_gen=args.warmup,
     )
     input_pytorch = inputs_pytorch[0]
     input_onnx = inputs_onnx[0]
@@ -141,14 +160,20 @@ def main():
     # create onnx model and compare results
     opset = 12
     if args.quantization:
-        from pytorch_quantization.nn import TensorQuantizer
+        try:
+            from pytorch_quantization.nn import TensorQuantizer
+        except ImportError:
+            raise ImportError(
+                "It seems that pytorch-quantization is not yet installed. "
+                "It is required when you enable the quantization flag."
+                "Please find installation instruction on "
+                "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization"
+            )
 
         TensorQuantizer.use_fb_fake_quant = True
         opset = 13
 
-    convert_to_onnx(
-        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=input_pytorch, opset=opset
-    )
+    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=input_pytorch, opset=opset)
     if args.quantization:
         TensorQuantizer.use_fb_fake_quant = False
     onnx_model = create_model_for_provider(path=onnx_model_path, provider_to_use="CUDAExecutionProvider")
@@ -182,6 +207,17 @@ def main():
     del model_pytorch
 
     if "tensorrt" in args.backend:
+        try:
+            from pycuda._driver import Stream
+            from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
+        except ImportError:
+            raise ImportError(
+                "It seems that pycuda and TensorRT are not yet installed. "
+                "They are required when you declare TensorRT backend."
+                "Please find installation instruction on "
+                "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
+            )
+
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if args.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
         engine = build_engine(
@@ -214,13 +250,8 @@ def main():
                 stream=stream,
             )
             tensorrt_output.append(output)
-        discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=tensorrt_output)
-        assert discrepency < args.atol, (
-            f"TensorRT discrepency is too high ({discrepency:.2f}):\n"
-            f"Pythorch:\n{pytorch_output}\n"
-            f"VS\n" f"TensorRT:\n{tensorrt_output}\n"
-            f"Diff:\n"
-            f"{np.asarray(pytorch_output) - np.asarray(tensorrt_output)}"
+        check_accuracy(
+            engine="TensorRT", pytorch_output=pytorch_output, engine_output=tensorrt_output, tolerance=args.atol
         )
 
         time_buffer = list()
@@ -254,15 +285,10 @@ def main():
             onnx_optim_fp16_path=onnx_optim_fp16_path,
             use_cuda=True,
         )
-        onnx_model = create_model_for_provider(path=onnx_optim_fp16_path, provider_to_use="CUDAExecutionProvider")
-        # run the model (None = get all the outputs)
-        output_onnx_optimised = onnx_model.run(None, input_onnx)
-        del onnx_model
-        assert np.allclose(a=output_onnx_optimised, b=output_pytorch, atol=args.atol)
 
         for provider, model_path, benchmark_name in [
-            ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (vanilla)"),
-            ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (optimized)"),
+            ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (FP32)"),
+            ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (FP16)"),
         ]:
             model = create_model_for_provider(path=model_path, provider_to_use=provider)
             ort_output = list()
@@ -270,14 +296,10 @@ def main():
             for input_onnx in inputs_onnx:
                 output = model.run(None, input_onnx)
                 ort_output.append(output)
-            discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=ort_output)
-            assert discrepency < args.atol, (
-                f"TensorRT discrepency is too high ({discrepency:.2f}):\n"
-                f"Pythorch:\n{pytorch_output}\n"
-                f"VS\n" f"TensorRT:\n{ort_output}\n"
-                f"Diff:\n"
-                f"{np.asarray(pytorch_output) - np.asarray(ort_output)}"
+            check_accuracy(
+                engine=benchmark_name, pytorch_output=pytorch_output, engine_output=ort_output, tolerance=args.atol
             )
+
             for _ in range(args.nb_measures):
                 with track_infer_time(time_buffer):
                     _ = model.run(None, input_onnx)

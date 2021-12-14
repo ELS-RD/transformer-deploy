@@ -18,7 +18,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pycuda.autoinit
@@ -46,16 +46,34 @@ from transformer_deploy.benchmarks.utils import (
 from transformer_deploy.templates.triton import Configuration, ModelType
 
 
-def check_accuracy(engine: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float):
+def check_accuracy(
+    engine_name: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float
+):
     discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
     assert discrepency < tolerance, (
-        f"{engine} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
+        f"{engine_name} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
         f"Pythorch:\n{pytorch_output}\n"
         f"VS\n"
-        f"{engine}:\n{engine_output}\n"
+        f"{engine_name}:\n{engine_output}\n"
         f"Diff:\n"
         f"{np.asarray(pytorch_output) - np.asarray(engine_output)}"
     )
+
+
+def launch_inference(
+    infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
+) -> Tuple[List[np.ndarray], List[float]]:
+    assert type(inputs) == list
+    assert len(inputs) > 0
+    outputs = list()
+    for batch_input in inputs:
+        output = infer(batch_input)
+        outputs.append(output)
+    time_buffer: List[float] = list()
+    for _ in range(nb_measures):
+        with track_infer_time(time_buffer):
+            _ = infer(inputs[0])
+    return outputs, time_buffer
 
 
 def main():
@@ -182,34 +200,36 @@ def main():
     del onnx_model
 
     timings = {}
-    pytorch_output = list()
+
+    def infer_classification_pytorch(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
+        output = model_pytorch(**inputs)
+        output_formated = output.logits.detach().cpu().numpy()
+        torch.cuda.synchronize()
+        return output_formated
+
     with torch.inference_mode():
-        for inputs in inputs_pytorch:
-            output = model_pytorch(**inputs)
-            pytorch_output.append(output.logits.detach().cpu().numpy())
-            torch.cuda.synchronize()
-        time_buffer = []
-        for _ in range(args.nb_measures):
-            with track_infer_time(time_buffer):
-                _ = model_pytorch(**input_pytorch)
-                torch.cuda.synchronize()
+        pytorch_output, time_buffer = launch_inference(
+            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=args.nb_measures
+        )
         timings["Pytorch (FP32)"] = time_buffer
         with autocast():
-            for _ in range(args.warmup):
-                _ = model_pytorch(**input_pytorch)
-                torch.cuda.synchronize()
-            time_buffer = []
-            for _ in range(args.nb_measures):
-                with track_infer_time(time_buffer):
-                    _ = model_pytorch(**input_pytorch)
-                    torch.cuda.synchronize()
-            timings["Pytorch (FP16)"] = time_buffer
+            engine_name = "Pytorch (FP16)"
+            pytorch_fp16_output, time_buffer = launch_inference(
+                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=args.nb_measures
+            )
+            check_accuracy(
+                engine_name=engine_name,
+                pytorch_output=pytorch_output,
+                engine_output=pytorch_fp16_output,
+                tolerance=args.atol,
+            )
+            timings[engine_name] = time_buffer
     del model_pytorch
 
     if "tensorrt" in args.backend:
         try:
             from pycuda._driver import Stream
-            from tensorrt.tensorrt import IExecutionContext, Logger, Runtime
+            from tensorrt.tensorrt import ICudaEngine, IExecutionContext, Logger, Runtime
         except ImportError:
             raise ImportError(
                 "It seems that pycuda and TensorRT are not yet installed. "
@@ -220,7 +240,7 @@ def main():
 
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if args.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
-        engine = build_engine(
+        engine: ICudaEngine = build_engine(
             runtime=runtime,
             onnx_file_path=onnx_model_path,
             logger=trt_logger,
@@ -240,33 +260,28 @@ def main():
         context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
         # retrieve input/output IDs
         input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
-        tensorrt_output = list()
-        for input_onnx in inputs_onnx:
-            output = infer_tensorrt(
+
+        def infer_tensorrt_fp16(inputs: Dict[str, np.ndarray]) -> np.ndarray:
+            return infer_tensorrt(
                 context=context,
-                host_inputs=input_onnx,
+                host_inputs=inputs,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
                 stream=stream,
             )
-            tensorrt_output.append(output)
-        check_accuracy(
-            engine="TensorRT", pytorch_output=pytorch_output, engine_output=tensorrt_output, tolerance=args.atol
+
+        engine_name = "TensorRT (FP16)"
+        tensorrt_output, time_buffer = launch_inference(
+            infer=infer_tensorrt_fp16, inputs=inputs_onnx, nb_measures=args.nb_measures
         )
-
-        time_buffer = list()
-        for _ in range(args.nb_measures):
-            with track_infer_time(time_buffer):
-                _ = infer_tensorrt(
-                    context=context,
-                    host_inputs=input_onnx,
-                    input_binding_idxs=input_binding_idxs,
-                    output_binding_idxs=output_binding_idxs,
-                    stream=stream,
-                )
-            timings["TensorRT (FP16)"] = time_buffer
+        check_accuracy(
+            engine_name=engine_name,
+            pytorch_output=pytorch_output,
+            engine_output=tensorrt_output,
+            tolerance=args.atol,
+        )
+        timings[engine_name] = time_buffer
         del engine, context, runtime  # delete all tensorrt objects
-
         conf = Configuration(
             model_name=args.name,
             model_type=ModelType.TensorRT,
@@ -290,21 +305,22 @@ def main():
             ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (FP32)"),
             ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (FP16)"),
         ]:
-            model = create_model_for_provider(path=model_path, provider_to_use=provider)
-            ort_output = list()
-            time_buffer = []
-            for input_onnx in inputs_onnx:
-                output = model.run(None, input_onnx)
-                ort_output.append(output)
-            check_accuracy(
-                engine=benchmark_name, pytorch_output=pytorch_output, engine_output=ort_output, tolerance=args.atol
-            )
+            ort_model = create_model_for_provider(path=model_path, provider_to_use=provider)
 
-            for _ in range(args.nb_measures):
-                with track_infer_time(time_buffer):
-                    _ = model.run(None, input_onnx)
+            def infer_ort(inputs: Dict[str, np.ndarray]) -> np.ndarray:
+                return ort_model.run(None, inputs)
+
+            ort_output, time_buffer = launch_inference(
+                infer=infer_ort, inputs=inputs_onnx, nb_measures=args.nb_measures
+            )
+            check_accuracy(
+                engine_name=benchmark_name,
+                pytorch_output=pytorch_output,
+                engine_output=ort_output,
+                tolerance=args.atol,
+            )
             timings[benchmark_name] = time_buffer
-        del model
+            del ort_model
 
         conf = Configuration(
             model_name=args.name,

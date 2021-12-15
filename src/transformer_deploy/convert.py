@@ -24,6 +24,7 @@ import numpy as np
 import tensorrt as trt
 import torch
 from numpy import ndarray
+from onnxruntime.quantization import quantize_dynamic, QuantType
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
@@ -228,6 +229,9 @@ def main(commands: argparse.Namespace):
             fp16=commands.device == "cuda",
             use_cuda=commands.device == "cuda",
         )
+        if commands.device == "cpu" and commands.quantization:
+            quantize_dynamic(model_input=onnx_optim_model_path, model_output=onnx_optim_model_path, weight_type=QuantType.QUInt8)
+
         ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),

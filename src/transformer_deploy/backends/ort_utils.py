@@ -61,7 +61,7 @@ def convert_to_onnx(
         )
 
 
-def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> None:
+def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cuda: bool) -> None:
     optimization_options = FusionOptions("bert")
     optimization_options.enable_gelu_approximation = True  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
@@ -73,7 +73,7 @@ def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> 
         hidden_size=0,  # automatic detection
         optimization_options=optimization_options,
     )
-
-    optimized_model.convert_float_to_float16()  # FP32 -> FP16
+    if fp16:
+        optimized_model.convert_float_to_float16()  # FP32 -> FP16
     logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
-    optimized_model.save_model_to_file(onnx_optim_fp16_path)
+    optimized_model.save_model_to_file(onnx_optim_path)

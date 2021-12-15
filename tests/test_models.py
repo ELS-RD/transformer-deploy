@@ -22,18 +22,18 @@ except ImportError:
 
 
 @pytest.mark.gpu
-def test_minilm():
+def test_minilm_gpu():
     commands = [
-        "-m",
+        "--model",
         "philschmid/MiniLM-L6-H384-uncased-sst2",
         "--backend",
         "tensorrt",
         "onnx",
-        "-b",
+        "--batch",
         "1",
         "16",
         "16",
-        "-s",
+        "--seq-len",
         "8",
         "8",
         "8",
@@ -42,19 +42,46 @@ def test_minilm():
     main(commands=args)
 
 
-@pytest.mark.gpu
-def test_camembert():
+def test_minilm_cpu():
     commands = [
-        "-m",
+        "--model",
+        "philschmid/MiniLM-L6-H384-uncased-sst2",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--device",
+        "cpu",
+        "--warmup",
+        "5",
+        "--nb-measures",
+        "10",
+        "--nb-threads",
+        "2",
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
+@pytest.mark.gpu
+def test_camembert_gpu():
+    commands = [
+        "--model",
         "camembert-base",
         "--backend",
         "tensorrt",
         "onnx",
-        "-b",
+        "--batch",
         "1",
         "16",
         "16",
-        "-s",
+        "--seq-len",
         "8",
         "8",
         "8",

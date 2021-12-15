@@ -80,6 +80,7 @@ def main(commands: argparse.Namespace):
 
     torch.manual_seed(commands.seed)
     np.random.seed(commands.seed)
+    torch.set_num_interop_threads(commands.nb_threads)
 
     if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True
@@ -90,7 +91,7 @@ def main(commands: argparse.Namespace):
 
     Path(commands.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(commands.output, "model-original.onnx")
-    onnx_optim_fp16_path = os.path.join(commands.output, "model.onnx")
+    onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
     if commands.device == "cuda":
         assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
@@ -223,13 +224,14 @@ def main(commands: argparse.Namespace):
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,
-            onnx_optim_fp16_path=onnx_optim_fp16_path,
+            onnx_optim_model_path=onnx_optim_model_path,
+            fp16=commands.device == "cuda",
             use_cuda=commands.device == "cuda",
         )
         ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
-            (ort_provider, onnx_optim_fp16_path, "ONNX Runtime (FP16)"),
+            (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
         ]:
             ort_model = create_model_for_provider(path=model_path, provider_to_use=provider)
 
@@ -257,7 +259,7 @@ def main(commands: argparse.Namespace):
             include_token_type=include_token_ids,
             workind_directory=commands.output,
         )
-        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
+        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 
     if commands.device == "cuda":
         print(f"Inference done on {get_device_name(0)}")

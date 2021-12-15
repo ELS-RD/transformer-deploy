@@ -64,7 +64,10 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
         help="device to use.",
         choices=["cpu", "cuda"],
     )
-    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
+    parser.add_argument("--nb-threads", default=1, help="# of CPU threads to use for inference", type=int)
+    parser.add_argument(
+        "--nb-instances", default=1, help="# of model instances, may improve troughput (Triton)", type=int
+    )
     parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)

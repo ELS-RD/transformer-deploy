@@ -1,0 +1,2 @@
+torch==1.10.0+cpu
+onnxruntime==1.9.0

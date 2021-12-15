@@ -1,11 +1,6 @@
-onnx
 onnxruntime-gpu==1.9.0
-nvidia-pyindex
-tritonclient[all]
 pycuda
 torch==1.10.0+cu113
 nvidia-tensorrt
 onnx_graphsurgeon
 polygraphy
-triton-model-analyzer
-pytorch-quantization

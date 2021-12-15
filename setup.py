@@ -24,6 +24,8 @@ with pathlib.Path("requirements.txt").open() as f:
 with pathlib.Path("requirements_gpu.txt").open() as f:
     extra_gpu = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
 
+with pathlib.Path("requirements_cpu.txt").open() as f:
+    extra_cpu = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
 
 setup(
     name="transformer-deploy",
@@ -44,11 +46,12 @@ setup(
     install_requires=install_requires,
     extras_require={
         "GPU": extra_gpu,
+        "CPU": extra_cpu,
     },
     python_requires=">=3.6.0",
     entry_points={
         "console_scripts": [
-            "convert_model = transformer_deploy.convert:main",
+            "convert_model = transformer_deploy.convert:entrypoint",
         ],
     },
 )

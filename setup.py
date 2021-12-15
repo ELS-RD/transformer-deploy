@@ -48,7 +48,7 @@ setup(
     python_requires=">=3.6.0",
     entry_points={
         "console_scripts": [
-            "convert_model = transformer_deploy.convert:main",
+            "convert_model = transformer_deploy.convert:entrypoint",
         ],
     },
 )

@@ -15,6 +15,7 @@
 from typing import Callable, Dict, List, OrderedDict, Tuple
 
 import numpy as np
+import pycuda.autoinit  # noqa: F401
 import pycuda.driver as cuda
 import tensorrt as trt
 from numpy import ndarray

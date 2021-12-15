@@ -38,6 +38,7 @@ from transformer_deploy.benchmarks.utils import (
     track_infer_time,
 )
 from transformer_deploy.templates.triton import Configuration, ModelType
+from transformer_deploy.utils.args import parse_args
 
 
 def check_accuracy(
@@ -70,108 +71,52 @@ def launch_inference(
     return outputs, time_buffer
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
-    parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
-    parser.add_argument(
-        "--auth-token",
-        default=None,
-        help=(
-            "Hugging Face Hub auth token. Set to `None` (default) for public models. "
-            "For private models, use `True` to use local cached token, or a string of your HF API token"
-        ),
-    )
-    parser.add_argument(
-        "-b",
-        "--batch-size",
-        default=[1, 1, 1],
-        help="batch sizes to optimize for (min, optimal, max). For TensorRT and benchmarks.",
-        type=int,
-        nargs=3,
-    )
-    parser.add_argument(
-        "-s",
-        "--seq-len",
-        default=[16, 16, 16],
-        help="sequence lengths to optimize for (min, opt, max). For TensorRT and benchmarks.",
-        type=int,
-        nargs=3,
-    )
-    parser.add_argument("-q", "--quantization", action="store_true", help="int-8 GPU quantization support")
-    parser.add_argument("-w", "--workspace-size", default=10000, help="workspace size in MiB (TensorRT)", type=int)
-    parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
-    parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")
-    parser.add_argument("-v", "--verbose", action="store_true", help="display detailed information")
-    parser.add_argument(
-        "--backend",
-        default=["onnx"],
-        help="backend to use. One of [onnx,tensorrt, pytorch] or all",
-        nargs="*",
-        choices=["onnx", "tensorrt"],
-    )
-    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
-    parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
-    parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
-    parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
-    parser.add_argument("--atol", default=3e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
-    args, _ = parser.parse_known_args()
+def main(commands: argparse.Namespace):
+    setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
 
-    setup_logging(level=logging.INFO if args.verbose else logging.WARNING)
-
-    if len(args.seq_len) == len(set(args.seq_len)) and "tensorrt" in args.backend:
+    if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
         logging.warning("having different sequence lengths may make TensorRT slower")
 
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
+    torch.manual_seed(commands.seed)
+    np.random.seed(commands.seed)
 
-    if isinstance(args.auth_token, str) and args.auth_token.lower() in ["true", "t"]:
+    if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True
-    elif isinstance(args.auth_token, str):
-        auth_token = args.auth_token
+    elif isinstance(commands.auth_token, str):
+        auth_token = commands.auth_token
     else:
         auth_token = None
 
-    Path(args.output).mkdir(parents=True, exist_ok=True)
-    onnx_model_path = os.path.join(args.output, "model-original.onnx")
-    onnx_optim_fp16_path = os.path.join(args.output, "model.onnx")
-    tensorrt_path = os.path.join(args.output, "model.plan")
+    Path(commands.output).mkdir(parents=True, exist_ok=True)
+    onnx_model_path = os.path.join(commands.output, "model-original.onnx")
+    onnx_optim_fp16_path = os.path.join(commands.output, "model.onnx")
+    tensorrt_path = os.path.join(commands.output, "model.plan")
 
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
-    tokenizer_path = args.tokenizer if args.tokenizer else args.model
+    tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
     model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
-        args.model, use_auth_token=auth_token
+        commands.model, use_auth_token=auth_token
     )
     model_pytorch.cuda()
     model_pytorch.eval()
 
-    tensor_shapes = list(zip(args.batch_size, args.seq_len))
+    tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # take optimial size
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
         include_token_ids=include_token_ids,
         device="cuda",
-        nb_inputs_to_gen=args.warmup,
+        nb_inputs_to_gen=commands.warmup,
     )
-    input_pytorch = inputs_pytorch[0]
-    input_onnx = inputs_onnx[0]
 
-    with torch.inference_mode():
-        output = model_pytorch(**input_pytorch)
-        output_pytorch: np.ndarray = output.logits.detach().cpu().numpy()
-
-    logging.info(f"[Pytorch] input shape {input_pytorch['input_ids'].shape}")
-    logging.info(f"[Pytorch] output shape: {output_pytorch.shape}")
     # create onnx model and compare results
     opset = 12
-    if args.quantization:
+    if commands.quantization:
         try:
             from pytorch_quantization.nn import TensorQuantizer
         except ImportError:
@@ -185,8 +130,10 @@ def main():
         TensorQuantizer.use_fb_fake_quant = True
         opset = 13
 
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=input_pytorch, opset=opset)
-    if args.quantization:
+    convert_to_onnx(
+        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch[0], opset=opset
+    )
+    if commands.quantization:
         TensorQuantizer.use_fb_fake_quant = False
 
     timings = {}
@@ -198,24 +145,24 @@ def main():
 
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=args.nb_measures
+            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
         )
         timings["Pytorch (FP32)"] = time_buffer
         with autocast():
             engine_name = "Pytorch (FP16)"
             pytorch_fp16_output, time_buffer = launch_inference(
-                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=args.nb_measures
+                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )
             check_accuracy(
                 engine_name=engine_name,
                 pytorch_output=pytorch_output,
                 engine_output=pytorch_fp16_output,
-                tolerance=args.atol,
+                tolerance=commands.atol,
             )
             timings[engine_name] = time_buffer
     del model_pytorch
 
-    if "tensorrt" in args.backend:
+    if "tensorrt" in commands.backend:
         try:
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
         except ImportError:
@@ -226,7 +173,7 @@ def main():
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
 
-        trt_logger: Logger = trt.Logger(trt.Logger.INFO if args.verbose else trt.Logger.WARNING)
+        trt_logger: Logger = trt.Logger(trt.Logger.INFO if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
         engine: ICudaEngine = build_engine(
             runtime=runtime,
@@ -235,9 +182,9 @@ def main():
             min_shape=tensor_shapes[0],
             optimal_shape=tensor_shapes[1],
             max_shape=tensor_shapes[2],
-            workspace_size=args.workspace_size * 1024 * 1024,
-            fp16=not args.quantization,
-            int8=args.quantization,
+            workspace_size=commands.workspace_size * 1024 * 1024,
+            fp16=not commands.quantization,
+            int8=commands.quantization,
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
@@ -247,28 +194,28 @@ def main():
 
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=args.nb_measures
+            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=commands.nb_measures
         )
         check_accuracy(
             engine_name=engine_name,
             pytorch_output=pytorch_output,
             engine_output=tensorrt_output,
-            tolerance=args.atol,
+            tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
         conf = Configuration(
-            model_name=args.name,
+            model_name=commands.name,
             model_type=ModelType.TensorRT,
             batch_size=0,
-            nb_output=output_pytorch.shape[1],
-            nb_instance=args.nb_instances,
+            nb_output=pytorch_output[0].shape[1],
+            nb_instance=commands.nb_instances,
             include_token_type=include_token_ids,
-            workind_directory=args.output,
+            workind_directory=commands.output,
         )
         conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
-    if "onnx" in args.backend:
+    if "onnx" in commands.backend:
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,
@@ -286,25 +233,25 @@ def main():
                 return ort_model.run(None, inputs)
 
             ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=inputs_onnx, nb_measures=args.nb_measures
+                infer=infer_ort, inputs=inputs_onnx, nb_measures=commands.nb_measures
             )
             check_accuracy(
                 engine_name=benchmark_name,
                 pytorch_output=pytorch_output,
                 engine_output=ort_output,
-                tolerance=args.atol,
+                tolerance=commands.atol,
             )
             timings[benchmark_name] = time_buffer
             del ort_model
 
         conf = Configuration(
-            model_name=args.name,
+            model_name=commands.name,
             model_type=ModelType.ONNX,
             batch_size=0,
-            nb_output=output_pytorch.shape[1],
-            nb_instance=args.nb_instances,
+            nb_output=pytorch_output[0].shape[1],
+            nb_instance=commands.nb_instances,
             include_token_type=include_token_ids,
-            workind_directory=args.output,
+            workind_directory=commands.output,
         )
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
 
@@ -314,5 +261,10 @@ def main():
         print_timings(name=name, timings=time_buffer)
 
 
+def entrypoint():
+    args = parse_args()
+    main(commands=args)
+
+
 if __name__ == "__main__":
-    main()
+    entrypoint()

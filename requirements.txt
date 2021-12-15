@@ -1,4 +1,8 @@
 fastapi
+onnx
+tritonclient[all]
+triton-model-analyzer
+nvidia-pyindex
 gunicorn
 uvicorn
 numpy

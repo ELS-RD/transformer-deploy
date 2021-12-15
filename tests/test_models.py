@@ -13,12 +13,8 @@
 #  limitations under the License.
 import pytest
 
-
-try:
-    from transformer_deploy.convert import main
-    from transformer_deploy.utils.args import parse_args
-except ImportError:
-    pass
+from transformer_deploy.convert import main
+from transformer_deploy.utils.args import parse_args
 
 
 @pytest.mark.gpu

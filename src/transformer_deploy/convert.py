@@ -73,7 +73,8 @@ def launch_inference(
 
 def main(commands: argparse.Namespace):
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
-
+    if commands.device == "cpu" and "tensorrt" in commands.backend:
+        raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
         logging.warning("having different sequence lengths may make TensorRT slower")
 
@@ -91,8 +92,8 @@ def main(commands: argparse.Namespace):
     onnx_model_path = os.path.join(commands.output, "model-original.onnx")
     onnx_optim_fp16_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
-
-    assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
+    if commands.device == "cuda":
+        assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
@@ -101,8 +102,9 @@ def main(commands: argparse.Namespace):
     model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
         commands.model, use_auth_token=auth_token
     )
-    model_pytorch.cuda()
     model_pytorch.eval()
+    if commands.device == "cuda":
+        model_pytorch.cuda()
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # take optimial size
@@ -110,13 +112,13 @@ def main(commands: argparse.Namespace):
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
         include_token_ids=include_token_ids,
-        device="cuda",
+        device=commands.device,
         nb_inputs_to_gen=commands.warmup,
     )
 
     # create onnx model and compare results
     opset = 12
-    if commands.quantization:
+    if commands.quantization and commands.device == "cuda":
         try:
             from pytorch_quantization.nn import TensorQuantizer
         except ImportError:
@@ -133,14 +135,15 @@ def main(commands: argparse.Namespace):
     convert_to_onnx(
         model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch[0], opset=opset
     )
-    if commands.quantization:
+    if commands.quantization and commands.device == "cuda":
         TensorQuantizer.use_fb_fake_quant = False
 
     timings = {}
 
     def infer_classification_pytorch(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
         model_output = model_pytorch(**inputs).logits.detach().cpu().numpy()  # noqa: F821
-        torch.cuda.synchronize()
+        if commands.device == "cuda":
+            torch.cuda.synchronize()
         return model_output
 
     with torch.inference_mode():
@@ -148,18 +151,19 @@ def main(commands: argparse.Namespace):
             infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
         )
         timings["Pytorch (FP32)"] = time_buffer
-        with autocast():
-            engine_name = "Pytorch (FP16)"
-            pytorch_fp16_output, time_buffer = launch_inference(
-                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
-            )
-            check_accuracy(
-                engine_name=engine_name,
-                pytorch_output=pytorch_output,
-                engine_output=pytorch_fp16_output,
-                tolerance=commands.atol,
-            )
-            timings[engine_name] = time_buffer
+        if commands.device == "cuda":
+            with autocast():
+                engine_name = "Pytorch (FP16)"
+                pytorch_fp16_output, time_buffer = launch_inference(
+                    infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+                )
+                check_accuracy(
+                    engine_name=engine_name,
+                    pytorch_output=pytorch_output,
+                    engine_output=pytorch_fp16_output,
+                    tolerance=commands.atol,
+                )
+                timings[engine_name] = time_buffer
     del model_pytorch
 
     if "tensorrt" in commands.backend:
@@ -220,12 +224,12 @@ def main(commands: argparse.Namespace):
         optimize_onnx(
             onnx_path=onnx_model_path,
             onnx_optim_fp16_path=onnx_optim_fp16_path,
-            use_cuda=True,
+            use_cuda=commands.device == "cuda",
         )
-
+        ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [
-            ("CUDAExecutionProvider", onnx_model_path, "ONNX Runtime (FP32)"),
-            ("CUDAExecutionProvider", onnx_optim_fp16_path, "ONNX Runtime (FP16)"),
+            (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
+            (ort_provider, onnx_optim_fp16_path, "ONNX Runtime (FP16)"),
         ]:
             ort_model = create_model_for_provider(path=model_path, provider_to_use=provider)
 
@@ -255,7 +259,9 @@ def main(commands: argparse.Namespace):
         )
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
 
-    print(f"Inference done on {get_device_name(0)}")
+    if commands.device == "cuda":
+        print(f"Inference done on {get_device_name(0)}")
+
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)

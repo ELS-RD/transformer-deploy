@@ -65,6 +65,8 @@ To install this package locally, you need:
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
+# or for CPU inference
+# pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
 ```
 
 To build your own version of the Docker image:
@@ -95,6 +97,9 @@ convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 128 128 12
 # [TensorRT (FP16)] mean=51.84ms, sd=2.66ms, min=46.42ms, max=59.03ms, median=52.10ms, 95p=56.18ms, 99p=57.68ms
 # [ONNX Runtime (vanilla)] mean=116.98ms, sd=3.67ms, min=111.96ms, max=130.20ms, median=116.23ms, 95p=127.03ms, 99p=128.58ms
 # [ONNX Runtime (optimized)] mean=55.14ms, sd=2.17ms, min=52.85ms, max=61.65ms, median=53.94ms, 95p=59.45ms, 99p=60.27ms
+
+# lighter alternative:
+# convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx --seq-len 128 128 128 --batch-size 1 32 32
 ```
 
 > **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  

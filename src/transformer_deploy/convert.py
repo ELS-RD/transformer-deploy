@@ -233,7 +233,9 @@ def main(commands: argparse.Namespace):
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
             (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
         ]:
-            ort_model = create_model_for_provider(path=model_path, provider_to_use=provider)
+            ort_model = create_model_for_provider(
+                path=model_path, provider_to_use=provider, nb_threads=commands.nb_threads, nb_instances=commands.nb_instances
+            )
 
             def infer_ort(inputs: Dict[str, np.ndarray]) -> np.ndarray:
                 return ort_model.run(None, inputs)

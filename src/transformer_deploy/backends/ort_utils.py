@@ -20,7 +20,7 @@ from typing import OrderedDict as OD
 from typing import Union
 
 import torch
-from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
+from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions, ExecutionMode
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
@@ -28,13 +28,18 @@ from torch.onnx import TrainingMode
 from transformers import PreTrainedModel
 
 
-def create_model_for_provider(path: str, provider_to_use: Union[str, List]) -> InferenceSession:
+def create_model_for_provider(
+    path: str, provider_to_use: Union[str, List], nb_threads: int = multiprocessing.cpu_count(), nb_instances: int = 0
+) -> InferenceSession:
     options = SessionOptions()
     options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
     if type(provider_to_use) != list:
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
-        options.intra_op_num_threads = multiprocessing.cpu_count()
+        options.execution_mode = ExecutionMode.ORT_SEQUENTIAL if nb_instances <= 1 else ExecutionMode.ORT_PARALLEL
+        options.intra_op_num_threads = nb_threads
+        if nb_instances > 1:
+            options.inter_op_num_threads = nb_instances
     return InferenceSession(path, options, providers=provider_to_use)
 
 
@@ -76,4 +81,4 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
     if fp16:
         optimized_model.convert_float_to_float16()  # FP32 -> FP16
     logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
-    optimized_model.save_model_to_file(onnx_optim_path)
+    optimized_model.save_model_to_file(onnx_optim_model_path)

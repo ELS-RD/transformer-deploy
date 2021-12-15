@@ -17,7 +17,7 @@ import pytest
 try:
     from transformer_deploy.convert import main
     from transformer_deploy.utils.args import parse_args
-except _:
+except ImportError:
     pass
 
 

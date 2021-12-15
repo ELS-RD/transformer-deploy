@@ -26,7 +26,8 @@ jobs:
 
     - name: linter and tests
       run: |
-        make test
+        make source_code_check_format
+        make test_ci
 
     - name: read VERSION file
       id: getversion

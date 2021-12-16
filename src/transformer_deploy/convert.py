@@ -24,7 +24,7 @@ import numpy as np
 import tensorrt as trt
 import torch
 from numpy import ndarray
-from onnxruntime.quantization import quantize_dynamic, QuantType
+from onnxruntime.quantization import QuantType, quantize_dynamic
 from torch.cuda import get_device_name
 from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
@@ -230,7 +230,15 @@ def main(commands: argparse.Namespace):
             use_cuda=commands.device == "cuda",
         )
         if commands.device == "cpu" and commands.quantization:
-            quantize_dynamic(model_input=onnx_optim_model_path, model_output=onnx_optim_model_path, weight_type=QuantType.QUInt8)
+            quantize_dynamic(
+                model_input=onnx_optim_model_path,
+                model_output=onnx_optim_model_path,
+                op_types_to_quantize=["MatMul", "Attention"],
+                weight_type=QuantType.QInt8,
+                per_channel=True,
+                reduce_range=True,
+                extra_options={"WeightSymmetric": False, "MatMulConstBOnly": True},
+            )
 
         ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [
@@ -238,7 +246,10 @@ def main(commands: argparse.Namespace):
             (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
         ]:
             ort_model = create_model_for_provider(
-                path=model_path, provider_to_use=provider, nb_threads=commands.nb_threads, nb_instances=commands.nb_instances
+                path=model_path,
+                provider_to_use=provider,
+                nb_threads=commands.nb_threads,
+                nb_instances=commands.nb_instances,
             )
 
             def infer_ort(inputs: Dict[str, np.ndarray]) -> np.ndarray:

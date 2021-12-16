@@ -20,7 +20,7 @@ from typing import OrderedDict as OD
 from typing import Union
 
 import torch
-from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions, ExecutionMode
+from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, SessionOptions
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
@@ -68,7 +68,7 @@ def convert_to_onnx(
 
 def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cuda: bool) -> None:
     optimization_options = FusionOptions("bert")
-    optimization_options.enable_gelu_approximation = True  # additional optimization
+    optimization_options.enable_gelu_approximation = False  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
         model_type="bert",

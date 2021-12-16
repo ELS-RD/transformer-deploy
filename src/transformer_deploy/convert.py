@@ -21,16 +21,12 @@ from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
-import tensorrt as trt
 import torch
 from numpy import ndarray
 from onnxruntime.quantization import QuantType, quantize_dynamic
-from torch.cuda import get_device_name
-from torch.cuda.amp import autocast
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 from transformer_deploy.backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
-from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
     generate_multiple_inputs,
@@ -154,6 +150,8 @@ def main(commands: argparse.Namespace):
         )
         timings["Pytorch (FP32)"] = time_buffer
         if commands.device == "cuda":
+            from torch.cuda.amp import autocast
+
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
@@ -170,7 +168,10 @@ def main(commands: argparse.Namespace):
 
     if "tensorrt" in commands.backend:
         try:
+            import tensorrt as trt
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
+
+            from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
         except ImportError:
             raise ImportError(
                 "It seems that pycuda and TensorRT are not yet installed. "
@@ -279,6 +280,8 @@ def main(commands: argparse.Namespace):
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 
     if commands.device == "cuda":
+        from torch.cuda import get_device_name
+
         print(f"Inference done on {get_device_name(0)}")
 
     print("latencies:")

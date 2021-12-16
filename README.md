@@ -64,6 +64,7 @@ To install this package locally, you need:
 ```shell
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
+# we use CUDA 11 Pytorch to support Ampere GPUs
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
 # or for CPU inference
 # pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html

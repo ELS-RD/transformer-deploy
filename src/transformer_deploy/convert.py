@@ -23,9 +23,9 @@ from typing import Callable, Dict, List, Tuple, Union
 import numpy as np
 import torch
 from numpy import ndarray
-from onnxruntime.quantization import QuantType, quantize_dynamic
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
+from src.transformer_deploy.backends.ort_utils import cpu_quantization
 from transformer_deploy.backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
@@ -122,8 +122,8 @@ def main(commands: argparse.Namespace):
         except ImportError:
             raise ImportError(
                 "It seems that pytorch-quantization is not yet installed. "
-                "It is required when you enable the quantization flag."
-                "Please find installation instruction on "
+                "It is required when you enable the quantization flag and use CUDA device."
+                "Please find installation instructions on "
                 "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization"
             )
 
@@ -231,15 +231,7 @@ def main(commands: argparse.Namespace):
             use_cuda=commands.device == "cuda",
         )
         if commands.device == "cpu" and commands.quantization:
-            quantize_dynamic(
-                model_input=onnx_optim_model_path,
-                model_output=onnx_optim_model_path,
-                op_types_to_quantize=["MatMul", "Attention"],
-                weight_type=QuantType.QInt8,
-                per_channel=True,
-                reduce_range=True,
-                extra_options={"WeightSymmetric": False, "MatMulConstBOnly": True},
-            )
+            cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)
 
         ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [

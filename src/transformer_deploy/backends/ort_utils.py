@@ -21,6 +21,7 @@ from typing import Union
 
 import torch
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, SessionOptions
+from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
@@ -74,7 +75,7 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
         model_type="bert",
         use_gpu=use_cuda,
         opt_level=1,
-        num_heads=0,  # automatic detection don't work with opset 13
+        num_heads=0,  # automatic detection may not work with opset 13
         hidden_size=0,  # automatic detection
         optimization_options=optimization_options,
     )
@@ -82,3 +83,15 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
         optimized_model.convert_float_to_float16()  # FP32 -> FP16
     logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
     optimized_model.save_model_to_file(onnx_optim_model_path)
+
+
+def cpu_quantization(input_model_path: str, output_model_path: str):
+    quantize_dynamic(
+        model_input=input_model_path,
+        model_output=output_model_path,
+        op_types_to_quantize=["MatMul", "Attention"],
+        weight_type=QuantType.QInt8,
+        per_channel=True,
+        reduce_range=True,
+        extra_options={"WeightSymmetric": False, "MatMulConstBOnly": True},
+    )

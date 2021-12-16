@@ -11,6 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import tempfile
+
 import pytest
 
 from transformer_deploy.convert import main
@@ -33,6 +35,8 @@ def test_minilm_gpu():
         "8",
         "8",
         "8",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)
@@ -60,6 +64,8 @@ def test_minilm_cpu():
         "10",
         "--nb-threads",
         "2",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)
@@ -88,6 +94,8 @@ def test_minilm_quantization_cpu():
         "--nb-threads",
         "2",
         "--quantization",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)
@@ -109,6 +117,8 @@ def test_camembert_gpu():
         "8",
         "8",
         "8",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)

@@ -25,8 +25,12 @@ import torch
 from numpy import ndarray
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from src.transformer_deploy.backends.ort_utils import cpu_quantization
-from transformer_deploy.backends.ort_utils import convert_to_onnx, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.ort_utils import (
+    convert_to_onnx,
+    cpu_quantization,
+    create_model_for_provider,
+    optimize_onnx,
+)
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
     generate_multiple_inputs,
@@ -48,7 +52,8 @@ def check_accuracy(
         f"VS\n"
         f"{engine_name}:\n{engine_output}\n"
         f"Diff:\n"
-        f"{np.asarray(pytorch_output) - np.asarray(engine_output)}"
+        f"{np.asarray(pytorch_output) - np.asarray(engine_output)}\n"
+        "Tolerance can be increased with --atol parameter."
     )
 
 
@@ -138,15 +143,20 @@ def main(commands: argparse.Namespace):
 
     timings = {}
 
-    def infer_classification_pytorch(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model_pytorch(**inputs).logits.detach().cpu().numpy()  # noqa: F821
-        if commands.device == "cuda":
-            torch.cuda.synchronize()
-        return model_output
+    def infer_classification_pytorch(model: PreTrainedModel) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
+        def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
+            model_output = model(**inputs).logits.detach().cpu().numpy()  # noqa: F821
+            if commands.device == "cuda":
+                torch.cuda.synchronize()
+            return model_output
+
+        return infer
 
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+            infer=infer_classification_pytorch(model=model_pytorch),
+            inputs=inputs_pytorch,
+            nb_measures=commands.nb_measures,
         )
         timings["Pytorch (FP32)"] = time_buffer
         if commands.device == "cuda":
@@ -155,7 +165,9 @@ def main(commands: argparse.Namespace):
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+                    infer=infer_classification_pytorch(model=model_pytorch),
+                    inputs=inputs_pytorch,
+                    nb_measures=commands.nb_measures,
                 )
                 check_accuracy(
                     engine_name=engine_name,
@@ -164,6 +176,21 @@ def main(commands: argparse.Namespace):
                     tolerance=commands.atol,
                 )
                 timings[engine_name] = time_buffer
+        elif commands.device == "cpu":
+            model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
+            engine_name = "Pytorch (INT-8)"
+            pytorch_int8_output, time_buffer = launch_inference(
+                infer=infer_classification_pytorch(model=model_pytorch),
+                inputs=inputs_pytorch,
+                nb_measures=commands.nb_measures,
+            )
+            check_accuracy(
+                engine_name=engine_name,
+                pytorch_output=pytorch_output,
+                engine_output=pytorch_int8_output,
+                tolerance=commands.atol,
+            )
+            timings[engine_name] = time_buffer
     del model_pytorch
 
     if "tensorrt" in commands.backend:

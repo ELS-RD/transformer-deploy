@@ -35,6 +35,7 @@ class Configuration:
         nb_output: int,
         nb_instance: int,
         include_token_type: bool,
+        device: str,
     ):
         self.model_name = model_name
         self.model_name += "_onnx" if model_type == ModelType.ONNX else "_tensorrt"
@@ -55,6 +56,7 @@ class Configuration:
             self.inference_platform = "tensorrt_plan"
         else:
             raise Exception(f"unknown model type: {model_type}")
+        self.device_kind = "KIND_GPU" if device == "cuda" else "KIND_CPU"
 
     def __get_tokens(self):
         token_type = ""
@@ -83,7 +85,7 @@ class Configuration:
 instance_group [
     {{
       count: {self.nb_instance}
-      kind: KIND_GPU
+      kind: {self.device_kind}
     }}
 ]
 """.strip()

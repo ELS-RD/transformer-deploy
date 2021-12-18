@@ -246,6 +246,7 @@ def main(commands: argparse.Namespace):
             nb_instance=commands.nb_instances,
             include_token_type=include_token_ids,
             workind_directory=commands.output,
+            device=commands.device,
         )
         conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
@@ -295,6 +296,7 @@ def main(commands: argparse.Namespace):
             nb_instance=commands.nb_instances,
             include_token_type=include_token_ids,
             workind_directory=commands.output,
+            device=commands.device,
         )
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 

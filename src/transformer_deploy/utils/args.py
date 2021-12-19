@@ -60,8 +60,8 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     parser.add_argument(
         "-d",
         "--device",
-        default=["cuda"],
-        help="device to use.",
+        default=None,
+        help="device to use. If not set, will be cuda if available.",
         choices=["cpu", "cuda"],
     )
     parser.add_argument("--nb-threads", default=1, help="# of CPU threads to use for inference", type=int)

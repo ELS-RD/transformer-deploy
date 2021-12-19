@@ -64,10 +64,18 @@ To install this package locally, you need:
 ```shell
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
-# we use CUDA 11 Pytorch to support Ampere GPUs
+```
+
+* for GPU support:
+
+```shell
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
-# or for CPU inference
-# pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
+```
+
+* for CPU support:
+
+```shell
+pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
 ```
 
 To build your own version of the Docker image:
@@ -89,22 +97,20 @@ With the single command below, you will:
 * **generate** configuration files for Triton inference server
 
 ```shell
-convert_model -m roberta-large-mnli --backend tensorrt onnx --seq-len 128 128 128 --batch-size 1 32 32
+convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend onnx --seq-len 128 128 128 --batch-size 1 32 32
 # ...
 # Inference done on NVIDIA GeForce RTX 3090
 # latencies:
-# [Pytorch (FP32)] mean=129.57ms, sd=8.73ms, min=119.10ms, max=192.44ms, median=129.81ms, 95p=137.11ms, 99p=173.64ms
-# [Pytorch (FP16)] mean=82.68ms, sd=3.92ms, min=76.39ms, max=97.42ms, median=83.59ms, 95p=89.58ms, 99p=94.09ms
-# [TensorRT (FP16)] mean=51.84ms, sd=2.66ms, min=46.42ms, max=59.03ms, median=52.10ms, 95p=56.18ms, 99p=57.68ms
-# [ONNX Runtime (vanilla)] mean=116.98ms, sd=3.67ms, min=111.96ms, max=130.20ms, median=116.23ms, 95p=127.03ms, 99p=128.58ms
-# [ONNX Runtime (optimized)] mean=55.14ms, sd=2.17ms, min=52.85ms, max=61.65ms, median=53.94ms, 95p=59.45ms, 99p=60.27ms
-
-# lighter alternative:
-# convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx --seq-len 128 128 128 --batch-size 1 32 32
+# [Pytorch (FP32)] mean=8.75ms, sd=0.30ms, min=8.60ms, max=11.20ms, median=8.68ms, 95p=9.15ms, 99p=10.77ms
+# [Pytorch (FP16)] mean=6.75ms, sd=0.22ms, min=6.66ms, max=8.99ms, median=6.71ms, 95p=6.88ms, 99p=7.95ms
+# [ONNX Runtime (FP32)] mean=8.10ms, sd=0.43ms, min=7.93ms, max=11.76ms, median=8.02ms, 95p=8.39ms, 99p=11.30ms
+# [ONNX Runtime (optimized)] mean=3.66ms, sd=0.23ms, min=3.57ms, max=6.46ms, median=3.62ms, 95p=3.70ms, 99p=4.95ms
 ```
 
-> **16 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model  
-> **1 32 32** -> batch size, same as above
+> **128 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model. 
+> Better to have the same value for seq len to get best performances from TensorRT (ONNX Runtime has not this limitation).
+>  
+> **1 32 32** -> batch size, same as above. Good idea to get 1 as minimum value. No impact on TensorRT performance.
 
 * Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:
 

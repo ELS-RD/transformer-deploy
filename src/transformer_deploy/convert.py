@@ -83,6 +83,8 @@ def main(commands: argparse.Namespace):
     torch.manual_seed(commands.seed)
     np.random.seed(commands.seed)
     torch.set_num_threads(commands.nb_threads)
+    if commands.device is None:
+        commands.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True

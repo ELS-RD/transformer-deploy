@@ -70,6 +70,8 @@ cd transformer-deploy
 
 ```shell
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
+# if you want to perform GPU quantization (recommended)
+pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\&subdirectory=tools/pytorch-quantization/
 ```
 
 * for CPU support:
@@ -124,7 +126,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 > This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
 Right now, only TensorRT 8.0.3 backend is available in Triton.  
-Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime Triton backend.   
+Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime backend.   
 
 * Query the inference server:
 

@@ -11,26 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-# coding=utf-8
-# Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# copied from Hugging Face transformers library
-# modified parts (outside imports) are preceded by -> # QDQ change below
-
-"""PyTorch RoBERTa model. """
 import math
 
 import torch
@@ -38,12 +18,11 @@ import torch.utils.checkpoint
 from pytorch_quantization import nn as quant_nn
 from pytorch_quantization.nn.modules.tensor_quantizer import TensorQuantizer
 from torch import nn
+from transformers.activations import ACT2FN
 
-from transformer_deploy.QDQModels.QDQBert import QDQBertIntermediate, QDQBertOutput, QDQBertSelfOutput
 
-
-class QDQRobertaSelfAttention(nn.Module):
-    def __init__(self, config, position_embedding_type=None):
+class QDQBertSelfAttention(nn.Module):
+    def __init__(self, config):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
@@ -54,19 +33,19 @@ class QDQRobertaSelfAttention(nn.Module):
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
-        # QDQ change below
+
         self.query = quant_nn.QuantLinear(config.hidden_size, self.all_head_size)
         self.key = quant_nn.QuantLinear(config.hidden_size, self.all_head_size)
         self.value = quant_nn.QuantLinear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-        self.position_embedding_type = position_embedding_type or getattr(config, "position_embedding_type", "absolute")
+        self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             self.max_position_embeddings = config.max_position_embeddings
             self.distance_embedding = nn.Embedding(2 * config.max_position_embeddings - 1, self.attention_head_size)
 
         self.is_decoder = config.is_decoder
-        # QDQ change below
+
         self.matmul_q_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
         self.matmul_k_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
         self.matmul_v_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
@@ -125,7 +104,6 @@ class QDQRobertaSelfAttention(nn.Module):
             past_key_value = (key_layer, value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        # QDQ change below
         attention_scores = torch.matmul(
             self.matmul_q_input_quantizer(query_layer), self.matmul_k_input_quantizer(key_layer.transpose(-1, -2))
         )
@@ -148,7 +126,7 @@ class QDQRobertaSelfAttention(nn.Module):
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
         if attention_mask is not None:
-            # Apply the attention mask is (precomputed for all layers in RobertaModel forward() function)
+            # Apply the attention mask is (precomputed for all layers in QDQBertModel forward() function)
             attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
@@ -161,7 +139,7 @@ class QDQRobertaSelfAttention(nn.Module):
         # Mask heads if we want to
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
-        # QDQ change below
+
         context_layer = torch.matmul(
             self.matmul_a_input_quantizer(attention_probs), self.matmul_v_input_quantizer(value_layer)
         )
@@ -177,15 +155,62 @@ class QDQRobertaSelfAttention(nn.Module):
         return outputs
 
 
-QDQRobertaSelfOutput = QDQBertSelfOutput
-QDQRobertaIntermediate = QDQBertIntermediate
-QDQRobertaOutput = QDQBertOutput
+class QDQBertSelfOutput(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        # Quantize Linear layer
+        self.dense = quant_nn.QuantLinear(config.hidden_size, config.hidden_size)
+
+        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        # Quantize the inputs to the residual add
+        self.add_local_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.add_residual_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+
+    def forward(self, hidden_states, input_tensor):
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dropout(hidden_states)
+        # Quantize the inputs to the residual add
+        add_local = self.add_local_input_quantizer(hidden_states)
+        add_residual = self.add_residual_input_quantizer(input_tensor)
+        hidden_states = self.LayerNorm(add_local + add_residual)
+        return hidden_states
 
 
-def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=0):
-    # QDQ change below
-    # The series of casts and type-conversions here are carefully balanced to both work with ONNX export and XLA.
-    # int() -> float() because of a limitations in cumsum operator implementation in TensorRT
-    mask = input_ids.ne(padding_idx).float()
-    incremental_indices = (torch.cumsum(mask, dim=1).type_as(mask) + past_key_values_length) * mask
-    return incremental_indices.long() + padding_idx
+class QDQBertIntermediate(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        # Quantize Linear layer
+        self.dense = quant_nn.QuantLinear(config.hidden_size, config.intermediate_size)
+        if isinstance(config.hidden_act, str):
+            self.intermediate_act_fn = ACT2FN[config.hidden_act]
+        else:
+            self.intermediate_act_fn = config.hidden_act
+
+    def forward(self, hidden_states):
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.intermediate_act_fn(hidden_states)
+        return hidden_states
+
+
+class QDQBertOutput(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        # Quantize Linear layer
+        self.dense = quant_nn.QuantLinear(config.intermediate_size, config.hidden_size)
+        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        # Quantize the inputs to the residual add
+        self.add_local_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.add_residual_input_quantizer = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+
+    def forward(self, hidden_states, input_tensor):
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dropout(hidden_states)
+        # Quantize the inputs to the residual add
+        add_local = self.add_local_input_quantizer(hidden_states)
+        add_residual = self.add_residual_input_quantizer(input_tensor)
+        hidden_states = self.LayerNorm(add_local + add_residual)
+        return hidden_states

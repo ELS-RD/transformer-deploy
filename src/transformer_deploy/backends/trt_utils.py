@@ -35,44 +35,6 @@ from tensorrt.tensorrt import (
 )
 
 
-class Calibrator(trt.IInt8Calibrator):
-    def __init__(self):
-        trt.IInt8Calibrator.__init__(self)
-        self.algorithm = trt.CalibrationAlgoType.MINMAX_CALIBRATION
-        self.batch_size = 32
-
-        input_list: List[ndarray] = [np.zeros((32, 512), dtype=np.int32) for _ in range(3)]
-        # allocate GPU memory for input tensors
-        self.device_inputs: List[DeviceAllocation] = [cuda.mem_alloc(tensor.nbytes) for tensor in input_list]
-        for h_input, d_input in zip(input_list, self.device_inputs):
-            cuda.memcpy_htod_async(d_input, h_input)  # host to GPU
-        self.count = 0
-
-    def get_algorithm(self):
-        return trt.CalibrationAlgoType.MINMAX_CALIBRATION
-
-    def get_batch_size(self):
-        return self.batch_size
-
-    def get_batch(self, names, p_str=None):
-        self.count += 1
-        if self.count > 20:
-            return []
-        # return pointers to arrays
-        return [int(d) for d in self.device_inputs]
-
-    def read_calibration_cache(self):
-        return None
-
-    def write_calibration_cache(self, cache):
-        with open("calibration_cache.bin", "wb") as f:
-            f.write(cache)
-
-    def free(self):
-        for dinput in self.device_inputs:
-            dinput.free()
-
-
 def setup_binding_shapes(
     context: trt.IExecutionContext,
     host_inputs: List[np.ndarray],

@@ -37,6 +37,7 @@ def conf(working_directory: tempfile.TemporaryDirectory):
         nb_instance=1,
         include_token_type=False,
         workind_directory=working_directory.name,
+        device="cuda",
     )
     return conf
 

@@ -11,53 +11,114 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import tempfile
+
 import pytest
 
-
-try:
-    from transformer_deploy.convert import main
-    from transformer_deploy.utils.args import parse_args
-except ImportError:
-    pass  # for CI unit tests
+from transformer_deploy.convert import main
+from transformer_deploy.utils.args import parse_args
 
 
 @pytest.mark.gpu
-def test_minilm():
+def test_minilm_gpu():
     commands = [
-        "-m",
+        "--model",
         "philschmid/MiniLM-L6-H384-uncased-sst2",
         "--backend",
         "tensorrt",
         "onnx",
-        "-b",
+        "--batch",
         "1",
         "16",
         "16",
-        "-s",
+        "--seq-len",
         "8",
         "8",
         "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
+def test_minilm_cpu():
+    commands = [
+        "--model",
+        "philschmid/MiniLM-L6-H384-uncased-sst2",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "1",
+        "1",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--device",
+        "cpu",
+        "--warmup",
+        "5",
+        "--nb-measures",
+        "10",
+        "--nb-threads",
+        "2",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
+def test_minilm_quantization_cpu():
+    commands = [
+        "--model",
+        "philschmid/MiniLM-L6-H384-uncased-sst2",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "1",
+        "1",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--device",
+        "cpu",
+        "--warmup",
+        "5",
+        "--nb-measures",
+        "10",
+        "--nb-threads",
+        "2",
+        "--quantization",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)
 
 
 @pytest.mark.gpu
-def test_camembert():
+def test_camembert_gpu():
     commands = [
-        "-m",
+        "--model",
         "camembert-base",
         "--backend",
         "tensorrt",
         "onnx",
-        "-b",
+        "--batch",
         "1",
         "16",
         "16",
-        "-s",
+        "--seq-len",
         "8",
         "8",
         "8",
+        "--output",
+        tempfile.mkdtemp(),
     ]
     args = parse_args(commands=commands)
     main(commands=args)

@@ -55,6 +55,7 @@ def track_infer_time(buffer: [int]):
 def generate_input(
     seq_len: int, batch_size: int, include_token_ids: bool, device: str = "cuda"
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
+    assert device in ["cuda", "cpu"]
     shape = (batch_size, seq_len)
     inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
     inputs_pytorch["input_ids"] = torch.randint(high=100, size=shape, dtype=torch.long, device=device)

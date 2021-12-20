@@ -53,11 +53,21 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     parser.add_argument(
         "--backend",
         default=["onnx"],
-        help="backend to use. One of [onnx,tensorrt, pytorch] or all",
+        help="backend to use. multiple args accepted.",
         nargs="*",
         choices=["onnx", "tensorrt"],
     )
-    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
+    parser.add_argument(
+        "-d",
+        "--device",
+        default=None,
+        help="device to use. If not set, will be cuda if available.",
+        choices=["cpu", "cuda"],
+    )
+    parser.add_argument("--nb-threads", default=1, help="# of CPU threads to use for inference", type=int)
+    parser.add_argument(
+        "--nb-instances", default=1, help="# of model instances, may improve troughput (Triton)", type=int
+    )
     parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)

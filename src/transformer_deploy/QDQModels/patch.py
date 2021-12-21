@@ -13,80 +13,56 @@
 #  limitations under the License.
 
 import importlib
-import inspect
-from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Dict, List
 
 import torch
+from pytorch_quantization import nn as quant_nn
+from pytorch_quantization.tensor_quant import QuantDescriptor
 
-from transformer_deploy.QDQModels.QDQBert import (
-    QDQBertIntermediate,
-    QDQBertOutput,
-    QDQBertSelfAttention,
-    QDQBertSelfOutput,
-)
-from transformer_deploy.QDQModels.QDQRoberta import (
-    QDQRobertaIntermediate,
-    QDQRobertaOutput,
-    QDQRobertaSelfAttention,
-    QDQRobertaSelfOutput,
-    qdq_create_position_tensorrt,
-)
+from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
+from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
+from transformer_deploy.QDQModels.QDQDistilbert import qdq_distilbert_mapping
+from transformer_deploy.QDQModels.QDQElectra import qdq_electra_mapping
+from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
+from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
-@dataclass
-class PatchBackup:
-    module: str
-    mapping: Dict[str, torch.nn.Module]
-
-
-def patch_model(module: str, qdq_classes: Dict[str, torch.nn.Module]) -> PatchBackup:
+def patch_model(patch: PatchTransformers) -> PatchTransformers:
     backup: Dict[str, torch.nn.Module] = dict()
-    model = importlib.import_module(module)
-    for class_name, qdq_class in qdq_classes.items():
+    model = importlib.import_module(patch.module)
+    for class_name, qdq_class in patch.mapping.items():
         backup[class_name] = getattr(model, class_name)
         setattr(model, class_name, qdq_class)
-    return PatchBackup(module=module, mapping=backup)
+    return PatchTransformers(module=patch.module, mapping=backup)
 
 
-def unpatch_model(backup: PatchBackup):
-    model = importlib.import_module(backup.module)
-    for class_name, original_class in backup.mapping.items():
-        setattr(model, class_name, original_class)
+def add_qdq() -> List[PatchTransformers]:
+    restore = list()
+    for patch in [
+        qdq_bert_mapping,
+        qdq_roberta_mapping,
+        qdq_electra_mapping,
+        qdq_distilbert_mapping,
+        qdq_albert_mapping,
+    ]:
+        backup = patch_model(patch)
+        restore.append(backup)
+    return restore
 
 
-def patch_roberta() -> Dict[str, torch.nn.Module]:
-    qdq_classes: Dict[str, torch.nn.Module] = {
-        "RobertaSelfAttention": QDQRobertaSelfAttention,
-        "RobertaSelfOutput": QDQRobertaSelfOutput,
-        "RobertaIntermediate": QDQRobertaIntermediate,
-        "RobertaOutput": QDQRobertaOutput,
-        "create_position_ids_from_input_ids": qdq_create_position_tensorrt,
-    }
-    return patch_model(module="transformers.models.roberta.modeling_roberta", qdq_classes=qdq_classes)
+def remove_qdq(backup: List[PatchTransformers]):
+    for patch in backup:
+        patch_model(patch)
 
 
-def patch_bert() -> Dict[str, torch.nn.Module]:
-    qdq_classes: Dict[str, torch.nn.Module] = {
-        "BertSelfAttention": QDQBertSelfAttention,
-        "BertSelfOutput": QDQBertSelfOutput,
-        "BertIntermediate": QDQBertIntermediate,
-        "BertOutput": QDQBertOutput,
-    }
-    return patch_model(module="transformers.models.bert.modeling_bert", qdq_classes=qdq_classes)
-
-
-def get_function_content(c: type) -> str:
-    return inspect.getsource(c)
-
-
-def patch_transformers():
-    for patch_fun in [patch_bert, patch_roberta]:  # type: Callable
-        patch_fun()
+def setup_qat(per_channel: bool):
+    axis = (0,) if per_channel else None
+    input_desc = QuantDescriptor(num_bits=8, calib_method="histogram")
+    # below we do per-channel quantization for weights, set axis to None to get a per tensor calibration
+    weight_desc = QuantDescriptor(num_bits=8, axis=axis)
+    quant_nn.QuantLinear.set_default_quant_desc_input(input_desc)
+    quant_nn.QuantLinear.set_default_quant_desc_weight(weight_desc)
 
 
 # TODO
-# Electra -> easy
-# DistillBert -> ?
 # Deberta V2 -> ? (will need to check ONNX export)
-# albert -> ?

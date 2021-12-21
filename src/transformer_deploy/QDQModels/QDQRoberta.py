@@ -40,6 +40,7 @@ from pytorch_quantization.nn.modules.tensor_quantizer import TensorQuantizer
 from torch import nn
 
 from transformer_deploy.QDQModels.QDQBert import QDQBertIntermediate, QDQBertOutput, QDQBertSelfOutput
+from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
 class QDQRobertaSelfAttention(nn.Module):
@@ -189,3 +190,15 @@ def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=
     mask = input_ids.ne(padding_idx).float()
     incremental_indices = (torch.cumsum(mask, dim=1).type_as(mask) + past_key_values_length) * mask
     return incremental_indices.long() + padding_idx
+
+
+qdq_roberta_mapping: PatchTransformers = PatchTransformers(
+    module="transformers.models.roberta.modeling_roberta",
+    mapping={
+        "RobertaSelfAttention": QDQRobertaSelfAttention,
+        "RobertaSelfOutput": QDQRobertaSelfOutput,
+        "RobertaIntermediate": QDQRobertaIntermediate,
+        "RobertaOutput": QDQRobertaOutput,
+        "create_position_ids_from_input_ids": qdq_create_position_tensorrt,
+    },
+)

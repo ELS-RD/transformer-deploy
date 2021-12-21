@@ -20,6 +20,8 @@ from pytorch_quantization.nn.modules.tensor_quantizer import TensorQuantizer
 from torch import nn
 from transformers.activations import ACT2FN
 
+from transformer_deploy.QDQModels.utils import PatchTransformers
+
 
 class QDQBertSelfAttention(nn.Module):
     def __init__(self, config):
@@ -214,3 +216,14 @@ class QDQBertOutput(nn.Module):
         add_residual = self.add_residual_input_quantizer(input_tensor)
         hidden_states = self.LayerNorm(add_local + add_residual)
         return hidden_states
+
+
+qdq_bert_mapping: PatchTransformers = PatchTransformers(
+    module="transformers.models.bert.modeling_bert",
+    mapping={
+        "BertSelfAttention": QDQBertSelfAttention,
+        "BertSelfOutput": QDQBertSelfOutput,
+        "BertIntermediate": QDQBertIntermediate,
+        "BertOutput": QDQBertOutput,
+    },
+)

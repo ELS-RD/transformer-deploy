@@ -16,11 +16,10 @@ import importlib
 from typing import Dict, List
 
 import torch
-from pytorch_quantization import nn as quant_nn
-from pytorch_quantization.tensor_quant import QuantDescriptor
 
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
+from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping
 from transformer_deploy.QDQModels.QDQDistilbert import qdq_distilbert_mapping
 from transformer_deploy.QDQModels.QDQElectra import qdq_electra_mapping
 from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
@@ -44,6 +43,7 @@ def add_qdq() -> List[PatchTransformers]:
         qdq_electra_mapping,
         qdq_distilbert_mapping,
         qdq_albert_mapping,
+        qdq_deberta_mapping,
     ]:
         backup = patch_model(patch)
         restore.append(backup)
@@ -53,15 +53,6 @@ def add_qdq() -> List[PatchTransformers]:
 def remove_qdq(backup: List[PatchTransformers]):
     for patch in backup:
         patch_model(patch)
-
-
-def setup_qat(per_channel: bool):
-    axis = (0,) if per_channel else None
-    input_desc = QuantDescriptor(num_bits=8, calib_method="histogram")
-    # below we do per-channel quantization for weights, set axis to None to get a per tensor calibration
-    weight_desc = QuantDescriptor(num_bits=8, axis=axis)
-    quant_nn.QuantLinear.set_default_quant_desc_input(input_desc)
-    quant_nn.QuantLinear.set_default_quant_desc_weight(weight_desc)
 
 
 # TODO

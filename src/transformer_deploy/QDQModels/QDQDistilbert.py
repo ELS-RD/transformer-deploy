@@ -110,7 +110,7 @@ class QDQMultiHeadSelfAttention(nn.Module):
             weights = weights * head_mask
 
         context = torch.matmul(
-            self.self.matmul_w_input_quantizer(weights), self.matmul_w_input_quantizer(v)
+            self.matmul_w_input_quantizer(weights), self.matmul_w_input_quantizer(v)
         )  # (bs, n_heads, q_length, dim_per_head)
         context = unshape(context)  # (bs, q_length, dim)
         context = self.out_lin(context)  # (bs, q_length, dim)

@@ -67,6 +67,16 @@ def convert_to_onnx(
         )
 
 
+def convert_to_quant_onnx(
+    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor]
+) -> None:
+    from pytorch_quantization.nn import TensorQuantizer
+
+    TensorQuantizer.use_fb_fake_quant = True
+    convert_to_onnx(model_pytorch=model_pytorch, output_path=output_path, inputs_pytorch=inputs_pytorch, opset=13)
+    TensorQuantizer.use_fb_fake_quant = False
+
+
 def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cuda: bool) -> None:
     optimization_options = FusionOptions("bert")
     optimization_options.enable_gelu_approximation = False  # additional optimization

@@ -13,10 +13,10 @@
 #  limitations under the License.
 
 import importlib
-from typing import Dict, List
+import logging
+from typing import List
 
-import torch
-
+from transformer_deploy.QDQModels.ast_patch import add_quantization_to_model
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
 from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping
@@ -27,12 +27,12 @@ from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
 def patch_model(patch: PatchTransformers) -> PatchTransformers:
-    backup: Dict[str, torch.nn.Module] = dict()
+    backup = add_quantization_to_model(module_path=patch.module)
     model = importlib.import_module(patch.module)
     for class_name, qdq_class in patch.mapping.items():
-        backup[class_name] = getattr(model, class_name)
+        backup.mapping[class_name] = getattr(model, class_name)
         setattr(model, class_name, qdq_class)
-    return PatchTransformers(module=patch.module, mapping=backup)
+    return backup
 
 
 def add_qdq() -> List[PatchTransformers]:
@@ -45,6 +45,7 @@ def add_qdq() -> List[PatchTransformers]:
         qdq_albert_mapping,
         qdq_deberta_mapping,
     ]:
+        logging.info(f"add quantization to module {patch.module}")
         backup = patch_model(patch)
         restore.append(backup)
     return restore
@@ -53,7 +54,3 @@ def add_qdq() -> List[PatchTransformers]:
 def remove_qdq(backup: List[PatchTransformers]):
     for patch in backup:
         patch_model(patch)
-
-
-# TODO
-# Deberta V2 -> ? (will need to check ONNX export)

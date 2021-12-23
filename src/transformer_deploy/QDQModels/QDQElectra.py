@@ -13,26 +13,10 @@
 #  limitations under the License.
 
 
-from transformer_deploy.QDQModels.QDQBert import (
-    QDQBertIntermediate,
-    QDQBertOutput,
-    QDQBertSelfAttention,
-    QDQBertSelfOutput,
-)
 from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
-QDQElectraSelfAttention = QDQBertSelfAttention
-QDQElectraSelfOutput = QDQBertSelfOutput
-QDQElectraIntermediate = QDQBertIntermediate
-QDQElectraOutput = QDQBertOutput
-
 qdq_electra_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.electra.modeling_electra",
-    mapping={
-        "ElectraSelfAttention": QDQBertSelfAttention,
-        "ElectraSelfOutput": QDQBertSelfOutput,
-        "ElectraIntermediate": QDQBertIntermediate,
-        "ElectraOutput": QDQBertOutput,
-    },
+    mapping=dict(),
 )

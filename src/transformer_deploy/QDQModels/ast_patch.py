@@ -19,6 +19,8 @@ import inspect
 import logging
 from typing import List, Optional, Sequence, Tuple
 
+from transformer_deploy.QDQModels.utils import PatchTransformers
+
 
 def init_quantizer(name: str) -> ast.Assign:
     """
@@ -182,22 +184,25 @@ def add_quantization_to_model(
     module_path: str,
     class_to_patch: Optional[List[str]] = None,
     torch_op_to_quantize: Sequence[str] = ("matmul", "add"),
-) -> None:
+) -> PatchTransformers:
     """
     Add quantization support to a model.
     :param module_path: model module to optimize
     :param class_to_patch: name of modules to patch, if None it will be auto-detected.
     :param torch_op_to_quantize: list of Pytorch operations to optimize
+    :return: backup of original classes
     """
+    backup = PatchTransformers(module=module_path, mapping=dict())
     model_module = importlib.import_module(name=module_path)
     load_missing_imports(model_module)
 
     if class_to_patch is None:
         class_to_patch = list_class_to_patch(model_module=model_module, torch_op_to_quantize=torch_op_to_quantize)
-        logging.info(f"patch following class: {', '.join(class_to_patch)}")
+        logging.info(f"modify class {', '.join(class_to_patch)}")
 
     for class_name in class_to_patch:
         module_to_patch = getattr(model_module, class_name)
+        backup.mapping[class_name] = module_to_patch
         head = add_quant_to_module(
             module_to_patch=module_to_patch, new_module_name=class_name, torch_op_to_quantize=torch_op_to_quantize
         )
@@ -205,3 +210,5 @@ def add_quantization_to_model(
         module_patched: code = compile(head, filename="<ast modif - transformer deploy>", mode="exec")
         # execute the code in the module context so it overrides the original classes and leverage existing imports
         exec(module_patched, model_module.__dict__, model_module.__dict__)
+
+    return backup

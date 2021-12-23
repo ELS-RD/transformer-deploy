@@ -19,6 +19,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Union
+import json
 
 import numpy as np
 import tensorrt as trt
@@ -40,7 +41,6 @@ from transformer_deploy.benchmarks.utils import (
 from transformer_deploy.templates.triton import Configuration, ModelType
 from transformer_deploy.utils.args import parse_args
 
-
 def check_accuracy(
     engine_name: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float
 ):
@@ -56,18 +56,28 @@ def check_accuracy(
 
 
 def launch_inference(
-    infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
+    infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int, 
+    benchmark_nm: str=None, time_tracker: Dict[str, List[float]]=None
 ) -> Tuple[List[np.ndarray], List[float]]:
     assert type(inputs) == list
     assert len(inputs) > 0
+    assert time_tracker is None or benchmark_nm
+    
+    # Warmup
+    logging.info(f'Running inference for "{benchmark_nm}" over {len(inputs)} batches')
     outputs = list()
     for batch_input in inputs:
         output = infer(batch_input)
         outputs.append(output)
+    
+    # Benchmarking
+    logging.info(f'Benchmarking "{benchmark_nm}" over {nb_measures} iterations')
     time_buffer: List[float] = list()
     for _ in range(nb_measures):
         with track_infer_time(time_buffer):
             _ = infer(inputs[0])
+    if time_tracker is not None:
+        time_tracker[benchmark_nm] = time_buffer
     return outputs, time_buffer
 
 
@@ -87,11 +97,13 @@ def main(commands: argparse.Namespace):
     else:
         auth_token = None
 
+    # Set model paths
     Path(commands.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(commands.output, "model-original.onnx")
     onnx_optim_fp16_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
 
+    # Load model, tokenizer
     assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
@@ -105,7 +117,9 @@ def main(commands: argparse.Namespace):
     model_pytorch.eval()
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
-    # take optimial size
+    
+    # Generate dummy inputs
+    # take optimal size
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
@@ -114,7 +128,7 @@ def main(commands: argparse.Namespace):
         nb_inputs_to_gen=commands.warmup,
     )
 
-    # create onnx model and compare results
+    # Convert ot ONNX model
     opset = 12
     if commands.quantization:
         try:
@@ -133,25 +147,29 @@ def main(commands: argparse.Namespace):
     convert_to_onnx(
         model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch[0], opset=opset
     )
+    logging.info(f'Saved onnx model to {onnx_model_path}')
+    
     if commands.quantization:
         TensorQuantizer.use_fb_fake_quant = False
 
     timings = {}
 
+    # PyTorch model benchmarking
     def infer_classification_pytorch(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
         model_output = model_pytorch(**inputs).logits.detach().cpu().numpy()  # noqa: F821
         torch.cuda.synchronize()
         return model_output
 
-    with torch.inference_mode():
+    with torch.inference_mode(): 
         pytorch_output, time_buffer = launch_inference(
-            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+            infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures, 
+            benchmark_nm="Pytorch (FP32)", time_tracker=timings
         )
-        timings["Pytorch (FP32)"] = time_buffer
         with autocast():
             engine_name = "Pytorch (FP16)"
             pytorch_fp16_output, time_buffer = launch_inference(
-                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+                infer=infer_classification_pytorch, inputs=inputs_pytorch, nb_measures=commands.nb_measures,
+                benchmark_nm=engine_name, time_tracker=timings
             )
             check_accuracy(
                 engine_name=engine_name,
@@ -159,9 +177,24 @@ def main(commands: argparse.Namespace):
                 engine_output=pytorch_fp16_output,
                 tolerance=commands.atol,
             )
-            timings[engine_name] = time_buffer
     del model_pytorch
-
+    
+    # Arguments for generating config.pbtxt (used for tensorrt as well as onnx)
+    tokenizer_meta_dict = json.loads(commands.tokenizer_meta_json)
+    model_meta_dict = json.loads(commands.model_meta_json)
+    
+    config_kwargs = dict(
+        working_directory=commands.output,
+        model_name=commands.name,
+        batch_size=0,
+        nb_output=pytorch_output[0].shape[1],
+        nb_instance=commands.nb_instances,
+        include_token_type=include_token_ids,
+        tokenizer_meta_dict=tokenizer_meta_dict,
+        model_meta_dict=model_meta_dict
+            )
+        
+    # -- TensorRT optimization --
     if "tensorrt" in commands.backend:
         try:
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
@@ -194,7 +227,8 @@ def main(commands: argparse.Namespace):
 
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=commands.nb_measures
+            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=commands.nb_measures,
+            benchmark_nm=engine_name, time_tracker=timings
         )
         check_accuracy(
             engine_name=engine_name,
@@ -202,25 +236,18 @@ def main(commands: argparse.Namespace):
             engine_output=tensorrt_output,
             tolerance=commands.atol,
         )
-        timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
-        conf = Configuration(
-            model_name=commands.name,
-            model_type=ModelType.TensorRT,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
-            workind_directory=commands.output,
-        )
+        conf = Configuration(model_type=ModelType.TensorRT, **config_kwargs)
         conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
+    # -- ONNX optimization --
     if "onnx" in commands.backend:
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,
             onnx_optim_fp16_path=onnx_optim_fp16_path,
             use_cuda=True,
+            num_heads=commands.num_heads
         )
 
         for provider, model_path, benchmark_name in [
@@ -233,7 +260,8 @@ def main(commands: argparse.Namespace):
                 return ort_model.run(None, inputs)
 
             ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=inputs_onnx, nb_measures=commands.nb_measures
+                infer=infer_ort, inputs=inputs_onnx, nb_measures=commands.nb_measures,
+                benchmark_nm=benchmark_name, time_tracker=timings
             )
             check_accuracy(
                 engine_name=benchmark_name,
@@ -241,18 +269,9 @@ def main(commands: argparse.Namespace):
                 engine_output=ort_output,
                 tolerance=commands.atol,
             )
-            timings[benchmark_name] = time_buffer
             del ort_model
 
-        conf = Configuration(
-            model_name=commands.name,
-            model_type=ModelType.ONNX,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
-            workind_directory=commands.output,
-        )
+        conf = Configuration(model_type=ModelType.ONNX, **config_kwargs)
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_fp16_path)
 
     print(f"Inference done on {get_device_name(0)}")

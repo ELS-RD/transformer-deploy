@@ -41,11 +41,15 @@ def create_model_for_provider(path: str, provider_to_use: Union[str, List]) -> I
 def convert_to_onnx(
     model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor], opset: int = 12
 ) -> None:
+    logging.info('Converting model to onnx format')
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():
         dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
     dynamic_axis["output"] = {0: "batch_size"}
+    
+    logging.info(f'convert_to_onnx: TEMP: list(inputs_pytorch.keys()): {list(inputs_pytorch.keys())}')
+    
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize
@@ -61,7 +65,8 @@ def convert_to_onnx(
         )
 
 
-def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> None:
+def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool, num_heads=0) -> None:
+    logging.info('Optimizing ONNX model')
     optimization_options = FusionOptions("bert")
     optimization_options.enable_gelu_approximation = True  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
@@ -69,11 +74,11 @@ def optimize_onnx(onnx_path: str, onnx_optim_fp16_path: str, use_cuda: bool) -> 
         model_type="bert",
         use_gpu=use_cuda,
         opt_level=1,
-        num_heads=0,  # automatic detection don't work with opset 13
+        num_heads=num_heads,  # automatic detection don't work with opset 13
         hidden_size=0,  # automatic detection
         optimization_options=optimization_options,
     )
 
     optimized_model.convert_float_to_float16()  # FP32 -> FP16
-    logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
+    logging.info(f"Optimizations applied: {optimized_model.get_fused_operator_statistics()}")
     optimized_model.save_model_to_file(onnx_optim_fp16_path)

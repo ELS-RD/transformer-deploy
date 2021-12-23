@@ -57,10 +57,17 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
         nargs="*",
         choices=["onnx", "tensorrt"],
     )
-    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve troughput", type=int)
+    parser.add_argument("--nb-instances", default=1, help="# of model instances, may improve throughput", type=int)
     parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)
     parser.add_argument("--seed", default=123, help="seed for random inputs, etc.", type=int)
     parser.add_argument("--atol", default=3e-1, help="tolerance when comparing outputs to Pytorch ones", type=float)
+    
+    # Temp argument. Useful to address DistilBERT issue with onnxruntime 1.9.0.
+    parser.add_argument("--num-heads", default=0, help="# of attention heads. Reference: onnxruntime.transformers.optimizer.optimize_model", type=int)
+    
+    parser.add_argument("--tokenizer-meta-json", default='{}', help="parameters to be stored in config.pbtxt file of Tokenizer")
+    parser.add_argument("--model-meta-json", default='{}', help="parameters to be stored in config.pbtxt file of Model")
+    
     args, _ = parser.parse_known_args(args=commands)
     return args

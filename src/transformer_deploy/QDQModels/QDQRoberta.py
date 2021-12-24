@@ -30,8 +30,6 @@
 # copied from Hugging Face transformers library
 # modified parts (outside imports) are preceded by -> # QDQ change below
 
-"""PyTorch RoBERTa model. """
-
 import torch
 import torch.utils.checkpoint
 
@@ -50,6 +48,6 @@ def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=
 qdq_roberta_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.roberta.modeling_roberta",
     mapping={
-        "create_position_ids_from_input_ids": qdq_create_position_tensorrt,
+        "create_position_ids_from_input_ids": (qdq_create_position_tensorrt, "qdq_create_position_tensorrt"),
     },
 )

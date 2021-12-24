@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import importlib
+import inspect
 import logging
 from typing import List
 
@@ -27,11 +28,17 @@ from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
 def patch_model(patch: PatchTransformers) -> PatchTransformers:
+    """
+    Perform modification to model to make it work with ONNX export and quantization.
+    :param patch: an object containing all the information to perform a modification
+    :return: all information to restore state before modification
+    """
     backup = add_quantization_to_model(module_path=patch.module)
-    model = importlib.import_module(patch.module)
-    for class_name, qdq_class in patch.mapping.items():
-        backup.mapping[class_name] = getattr(model, class_name)
-        setattr(model, class_name, qdq_class)
+    model_module = importlib.import_module(patch.module)
+    for target, (modified_object, object_name) in patch.mapping.items():
+        source_code = inspect.getsource(modified_object)
+        source_code += f"\n{target} = {object_name}"
+        exec(source_code, model_module.__dict__, model_module.__dict__)
     return backup
 
 

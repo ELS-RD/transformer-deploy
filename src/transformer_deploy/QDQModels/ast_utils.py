@@ -17,9 +17,20 @@ import code
 import importlib
 import inspect
 import logging
-from typing import List, Optional, Sequence, Tuple
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-from transformer_deploy.QDQModels.utils import PatchTransformers
+
+@dataclass
+class PatchTransformers:
+    module: str
+    monkey_patch: Dict[str, Tuple[Callable, str]] = field(default_factory=dict)
+
+    def print_code(self):
+        for class_name, cl in self.monkey_patch.items():
+            print("---------")
+            print(class_name)
+            inspect.getsource(cl)
 
 
 def init_quantizer(name: str) -> ast.Assign:
@@ -182,8 +193,8 @@ def load_missing_imports(model_module) -> None:
 
 def add_quantization_to_model(
     module_path: str,
-    class_to_patch: Optional[List[str]] = None,
-    torch_op_to_quantize: Sequence[str] = ("matmul", "add"),
+    class_to_patch: Optional[List[str]],
+    torch_op_to_quantize: Sequence[str],
 ) -> PatchTransformers:
     """
     Add quantization support to a model.
@@ -192,17 +203,17 @@ def add_quantization_to_model(
     :param torch_op_to_quantize: list of Pytorch operations to optimize
     :return: backup of original classes
     """
-    backup = PatchTransformers(module=module_path, mapping=dict())
+    backup = PatchTransformers(module=module_path)
     model_module = importlib.import_module(name=module_path)
     load_missing_imports(model_module)
 
-    if class_to_patch is None:
+    if class_to_patch is None or len(class_to_patch) == 0:
         class_to_patch = list_class_to_patch(model_module=model_module, torch_op_to_quantize=torch_op_to_quantize)
         logging.info(f"modify class {', '.join(class_to_patch)}")
 
     for class_name in class_to_patch:
         module_to_patch = getattr(model_module, class_name)
-        backup.mapping[class_name] = module_to_patch
+        backup.monkey_patch[class_name] = module_to_patch
         head = add_quant_to_module(
             module_to_patch=module_to_patch, new_module_name=class_name, torch_op_to_quantize=torch_op_to_quantize
         )

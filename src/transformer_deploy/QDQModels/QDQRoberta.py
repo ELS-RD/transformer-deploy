@@ -33,7 +33,7 @@
 import torch
 import torch.utils.checkpoint
 
-from transformer_deploy.QDQModels.utils import PatchTransformers
+from transformer_deploy.QDQModels.ast_utils import PatchTransformers
 
 
 def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=0):
@@ -47,7 +47,7 @@ def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=
 
 qdq_roberta_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.roberta.modeling_roberta",
-    mapping={
+    monkey_patch={
         "create_position_ids_from_input_ids": (qdq_create_position_tensorrt, "qdq_create_position_tensorrt"),
     },
 )

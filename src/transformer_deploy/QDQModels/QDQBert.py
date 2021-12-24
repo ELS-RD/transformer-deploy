@@ -12,10 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from transformer_deploy.QDQModels.utils import PatchTransformers
+from transformer_deploy.QDQModels.ast_utils import PatchTransformers
 
 
 qdq_bert_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.bert.modeling_bert",
-    mapping=dict(),
 )

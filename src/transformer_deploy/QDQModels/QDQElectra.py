@@ -13,10 +13,9 @@
 #  limitations under the License.
 
 
-from transformer_deploy.QDQModels.utils import PatchTransformers
+from transformer_deploy.QDQModels.ast_utils import PatchTransformers
 
 
 qdq_electra_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.electra.modeling_electra",
-    mapping=dict(),
 )

@@ -17,14 +17,13 @@ import inspect
 import logging
 from typing import List
 
-from transformer_deploy.QDQModels.ast_patch import add_quantization_to_model
+from transformer_deploy.QDQModels.ast_utils import PatchTransformers, add_quantization_to_model
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
 from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping
 from transformer_deploy.QDQModels.QDQDistilbert import qdq_distilbert_mapping
 from transformer_deploy.QDQModels.QDQElectra import qdq_electra_mapping
 from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
-from transformer_deploy.QDQModels.utils import PatchTransformers
 
 
 def patch_model(patch: PatchTransformers) -> PatchTransformers:
@@ -33,9 +32,11 @@ def patch_model(patch: PatchTransformers) -> PatchTransformers:
     :param patch: an object containing all the information to perform a modification
     :return: all information to restore state before modification
     """
-    backup = add_quantization_to_model(module_path=patch.module)
+    backup = add_quantization_to_model(
+        module_path=patch.module, class_to_patch=None, torch_op_to_quantize=("matmul", "add", "bmm")
+    )
     model_module = importlib.import_module(patch.module)
-    for target, (modified_object, object_name) in patch.mapping.items():
+    for target, (modified_object, object_name) in patch.monkey_patch.items():
         source_code = inspect.getsource(modified_object)
         source_code += f"\n{target} = {object_name}"
         exec(source_code, model_module.__dict__, model_module.__dict__)
@@ -58,6 +59,6 @@ def add_qdq() -> List[PatchTransformers]:
     return restore
 
 
-def remove_qdq(backup: List[PatchTransformers]):
+def remove_qdq(backup: List[PatchTransformers]) -> None:
     for patch in backup:
         patch_model(patch)

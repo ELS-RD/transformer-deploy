@@ -14,7 +14,7 @@
 
 import torch
 
-from transformer_deploy.QDQModels.utils import PatchTransformers
+from transformer_deploy.QDQModels.ast_utils import PatchTransformers
 
 
 # in class DebertaEncoder(nn.Module):
@@ -51,7 +51,7 @@ def symbolic(g, self, mask, dim):
 
 qdq_deberta_mapping: PatchTransformers = PatchTransformers(
     module="transformers.models.deberta.modeling_deberta",
-    mapping={
+    monkey_patch={
         "XSoftmax.symbolic": (symbolic, "symbolic"),
         "DebertaEncoder.get_attention_mask": (get_attention_mask, "get_attention_mask"),
     },

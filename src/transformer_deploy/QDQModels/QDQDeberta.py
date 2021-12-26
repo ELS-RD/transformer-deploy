@@ -56,3 +56,12 @@ qdq_deberta_mapping: PatchTransformers = PatchTransformers(
         "DebertaEncoder.get_attention_mask": (get_attention_mask, "get_attention_mask"),
     },
 )
+
+
+qdq_deberta_v2_mapping: PatchTransformers = PatchTransformers(
+    module="transformers.models.deberta_v2.modeling_deberta_v2",
+    monkey_patch={
+        "XSoftmax.symbolic": (symbolic, "symbolic"),
+        "DebertaEncoder.get_attention_mask": (get_attention_mask, "get_attention_mask"),
+    },
+)

@@ -16,6 +16,11 @@ from typing import List
 
 
 def parse_args(commands: List[str] = None) -> argparse.Namespace:
+    """
+    Parse command line arguments
+    :param commands: to provide command line programatically
+    :return: parsed command line
+    """
     parser = argparse.ArgumentParser(
         description="optimize and deploy transformers", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

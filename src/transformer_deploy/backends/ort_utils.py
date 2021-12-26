@@ -32,6 +32,14 @@ from transformers import PreTrainedModel
 def create_model_for_provider(
     path: str, provider_to_use: Union[str, List], nb_threads: int = multiprocessing.cpu_count(), nb_instances: int = 0
 ) -> InferenceSession:
+    """
+    Create an ONNX Runtime instance.
+    :param path: path to ONNX file
+    :param provider_to_use: provider to use for inference
+    :param nb_threads: intra_op_num_threads to use
+    :param nb_instances: inter_op_num_threads to use
+    :return: ONNX Runtime inference session
+    """
     options = SessionOptions()
     options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
     if type(provider_to_use) != list:
@@ -47,6 +55,14 @@ def create_model_for_provider(
 def convert_to_onnx(
     model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor], opset: int = 12
 ) -> None:
+    """
+    Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
+    :param model_pytorch: Pytorch model
+    :param output_path: where to save ONNX file
+    :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
+    Should be on the same device than the model (CPU or GPU)
+    :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model
+    """
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():
@@ -70,6 +86,12 @@ def convert_to_onnx(
 def convert_to_quant_onnx(
     model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor]
 ) -> None:
+    """
+    Convert a quantized Pytorch model to ONNX file.
+    :param model_pytorch: Pytorch model
+    :param output_path: ONNX file path
+    :param inputs_pytorch: some dummy input (Pytorch tensor on the same device than the model)
+    """
     from pytorch_quantization.nn import TensorQuantizer
 
     TensorQuantizer.use_fb_fake_quant = True
@@ -78,6 +100,15 @@ def convert_to_quant_onnx(
 
 
 def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cuda: bool) -> None:
+    """
+    ONNX Runtime transformer graph optimization.
+    Performs some operator fusion (merge several nodes of the graph in a single one)
+    and may convert some nodes to reduced precision.
+    :param onnx_path: ONNX input path
+    :param onnx_optim_model_path: where to save optimized model
+    :param fp16: use mixed precision (faster inference)
+    :param use_cuda: perform optimization on GPU (should )
+    """
     optimization_options = FusionOptions("bert")
     optimization_options.enable_gelu_approximation = False  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
@@ -95,7 +126,12 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
     optimized_model.save_model_to_file(onnx_optim_model_path)
 
 
-def cpu_quantization(input_model_path: str, output_model_path: str):
+def cpu_quantization(input_model_path: str, output_model_path: str) -> None:
+    """
+    ONNX CPU only dynamic quantization
+    :param input_model_path: ONNX graph (float) to quantize
+    :param output_model_path: where to save quantized model
+    """
     quantize_dynamic(
         model_input=input_model_path,
         model_output=output_model_path,

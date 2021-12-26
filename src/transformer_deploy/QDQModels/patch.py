@@ -20,7 +20,7 @@ from typing import List
 from transformer_deploy.QDQModels.ast_utils import PatchTransformers, add_quantization_to_model
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
-from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping
+from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping, qdq_deberta_v2_mapping
 from transformer_deploy.QDQModels.QDQDistilbert import qdq_distilbert_mapping
 from transformer_deploy.QDQModels.QDQElectra import qdq_electra_mapping
 from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
@@ -28,7 +28,7 @@ from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
 
 def patch_model(patch: PatchTransformers) -> PatchTransformers:
     """
-    Perform modification to model to make it work with ONNX export and quantization.
+    Perform modifications to model to make it work with ONNX export and quantization.
     :param patch: an object containing all the information to perform a modification
     :return: all information to restore state before modification
     """
@@ -44,6 +44,10 @@ def patch_model(patch: PatchTransformers) -> PatchTransformers:
 
 
 def add_qdq() -> List[PatchTransformers]:
+    """
+    Modify AST tree modification of each tested model to support quantization.
+    :return: backup of the modified classes / functions.
+    """
     restore = list()
     for patch in [
         qdq_bert_mapping,
@@ -52,6 +56,7 @@ def add_qdq() -> List[PatchTransformers]:
         qdq_distilbert_mapping,
         qdq_albert_mapping,
         qdq_deberta_mapping,
+        qdq_deberta_v2_mapping,
     ]:
         logging.info(f"add quantization to module {patch.module}")
         backup = patch_model(patch)
@@ -59,6 +64,10 @@ def add_qdq() -> List[PatchTransformers]:
     return restore
 
 
-def remove_qdq(backup: List[PatchTransformers]) -> None:
+def restore(backup: List[PatchTransformers]) -> None:
+    """
+    Restore modified classes
+    :param backup: backup generated during the class patch process.
+    """
     for patch in backup:
         patch_model(patch)

@@ -12,9 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from transformer_deploy.QDQModels.ast_utils import PatchTransformers
+from transformer_deploy.QDQModels.ast_module_patch import PatchModule
 
 
-qdq_distilbert_mapping: PatchTransformers = PatchTransformers(
+qdq_distilbert_mapping: PatchModule = PatchModule(
     module="transformers.models.distilbert.modeling_distilbert",
 )

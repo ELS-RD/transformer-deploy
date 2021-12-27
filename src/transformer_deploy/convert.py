@@ -44,7 +44,14 @@ from transformer_deploy.utils.args import parse_args
 
 def check_accuracy(
     engine_name: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float
-):
+) -> None:
+    """
+    Compare engine predictions with a reference. Assert that the difference is under a threshold.
+    :param engine_name: string used in error message, if any
+    :param pytorch_output: reference output used for the comparaison
+    :param engine_output: output from the engine
+    :param tolerance: if difference in outputs is above threshold, an error will be raised
+    """
     discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
     assert discrepency < tolerance, (
         f"{engine_name} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
@@ -60,6 +67,13 @@ def check_accuracy(
 def launch_inference(
     infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
 ) -> Tuple[List[np.ndarray], List[float]]:
+    """
+    Perform inference and measure latency
+    :param infer: a lambda which will perform the inference
+    :param inputs: tensor compatible with the lambda (Torch tensor for Pytorch, or numpy otherwise)
+    :param nb_measures: number of measures to perform for the latency measure
+    :return: a tuple of model output and inference latencies
+    """
     assert type(inputs) == list
     assert len(inputs) > 0
     outputs = list()

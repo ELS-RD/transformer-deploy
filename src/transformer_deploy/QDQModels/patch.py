@@ -15,9 +15,8 @@
 import importlib
 import inspect
 import logging
-from typing import List
 
-from transformer_deploy.QDQModels.ast_utils import PatchTransformers, add_quantization_to_model
+from transformer_deploy.QDQModels.ast_module_patch import PatchModule, add_quantization_to_model
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
 from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping, qdq_deberta_v2_mapping
@@ -26,48 +25,44 @@ from transformer_deploy.QDQModels.QDQElectra import qdq_electra_mapping
 from transformer_deploy.QDQModels.QDQRoberta import qdq_roberta_mapping
 
 
-def patch_model(patch: PatchTransformers) -> PatchTransformers:
+tested_models: list[PatchModule] = [
+    qdq_bert_mapping,
+    qdq_roberta_mapping,
+    qdq_electra_mapping,
+    qdq_distilbert_mapping,
+    qdq_albert_mapping,
+    qdq_deberta_mapping,
+    qdq_deberta_v2_mapping,
+]
+
+
+def patch_model(patch: PatchModule) -> None:
     """
     Perform modifications to model to make it work with ONNX export and quantization.
     :param patch: an object containing all the information to perform a modification
-    :return: all information to restore state before modification
     """
-    backup = add_quantization_to_model(
-        module_path=patch.module, class_to_patch=None, torch_op_to_quantize=("matmul", "add", "bmm")
-    )
+    add_quantization_to_model(module_path=patch.module, class_to_patch=None)
     model_module = importlib.import_module(patch.module)
     for target, (modified_object, object_name) in patch.monkey_patch.items():
         source_code = inspect.getsource(modified_object)
         source_code += f"\n{target} = {object_name}"
         exec(source_code, model_module.__dict__, model_module.__dict__)
-    return backup
 
 
-def add_qdq() -> List[PatchTransformers]:
+def add_qdq():
     """
     Modify AST tree modification of each tested model to support quantization.
     :return: backup of the modified classes / functions.
     """
-    restore = list()
-    for patch in [
-        qdq_bert_mapping,
-        qdq_roberta_mapping,
-        qdq_electra_mapping,
-        qdq_distilbert_mapping,
-        qdq_albert_mapping,
-        qdq_deberta_mapping,
-        qdq_deberta_v2_mapping,
-    ]:
+    for patch in tested_models:
         logging.info(f"add quantization to module {patch.module}")
-        backup = patch_model(patch)
-        restore.append(backup)
-    return restore
-
-
-def restore(backup: List[PatchTransformers]) -> None:
-    """
-    Restore modified classes
-    :param backup: backup generated during the class patch process.
-    """
-    for patch in backup:
         patch_model(patch)
+
+
+def remove_qdq() -> None:
+    """
+    Restore modified modules
+    """
+    for patch in tested_models:
+        logging.info(f"restore module {patch.module}")
+        patch.restore()

@@ -20,11 +20,11 @@ from pytorch_quantization import nn as quant_nn
 from pytorch_quantization.tensor_quant import QuantDescriptor
 from transformers import PreTrainedModel
 
-from transformer_deploy.QDQModels.patch import add_qdq
+from transformer_deploy.QDQModels.patch import add_qdq, remove_qdq
 
 
 class QATCalibrate:
-    def __init__(self, method: str = "histogram", percentile: float = 99.99, per_channel: bool = True):
+    def __init__(self, method: str = "histogram", percentile: float = 99.999, per_channel: bool = True):
         """
         Calibration will learn how a float tensor should be mapped to an integer tensor.
         Will learn range, bias and scale.
@@ -38,11 +38,11 @@ class QATCalibrate:
         """
         assert torch.cuda.is_available(), "CUDA not available"
         self.model: Optional[PreTrainedModel] = None
-        self.calib_method: str = method
-        assert self.calib_method in [
+        assert method in [
             "histogram",
             "max",
-        ], f"unknown calibration method (for NLP): {self.calib_method}"
+        ], f"unknown calibration method (for NLP): {method}"
+        self.calib_method: str = method
         self.calibration_percentile: float = percentile
         self.calibration_per_channel: bool = per_channel
 
@@ -59,7 +59,7 @@ class QATCalibrate:
 
     def setup_model_qat(self, model: PreTrainedModel) -> None:
         """
-        Enable calibration node on each tensor to quantize.
+        Enable calibration on each tensor to quantize.
         :param model: model to optimize
         """
         self.model = model
@@ -93,6 +93,13 @@ class QATCalibrate:
                     module.enable()
         # move back model to GPU memory
         self.model.cuda()
+
+    @staticmethod
+    def restore():
+        """
+        Restore behavior without quantization support.
+        """
+        remove_qdq()
 
     def __enter__(self):
         add_qdq()

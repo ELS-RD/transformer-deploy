@@ -22,7 +22,12 @@ import numpy as np
 import torch
 
 
-def print_timings(name: str, timings: List[float]):
+def print_timings(name: str, timings: List[float]) -> None:
+    """
+    Format and print latencies
+    :param name: engine name
+    :param timings: latencies measured during the inference
+    """
     mean_time = 1e3 * np.mean(timings)
     std_time = 1e3 * np.std(timings)
     min_time = 1e3 * np.min(timings)
@@ -40,12 +45,20 @@ def print_timings(name: str, timings: List[float]):
     )
 
 
-def setup_logging(level: int = logging.INFO):
+def setup_logging(level: int = logging.INFO) -> None:
+    """
+    Set the generic Python logger
+    :param level: logger level
+    """
     logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=level)
 
 
 @contextmanager
-def track_infer_time(buffer: [int]):
+def track_infer_time(buffer: List[int]) -> None:
+    """
+    A context manager to perform latency measures
+    :param buffer: a List where to save latencies for each input
+    """
     start = time.perf_counter()
     yield
     end = time.perf_counter()
@@ -55,7 +68,15 @@ def track_infer_time(buffer: [int]):
 def generate_input(
     seq_len: int, batch_size: int, include_token_ids: bool, device: str = "cuda"
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
-    assert device in ["cuda", "cpu"]
+    """
+    Generate dummy inputs.
+    :param seq_len: number of token per input.
+    :param batch_size: first dimension of the tensor
+    :param include_token_ids: should we add token_type_ids
+    :param device: where to store tensors (Pytorch only). One of [cpu, cuda]
+    :return: a tuple of tensors, Pytorch and numpy
+    """
+    assert device in ["cpu", "cuda"]
     shape = (batch_size, seq_len)
     inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
     inputs_pytorch["input_ids"] = torch.randint(high=100, size=shape, dtype=torch.long, device=device)

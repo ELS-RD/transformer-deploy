@@ -18,11 +18,22 @@ import importlib
 import inspect
 import logging
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
+
+from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode
+
+
+# list of Pytorch operations to optimize, you can reduce it to increase PTQ/QAT accuracy
+op_to_quant = [
+    Patch2ArgsNode(op="matmul"),
+    Patch2ArgsNode(op="add"),
+    Patch2ArgsNode(op="bmm"),
+    PatchAdd2ArgsNode(op="LayerNorm"),
+]
 
 
 @dataclass
-class PatchTransformers:
+class PatchModule:
     module: str
     monkey_patch: Dict[str, Tuple[Callable, str]] = field(default_factory=dict)
 
@@ -31,6 +42,10 @@ class PatchTransformers:
             print("---------")
             print(class_name)
             inspect.getsource(cl)
+
+    def restore(self):
+        model_module = importlib.import_module(name=self.module)
+        importlib.reload(model_module)
 
 
 def init_quantizer(name: str) -> ast.Assign:
@@ -49,53 +64,19 @@ def init_quantizer(name: str) -> ast.Assign:
     )
 
 
-def wrap_attr(quantizer_name: str, tensor_var: ast.expr) -> ast.Call:
-    """
-    Generate quantization wrapping each attribute of a torch operation to optimize (matmul, add, etc.)
-    :param quantizer_name: generated quantization name
-    :param tensor_var: the variable to wrap
-    :return: the ast tree to replace the original variable
-    """
-    return ast.Call(
-        func=ast.Attribute(value=ast.Name(id="self", ctx=ast.Load()), attr=quantizer_name, ctx=ast.Load()),
-        args=[tensor_var],
-        keywords=[],
-    )
-
-
-def should_be_quantized(node: ast.AST, torch_op_to_quantize: Tuple[str]) -> bool:
-    """
-    Predicate to check if a torch operation should be optimized
-    :param node: ast node to check
-    :param torch_op_to_quantize: list of torch operations to optimize
-    :return: True if node should be optimized
-    """
-    return (
-        isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == "torch"
-        and node.func.attr in torch_op_to_quantize
-    )
-
-
-def patch_nodes(head_node: ast.Module, torch_op_to_quantize: Tuple[str]) -> Tuple[ast.Module, List[str]]:
+def patch_nodes(head_node: ast.Module) -> Tuple[ast.Module, List[str]]:
     """
     Replace an operation to optimize by its optimized version.
     May have to generate some quantization node names.
     :param head_node: ast node to modify
-    :param torch_op_to_quantize: list of torch operations to optimize
     :return: the modified ast tree and the list of generated quantization nodes
     """
     q_attr_names: List[str] = list()
     for node in ast.walk(head_node):  # type: ast.Call
-        if should_be_quantized(node=node, torch_op_to_quantize=torch_op_to_quantize):
-            assert len(node.args) >= 2, f"unexpected number of args: {len(node.args)} args in {node.func.attr} node"
-            for index in range(2):  # only apply transfo to the 2 first args
-                arg = node.args[index]
-                q_name = f"quantizer_{len(q_attr_names)}"
-                q_attr_names.append(q_name)
-                node.args[index] = wrap_attr(q_name, arg)
+        for op in op_to_quant:
+            if op.should_patch(node=node):
+                quant_names = op.patch(node=node, nb_quant_node=len(q_attr_names))
+                q_attr_names.extend(quant_names)
 
     return head_node, q_attr_names
 
@@ -128,47 +109,45 @@ def add_qdq_to_class_name(head_node: ast.Module, new_class_name: str) -> ast.Mod
     return head_node
 
 
-def add_quant_to_module(module_to_patch: type, new_module_name: str, torch_op_to_quantize: Tuple[str]) -> ast.Module:
+def add_quant_to_module(module_to_patch: type, new_module_name: str) -> ast.Module:
     """
     Modify a class to add quantization operations around each torch operation to optimize.
     :param module_to_patch: Pytorch module to patch
     :param new_module_name: new name for the module
-    :param torch_op_to_quantize: list of torch operations to optimize
     :return: modified ast tree
     """
     source_code = inspect.getsource(module_to_patch)
     head = ast.parse(source_code)
-    head, nodes_to_add = patch_nodes(head, torch_op_to_quantize=torch_op_to_quantize)
+    head, nodes_to_add = patch_nodes(head)
     add_init_quantizer(head_node=head, q_attr_names=nodes_to_add)
     head = add_qdq_to_class_name(head_node=head, new_class_name=new_module_name)
     return head
 
 
-def contains_op(node: ast.AST, torch_op_to_quantize: Tuple[str]) -> bool:
+def contains_op(node: ast.AST) -> bool:
     """
     Check if a tree contains some operations to optimize.
     :param node: Head of the ast tree
-    :param torch_op_to_quantize: list of Pytorch operations to optimize
     :return: True if ast tree contains operations to optimize
     """
     for node in ast.walk(node):
-        if should_be_quantized(node=node, torch_op_to_quantize=torch_op_to_quantize):
-            return True
+        for op in op_to_quant:
+            if op.should_patch(node=node):
+                return True
     return False
 
 
-def list_class_to_patch(model_module, torch_op_to_quantize: Sequence[str]) -> List[str]:
+def list_class_to_patch(model_module) -> List[str]:
     """
     List all classes which contain operations to be optimized.
     :param model_module: Pytorch module
-    :param torch_op_to_quantize: list of Pytorch operations to be optimized
     :return: the list of module names to be optimized
     """
     module_names: List[str] = list()
     module_source_code = inspect.getsource(model_module)
     head_node = ast.parse(module_source_code)
     for node in ast.walk(head_node):
-        if isinstance(node, ast.ClassDef) and contains_op(node=node, torch_op_to_quantize=torch_op_to_quantize):
+        if isinstance(node, ast.ClassDef) and contains_op(node=node):
             module_names.append(node.name)
     return module_names
 
@@ -194,32 +173,24 @@ def load_missing_imports(model_module) -> None:
 def add_quantization_to_model(
     module_path: str,
     class_to_patch: Optional[List[str]],
-    torch_op_to_quantize: Sequence[str],
-) -> PatchTransformers:
+):
     """
     Add quantization support to a model.
     :param module_path: model module to optimize
     :param class_to_patch: name of modules to patch, if None it will be auto-detected.
-    :param torch_op_to_quantize: list of Pytorch operations to optimize
     :return: backup of original classes
     """
-    backup = PatchTransformers(module=module_path)
     model_module = importlib.import_module(name=module_path)
     load_missing_imports(model_module)
 
     if class_to_patch is None or len(class_to_patch) == 0:
-        class_to_patch = list_class_to_patch(model_module=model_module, torch_op_to_quantize=torch_op_to_quantize)
+        class_to_patch = list_class_to_patch(model_module=model_module)
         logging.info(f"modify class {', '.join(class_to_patch)}")
 
     for class_name in class_to_patch:
         module_to_patch = getattr(model_module, class_name)
-        backup.monkey_patch[class_name] = module_to_patch
-        head = add_quant_to_module(
-            module_to_patch=module_to_patch, new_module_name=class_name, torch_op_to_quantize=torch_op_to_quantize
-        )
+        head = add_quant_to_module(module_to_patch=module_to_patch, new_module_name=class_name)
         head = ast.fix_missing_locations(head)
         module_patched: code = compile(head, filename="<ast modif - transformer deploy>", mode="exec")
         # execute the code in the module context so it overrides the original classes and leverage existing imports
         exec(module_patched, model_module.__dict__, model_module.__dict__)
-
-    return backup

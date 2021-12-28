@@ -14,7 +14,7 @@
 
 # noinspection DuplicatedCode
 import os
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 
@@ -27,14 +27,23 @@ class TritonPythonModel:
     is_tensorrt: bool
     tokenizer: PreTrainedTokenizer
 
-    def initialize(self, args: Dict[str, str]):
+    def initialize(self, args: Dict[str, str]) -> None:
+        """
+        Initialize the tokenization process
+        :param args: arguments from Triton config file
+        """
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
         path: str = os.path.join(args["model_repository"], args["model_version"])
         model_name: str = args["model_name"]
         self.is_tensorrt = "tensorrt" in model_name
         self.tokenizer = AutoTokenizer.from_pretrained(path)
 
-    def execute(self, requests):
+    def execute(self, requests) -> List[List[pb_utils.Tensor]]:
+        """
+        Parse and tokenize each request
+        :param requests: 1 or more requests received by Triton server.
+        :return: text as input tensors
+        """
         responses = []
         # for loop for batch requests (disabled in our case)
         for request in requests:

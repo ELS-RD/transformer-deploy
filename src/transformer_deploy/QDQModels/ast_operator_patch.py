@@ -19,19 +19,29 @@ from typing import List
 
 class PatchNode(object):
     __metaclass__ = abc.ABCMeta
+    torch_op_to_quantize: str
 
     @abc.abstractmethod
     def should_patch(self, node: ast.AST) -> bool:
-        """Check if a node should be patched"""
+        """
+        Check if a node should be patched
+        :param node: node to check
+        :return: return True if it matches the operator provided during the __init__
+        """
         raise Exception("to implement")
 
     @abc.abstractmethod
-    def patch(self, node: ast.AST, count: int) -> List[str]:
-        """Patch ndoe"""
+    def patch(self, node: ast.AST, nb_quant_node: int) -> List[str]:
+        """
+        Patch node by adding quantizer nodes around the operator provided during the __init__
+        :param node: node to patch
+        :param nb_quant_node: number of existing quantizer node
+        :return: return list of generated quantizer node names
+        """
         raise Exception("to implement")
 
     @staticmethod
-    def wrap_attr(quantizer_name: str, tensor_var: ast.expr) -> ast.Call:
+    def _wrap_attr(quantizer_name: str, tensor_var: ast.expr) -> ast.Call:
         """
         Generate quantization wrapping each attribute of a torch operation to optimize (matmul, add, etc.)
         :param quantizer_name: generated quantization name
@@ -44,9 +54,8 @@ class PatchNode(object):
             keywords=[],
         )
 
-    @staticmethod
-    def get_quant_name(node_id: int) -> str:
-        return f"quantizer_{node_id}"
+    def get_quant_name(self, node_id: int) -> str:
+        return f"{self.torch_op_to_quantize.lower()}_quantizer_{node_id}"
 
 
 class Patch2ArgsNode(PatchNode):
@@ -72,7 +81,7 @@ class Patch2ArgsNode(PatchNode):
             arg = node.args[index]
             q_name = self.get_quant_name(nb_quant_node + len(q_attr_names))
             q_attr_names.append(q_name)
-            node.args[index] = self.wrap_attr(q_name, arg)
+            node.args[index] = self._wrap_attr(q_name, arg)
         return q_attr_names
 
 
@@ -98,6 +107,6 @@ class PatchAdd2ArgsNode(PatchNode):
     def patch(self, node: ast.AST, nb_quant_node: int) -> List[str]:
         left_name = self.get_quant_name(nb_quant_node)
         right_name = self.get_quant_name(nb_quant_node + 1)
-        node.args[0].left = self.wrap_attr(left_name, node.args[0].left)
-        node.args[0].right = self.wrap_attr(right_name, node.args[0].right)
+        node.args[0].left = self._wrap_attr(left_name, node.args[0].left)
+        node.args[0].right = self._wrap_attr(right_name, node.args[0].right)
         return [left_name, right_name]

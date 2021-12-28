@@ -42,16 +42,16 @@ class QDQFakeModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(in_features=5, out_features=5, bias=True)
-        self.quantizer_0 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
-        self.quantizer_1 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
-        self.quantizer_2 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
-        self.quantizer_3 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.matmul_quantizer_0 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.matmul_quantizer_1 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.layernorm_quantizer_2 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
+        self.layernorm_quantizer_3 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
 
     def forward(self, inputs: torch.Tensor):
         a: torch.Tensor = self.linear(inputs)
         b = torch.ones(a.shape)
-        c = torch.matmul(self.quantizer_0(a), self.quantizer_1(b))
-        d = nn.LayerNorm(self.quantizer_2(a) + self.quantizer_3(c))
+        c = torch.matmul(self.matmul_quantizer_0(a), self.matmul_quantizer_1(b))
+        d = nn.LayerNorm(self.layernorm_quantizer_2(a) + self.layernorm_quantizer_3(c))
         return d
 """.strip()
 
@@ -75,8 +75,8 @@ def test_patch_2_args_node():
     head: ast.AST = ast.parse(source_code).body[0].value
     assert patch.should_patch(head)
     head_patched = patch.patch(node=head, nb_quant_node=0)
-    assert ast.unparse(head) == "torch.matmul(self.quantizer_0(a), self.quantizer_1(b))"
-    assert head_patched == ["quantizer_0", "quantizer_1"]
+    assert ast.unparse(head) == "torch.matmul(self.matmul_quantizer_0(a), self.matmul_quantizer_1(b))"
+    assert head_patched == ["matmul_quantizer_0", "matmul_quantizer_1"]
 
 
 def test_add_2_args_node():
@@ -85,5 +85,8 @@ def test_add_2_args_node():
     head: ast.AST = ast.parse(source_code).body[0].value
     assert patch.should_patch(head)
     head_patched = patch.patch(node=head, nb_quant_node=0)
-    assert ast.unparse(head) == "nn.LayerNorm(self.quantizer_0(hidden_states) + self.quantizer_1(input_tensor))"
-    assert head_patched == ["quantizer_0", "quantizer_1"]
+    assert (
+        ast.unparse(head)
+        == "nn.LayerNorm(self.layernorm_quantizer_0(hidden_states) + self.layernorm_quantizer_1(input_tensor))"
+    )
+    assert head_patched == ["layernorm_quantizer_0", "layernorm_quantizer_1"]

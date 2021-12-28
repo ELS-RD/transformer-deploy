@@ -20,11 +20,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
-from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode
+from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode, PatchNode
 
 
 # list of Pytorch operations to optimize, you can reduce it to increase PTQ/QAT accuracy
-op_to_quant = [
+op_to_quant: List[PatchNode] = [
     Patch2ArgsNode(op="matmul"),
     Patch2ArgsNode(op="add"),
     Patch2ArgsNode(op="bmm"),

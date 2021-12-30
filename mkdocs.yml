@@ -1,0 +1,76 @@
+site_name: transformer-deploy
+site_description: Efficient, scalable and enterprise-grade CPU/GPU inference server for Hugging Face transformer models
+repo_url: https://github.com/ELS-RD/transformer-deploy/
+repo_name: ELS-RD/transformer-deploy/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - scheme: default
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - scheme: slate
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/currency-sign
+
+edit_uri: ""
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - toc:
+      permalink: "#"
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            docstring_style: restructured-text
+  - include-markdown
+  - gen-files:
+      scripts:
+        - docs/gen_doc_stubs.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/pommedeterre33
+    - icon: fontawesome/brands/medium
+      link: https://medium.com/@pommedeterre33
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/lefebvre-dalloz/
+  generator: false
+
+copyright: Copyright &copy; 2020 - 2021 Lefebvre Dalloz
+
+nav:
+    - Home: index.md
+    - 🏗️ Installation: setup.md
+    - 🤓 run (1 command): started.md
+    - 🐍 TensorRT usage in Python script: python.md
+    - 🤗 end to end reproduction of Infinity Hugging Face demo: demo.md
+    - 🏎️ end to end GPU quantization tutorial and many benchmarks (ONNX Runtime, TensorRT, vanilla Pytorch, etc.): demo.md
+    - ⏱ benchmarks: benchmarks.md
+    - Code Reference: reference/

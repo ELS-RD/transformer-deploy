@@ -1,0 +1,6 @@
+mkdocs
+mkdocstrings
+mkdocs-material
+mkdocs-include-markdown-plugin
+mkdocs-gen-files
+mkdocs-literate-nav

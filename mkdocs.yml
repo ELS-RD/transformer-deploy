@@ -1,28 +1,29 @@
 site_name: transformer-deploy
-site_description: Efficient, scalable and enterprise-grade CPU/GPU inference server for Hugging Face transformer models
-repo_url: https://github.com/ELS-RD/transformer-deploy/
 repo_name: ELS-RD/transformer-deploy/
+repo_url: https://github.com/ELS-RD/transformer-deploy/
+site_description: Efficient, scalable and enterprise-grade CPU/GPU inference server for Hugging Face transformer models
+copyright: Copyright &copy; 2020 - 2021 Lefebvre Dalloz
+edit_uri: ""
 
 theme:
   name: material
   custom_dir: docs/overrides
   palette:
+    - scheme: slate
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
     - scheme: default
       primary: black
       accent: deep orange
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
-    - scheme: slate
-      accent: deep orange
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
   icon:
     repo: fontawesome/brands/github
     logo: material/currency-sign
-
-edit_uri: ""
 
 markdown_extensions:
   - admonition
@@ -47,9 +48,10 @@ plugins:
           selection:
             docstring_style: restructured-text
   - include-markdown
+  - mkdocs-jupyter
   - gen-files:
       scripts:
-        - docs/gen_doc_stubs.py
+        - docs/script/gen_doc_stubs.py
   - literate-nav:
       nav_file: SUMMARY.md
 
@@ -63,14 +65,12 @@ extra:
       link: https://www.linkedin.com/company/lefebvre-dalloz/
   generator: false
 
-copyright: Copyright &copy; 2020 - 2021 Lefebvre Dalloz
-
 nav:
     - Home: index.md
     - 🏗️ Installation: setup.md
     - 🤓 run (1 command): started.md
     - 🐍 TensorRT usage in Python script: python.md
     - 🤗 end to end reproduction of Infinity Hugging Face demo: demo.md
-    - 🏎️ end to end GPU quantization tutorial and many benchmarks (ONNX Runtime, TensorRT, vanilla Pytorch, etc.): demo.md
+    - 🏎️ end to end GPU quantization: quantization.ipynb
     - ⏱ benchmarks: benchmarks.md
-    - Code Reference: reference/
+    - Library API: reference/

@@ -1,4 +1,4 @@
-site_name: transformer-deploy
+site_name: transformer-deploy by Lefebvre Dalloz
 repo_name: ELS-RD/transformer-deploy/
 repo_url: https://github.com/ELS-RD/transformer-deploy/
 site_description: Efficient, scalable and enterprise-grade CPU/GPU inference server for Hugging Face transformer models
@@ -23,7 +23,7 @@ theme:
 #        name: Switch to dark mode
   icon:
     repo: fontawesome/brands/github
-    logo: material/currency-sign
+    logo: material/speedometer
 
 markdown_extensions:
   - admonition
@@ -50,6 +50,7 @@ plugins:
   - include-markdown
   - mkdocs-jupyter:
       theme: dark
+      ignore_h1_titles: True
   - gen-files:
       scripts:
         - docs/script/gen_doc_stubs.py
@@ -62,16 +63,14 @@ extra:
       link: https://twitter.com/pommedeterre33
     - icon: fontawesome/brands/medium
       link: https://medium.com/@pommedeterre33
-    - icon: fontawesome/brands/linkedin
-      link: https://www.linkedin.com/company/lefebvre-dalloz/
   generator: false
 
 nav:
-    - Home: index.md
+    - ❓ Why this tool: index.md
     - 🏗️ Installation: setup.md
     - 🤓 run (1 command): started.md
-    - 🐍 TensorRT usage in Python script: python.md
-    - 🤗 end to end reproduction of Infinity Hugging Face demo: demo.md
-    - 🏎️ end to end GPU quantization: quantization.ipynb
+    - 🐍 TensorRT in Python: python.md
+    - 🤗 end to end reproduction of Hugging Face Infinity demo: demo.md
+    - 🏎️ GPU quantization: quantization.ipynb
     - ⏱ benchmarks: benchmarks.md
     - Library API: reference/

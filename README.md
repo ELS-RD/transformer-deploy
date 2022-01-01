@@ -29,7 +29,7 @@ You will usually get from 2X to 4X faster inference compared to vanilla Pytorch.
 [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ⚡️🏃💨💨  
 However, if you want the best in class performances on GPU, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch. 
-Sometimes it can raises up to **10X faster inference**.
+Sometimes it can raise up to **10X faster inference**.
 Buuuuttt... TensorRT is not easy to use, even less with Transformer models, it requires specific tricks not easy to come with.  
 
 

@@ -12,11 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+All the tooling to ease ONNX Runtime usage.
+"""
+
 import logging
 import multiprocessing
 from collections import OrderedDict
 from typing import List
-from typing import OrderedDict as OD
+from typing import OrderedDict as Od
 from typing import Union
 
 import torch
@@ -53,7 +57,7 @@ def create_model_for_provider(
 
 
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor], opset: int = 12
+    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor], opset: int = 12
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
@@ -84,7 +88,7 @@ def convert_to_onnx(
 
 
 def convert_to_quant_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: OD[str, torch.Tensor]
+    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor]
 ) -> None:
     """
     Convert a quantized Pytorch model to ONNX file.

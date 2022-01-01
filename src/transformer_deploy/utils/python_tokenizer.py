@@ -12,6 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+This module is copy-pasted in generated Triton configuration folder to perform the tokenization step.
+"""
+
 # noinspection DuplicatedCode
 import os
 from typing import Dict, List

@@ -12,6 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+Generate Nvidia Triton server configuration files.
+"""
+
 import os
 import shutil
 from enum import Enum
@@ -21,6 +25,10 @@ from transformers import PreTrainedTokenizer
 
 
 class ModelType(Enum):
+    """
+    Type of model to use
+    """
+
     ONNX = 1
     TensorRT = 2
 
@@ -37,6 +45,17 @@ class Configuration:
         include_token_type: bool,
         device: str,
     ):
+        """
+        Configuration file setup.
+        :param workind_directory: path to the working directory
+        :param model_name: model name to use (used to call TensorRT API)
+        :param model_type: type of model (ONNX or TensorRT)
+        :param batch_size: dynamic batch size to use (0 to disable)
+        :param nb_output: number of tensor outputs
+        :param nb_instance: number of parallel instances to use. Mainly useful to optimize CPU inference.
+        :param include_token_type: does the model expect to receive among tensor input one for token type?
+        :param device: where perform is done. One of [cpu, cuda]
+        """
         self.model_name = model_name
         self.model_name += "_onnx" if model_type == ModelType.ONNX else "_tensorrt"
         self.model_folder_name = f"{self.model_name}_model"
@@ -59,6 +78,10 @@ class Configuration:
         self.device_kind = "KIND_GPU" if device == "cuda" else "KIND_CPU"
 
     def __get_tokens(self):
+        """
+        Generate input tensor configuration
+        :return: input tensor configuration string
+        """
         token_type = ""
         if self.include_token_type:
             token_type = f"""    {{
@@ -81,6 +104,10 @@ class Configuration:
 """
 
     def __instance_group(self):
+        """
+        Generate instance configuration.
+        :return: instance configuration
+        """
         return f"""
 instance_group [
     {{
@@ -91,6 +118,10 @@ instance_group [
 """.strip()
 
     def get_model_conf(self) -> str:
+        """
+        Generate model configuration.
+        :return: model configuration
+        """
         return f"""
 name: "{self.model_folder_name}"
 max_batch_size: {self.batch_size}
@@ -111,6 +142,10 @@ output {{
 """.strip()
 
     def get_tokenize_conf(self):
+        """
+        Generate tokenization step configuration.
+        :return: tokenization step configuration
+        """
         return f"""
 name: "{self.tokenizer_folder_name}"
 max_batch_size: {self.batch_size}
@@ -132,6 +167,10 @@ output [
 """.strip()
 
     def get_inference_conf(self):
+        """
+        Generate inference step configuration.
+        :return: inference step configuration
+        """
         input_token_type_ids = ""
         if self.include_token_type:
             input_token_type_ids = """
@@ -211,7 +250,12 @@ ensemble_scheduling {{
 }}
 """.strip()
 
-    def create_folders(self, tokenizer: PreTrainedTokenizer, model_path: str):
+    def create_folders(self, tokenizer: PreTrainedTokenizer, model_path: str) -> None:
+        """
+        Generate configuration folder layout.
+        :param tokenizer: tokenizer to use
+        :param model_path: ouput path
+        """
         wd_path = Path(self.workind_directory)
         wd_path.mkdir(parents=True, exist_ok=True)
         for folder_name, conf_func in [

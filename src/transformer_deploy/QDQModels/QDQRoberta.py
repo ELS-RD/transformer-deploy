@@ -14,6 +14,10 @@
 # coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
 # Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
+"""
+This module add quantization support to all Roberta architecture based models.
+"""
+
 
 import torch
 import torch.utils.checkpoint
@@ -22,6 +26,12 @@ from transformer_deploy.QDQModels.ast_module_patch import PatchModule
 
 
 def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=0):
+    """
+    Override qdq_create_position_tensorrt function.
+    It appeared that cumsum operator in TensorRT doesn't support integer type.
+    see https://github.com/onnx/onnx-tensorrt/blob/master/docs/operators.md
+    This override uses float instead.
+    """
     # QDQ change below
     # The series of casts and type-conversions here are carefully balanced to both work with ONNX export and XLA.
     # int() -> float() because of a limitations in cumsum operator implementation in TensorRT

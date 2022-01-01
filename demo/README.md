@@ -25,7 +25,7 @@ Setup they used for their own demo:
 * experience 1 : batch size 1, seq len 16 tokens -> `1.7ms`/query
 * experience 2 : batch size 1, seq len 128 tokens -> `2.5ms`/query
 
-![](./resources/infinity.png)
+![](../resources/infinity.png)
 
 ### Model optimization
 

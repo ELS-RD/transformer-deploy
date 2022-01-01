@@ -12,13 +12,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+This module add quantization support to all Deberta architecture based models.
+For now, Deberta export to ONNX doesn't work well.
+This PR may help: https://github.com/microsoft/DeBERTa/pull/6
+"""
+
 import torch
 
 from transformer_deploy.QDQModels.ast_module_patch import PatchModule
 
 
-# in class DebertaEncoder(nn.Module):
 def get_attention_mask(self, attention_mask):
+    """
+    Override existing get_attention_mask method in DebertaV2Encoder class.
+    This one uses signed integers instead of unsigned one.
+    """
     if attention_mask.dim() <= 2:
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
         attention_mask = extended_attention_mask * extended_attention_mask.squeeze(-2).unsqueeze(-1)
@@ -30,9 +39,12 @@ def get_attention_mask(self, attention_mask):
     return attention_mask
 
 
-# in class XSoftmax(torch.autograd.Function):
-# @staticmethod
 def symbolic(g, self, mask, dim):
+    """
+    Override existing symbolic static function of Xsoftmax class.
+    This one uses signed integers instead of unsigned one.
+    Symbolic function are used during ONNX conversion instead of Pytorch code.
+    """
     import torch.onnx.symbolic_helper as sym_help
     from torch.onnx.symbolic_opset9 import masked_fill, softmax
 
@@ -58,14 +70,10 @@ qdq_deberta_mapping: PatchModule = PatchModule(
 )
 
 
-def toto():
-    print("1")
-
-
 qdq_deberta_v2_mapping: PatchModule = PatchModule(
     module="transformers.models.deberta_v2.modeling_deberta_v2",
     monkey_patch={
-        "XSoftmax.symbolic": (toto, "toto"),
+        "XSoftmax.symbolic": (symbolic, "symbolic"),
         "DebertaV2Encoder.get_attention_mask": (get_attention_mask, "get_attention_mask"),
     },
 )

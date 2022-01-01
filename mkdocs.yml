@@ -9,18 +9,18 @@ theme:
   name: material
   custom_dir: docs/overrides
   palette:
-    - scheme: slate
-      primary: white
-      accent: deep orange
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
-    - scheme: default
-      primary: black
-      accent: deep orange
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
+    scheme: slate
+    primary: white
+    accent: deep orange
+#      toggle:
+#        icon: material/weather-night
+#        name: Switch to light mode
+#    - scheme: default
+#      primary: black
+#      accent: deep orange
+#      toggle:
+#        icon: material/weather-sunny
+#        name: Switch to dark mode
   icon:
     repo: fontawesome/brands/github
     logo: material/currency-sign
@@ -48,7 +48,8 @@ plugins:
           selection:
             docstring_style: restructured-text
   - include-markdown
-  - mkdocs-jupyter
+  - mkdocs-jupyter:
+      theme: dark
   - gen-files:
       scripts:
         - docs/script/gen_doc_stubs.py

@@ -12,6 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+Contains code to match and patch specific AST patterns.
+"""
+
 import abc
 import ast
 from typing import List

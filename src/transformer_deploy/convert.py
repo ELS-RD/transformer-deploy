@@ -14,6 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+This module contains code related to client interface.
+"""
+
 import argparse
 import logging
 import os

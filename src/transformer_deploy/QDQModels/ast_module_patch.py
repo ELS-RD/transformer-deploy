@@ -12,6 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""
+Contains the code to patch model AST in RAM.
+"""
+
 import ast
 import code
 import importlib

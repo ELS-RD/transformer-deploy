@@ -1,0 +1,1763 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Efficient, scalable and enterprise-grade CPU/GPU inference server for Hugging Face transformer models">
+      
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+    
+    
+      
+        <title>Trt utils - transformer-deploy by Lefebvre Dalloz</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.edf004c2.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#ffffff">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="white" data-md-color-accent="deep-orange">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#src.transformer_deploy.backends.trt_utils" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+<a href="https://twitter.com/pommedeterre33" style="color: orangered">
+For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twitter"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"></path></svg> </span> <strong>Twitter</strong>
+</a>
+
+          </div>
+        </aside>
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            transformer-deploy by Lefebvre Dalloz
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Trt utils
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ELS-RD/transformer-deploy/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ELS-RD/transformer-deploy/
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
+
+    </a>
+    transformer-deploy by Lefebvre Dalloz
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ELS-RD/transformer-deploy/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ELS-RD/transformer-deploy/
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        ❓ Why this tool
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../setup/" class="md-nav__link">
+        🏗️ Installation
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../started/" class="md-nav__link">
+        🤓 run (1 command)
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../python/" class="md-nav__link">
+        🐍 TensorRT in Python
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../demo/" class="md-nav__link">
+        🤗 end to end reproduction of Hugging Face Infinity demo
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../quantization/" class="md-nav__link">
+        🏎️ GPU quantization
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/" class="md-nav__link">
+        ⏱ benchmarks
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8">
+          Library API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Library API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_8">
+          <span class="md-nav__icon md-icon"></span>
+          Library API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../convert/" class="md-nav__link">
+        Convert
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_2" type="checkbox" id="__nav_8_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8_2">
+          QDQModels
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_2">
+          <span class="md-nav__icon md-icon"></span>
+          QDQModels
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQAlbert/" class="md-nav__link">
+        QDQAlbert
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQBert/" class="md-nav__link">
+        QDQBert
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQDeberta/" class="md-nav__link">
+        QDQDeberta
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQDistilbert/" class="md-nav__link">
+        QDQDistilbert
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQElectra/" class="md-nav__link">
+        QDQElectra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/QDQRoberta/" class="md-nav__link">
+        QDQRoberta
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/ast_module_patch/" class="md-nav__link">
+        Ast module patch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/ast_operator_patch/" class="md-nav__link">
+        Ast operator patch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/calibration_utils/" class="md-nav__link">
+        Calibration utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QDQModels/patch/" class="md-nav__link">
+        Patch
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_3" type="checkbox" id="__nav_8_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8_3">
+          Backends
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Backends" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_3">
+          <span class="md-nav__icon md-icon"></span>
+          Backends
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ort_utils/" class="md-nav__link">
+        Ort utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Trt utils
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Trt utils
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils" class="md-nav__link">
+    src.transformer_deploy.backends.trt_utils
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.build_engine" class="md-nav__link">
+    build_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.fix_fp16_network" class="md-nav__link">
+    fix_fp16_network()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.get_binding_idxs" class="md-nav__link">
+    get_binding_idxs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.infer_tensorrt" class="md-nav__link">
+    infer_tensorrt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.load_engine" class="md-nav__link">
+    load_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.save_engine" class="md-nav__link">
+    save_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.setup_binding_shapes" class="md-nav__link">
+    setup_binding_shapes()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_4" type="checkbox" id="__nav_8_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8_4">
+          Benchmarks
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_4">
+          <span class="md-nav__icon md-icon"></span>
+          Benchmarks
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/utils/" class="md-nav__link">
+        Utils
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_5" type="checkbox" id="__nav_8_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8_5">
+          Templates
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Templates" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_5">
+          <span class="md-nav__icon md-icon"></span>
+          Templates
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../templates/triton/" class="md-nav__link">
+        Triton
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8_6" type="checkbox" id="__nav_8_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8_6">
+          Utils
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Utils" data-md-level="2">
+        <label class="md-nav__title" for="__nav_8_6">
+          <span class="md-nav__icon md-icon"></span>
+          Utils
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utils/args/" class="md-nav__link">
+        Args
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils" class="md-nav__link">
+    src.transformer_deploy.backends.trt_utils
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.build_engine" class="md-nav__link">
+    build_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.fix_fp16_network" class="md-nav__link">
+    fix_fp16_network()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.get_binding_idxs" class="md-nav__link">
+    get_binding_idxs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.infer_tensorrt" class="md-nav__link">
+    infer_tensorrt()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.load_engine" class="md-nav__link">
+    load_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.save_engine" class="md-nav__link">
+    save_engine()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.trt_utils.setup_binding_shapes" class="md-nav__link">
+    setup_binding_shapes()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+
+  <h1>Trt utils</h1>
+
+<div class="doc doc-object doc-module">
+
+<a id="src.transformer_deploy.backends.trt_utils"></a>
+    <div class="doc doc-contents first">
+
+      <p>All the tooling to ease TensorRT usage.</p>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.build_engine" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">build_engine</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span> <span class="n">onnx_file_path</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">min_shape</span><span class="p">,</span> <span class="n">optimal_shape</span><span class="p">,</span> <span class="n">max_shape</span><span class="p">,</span> <span class="n">workspace_size</span><span class="p">,</span> <span class="n">fp16</span><span class="p">,</span> <span class="n">int8</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.build_engine" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Convert ONNX file to TensorRT engine.
+It supports dynamic shape, however it's advised to keep sequence length fix as it hurts performance otherwise.
+Dynamic batch size don't hurt performance and is highly advised.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>runtime</code></td>
+        <td><code>Runtime</code></td>
+        <td><p>global variable shared accross inference call / model building</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>onnx_file_path</code></td>
+        <td><code>str</code></td>
+        <td><p>path to the ONNX file</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>logger</code></td>
+        <td><code>Logger</code></td>
+        <td><p>specific logger to TensorRT</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>min_shape</code></td>
+        <td><code>Tuple[int, int]</code></td>
+        <td><p>the minimal shape of input tensors. It's advised to set first dimension (batch size) to 1</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>optimal_shape</code></td>
+        <td><code>Tuple[int, int]</code></td>
+        <td><p>input tensor shape used for optimizations</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>max_shape</code></td>
+        <td><code>Tuple[int, int]</code></td>
+        <td><p>maximal input tensor shape</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>workspace_size</code></td>
+        <td><code>int</code></td>
+        <td><p>GPU memory to use during the building, more is always better. If there is not enough memory, some optimization may fail, and the whole conversion process will crash.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>fp16</code></td>
+        <td><code>bool</code></td>
+        <td><p>enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>int8</code></td>
+        <td><code>bool</code></td>
+        <td><p>enable int-8 quantization, best performance but model should have been quantized.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ICudaEngine</code></td>
+      <td><p>TensorRT engine to use during inference</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">build_engine</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">runtime</span><span class="p">:</span> <span class="n">Runtime</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">onnx_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">logger</span><span class="p">:</span> <span class="n">Logger</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">min_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">optimal_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="n">max_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="n">workspace_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">fp16</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">int8</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ICudaEngine</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Convert ONNX file to TensorRT engine.</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    It supports dynamic shape, however it&#39;s advised to keep sequence length fix as it hurts performance otherwise.</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Dynamic batch size don&#39;t hurt performance and is highly advised.</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    :param runtime: global variable shared accross inference call / model building</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :param onnx_file_path: path to the ONNX file</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    :param logger: specific logger to TensorRT</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    :param min_shape: the minimal shape of input tensors. It&#39;s advised to set first dimension (batch size) to 1</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    :param optimal_shape: input tensor shape used for optimizations</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    :param max_shape: maximal input tensor shape</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    :param workspace_size: GPU memory to use during the building, more is always better. If there is not enough memory,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    some optimization may fail, and the whole conversion process will crash.</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    :param fp16: enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    :param int8: enable int-8 quantization, best performance but model should have been quantized.</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    :return: TensorRT engine to use during inference</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">with</span> <span class="n">trt</span><span class="o">.</span><span class="n">Builder</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span> <span class="k">as</span> <span class="n">builder</span><span class="p">:</span>  <span class="c1"># type: Builder</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">create_network</span><span class="p">(</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>            <span class="n">flags</span><span class="o">=</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">NetworkDefinitionCreationFlag</span><span class="o">.</span><span class="n">EXPLICIT_BATCH</span><span class="p">)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="p">)</span> <span class="k">as</span> <span class="n">network_definition</span><span class="p">:</span>  <span class="c1"># type: INetworkDefinition</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a>            <span class="k">with</span> <span class="n">trt</span><span class="o">.</span><span class="n">OnnxParser</span><span class="p">(</span><span class="n">network_definition</span><span class="p">,</span> <span class="n">logger</span><span class="p">)</span> <span class="k">as</span> <span class="n">parser</span><span class="p">:</span>  <span class="c1"># type: OnnxParser</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a>                <span class="n">builder</span><span class="o">.</span><span class="n">max_batch_size</span> <span class="o">=</span> <span class="n">max_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># max batch size</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a>                <span class="n">config</span><span class="p">:</span> <span class="n">IBuilderConfig</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">create_builder_config</span><span class="p">()</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a>                <span class="n">config</span><span class="o">.</span><span class="n">max_workspace_size</span> <span class="o">=</span> <span class="n">workspace_size</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a>                <span class="c1"># to enable complete trt inspector debugging, only for TensorRT &gt;= 8.2</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a>                <span class="c1"># config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a>                <span class="c1"># disable CUDNN optimizations</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a>                <span class="n">config</span><span class="o">.</span><span class="n">set_tactic_sources</span><span class="p">(</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a>                    <span class="n">tactic_sources</span><span class="o">=</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">TacticSource</span><span class="o">.</span><span class="n">CUBLAS</span><span class="p">)</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">TacticSource</span><span class="o">.</span><span class="n">CUBLAS_LT</span><span class="p">)</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a>                <span class="p">)</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a>                <span class="k">if</span> <span class="n">int8</span><span class="p">:</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a>                    <span class="n">config</span><span class="o">.</span><span class="n">set_flag</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">BuilderFlag</span><span class="o">.</span><span class="n">INT8</span><span class="p">)</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a>                <span class="k">if</span> <span class="n">fp16</span><span class="p">:</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a>                    <span class="n">config</span><span class="o">.</span><span class="n">set_flag</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">BuilderFlag</span><span class="o">.</span><span class="n">FP16</span><span class="p">)</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a>                <span class="n">config</span><span class="o">.</span><span class="n">set_flag</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">BuilderFlag</span><span class="o">.</span><span class="n">DISABLE_TIMING_CACHE</span><span class="p">)</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>                <span class="c1"># https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a>                <span class="n">config</span><span class="o">.</span><span class="n">set_flag</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">BuilderFlag</span><span class="o">.</span><span class="n">PREFER_PRECISION_CONSTRAINTS</span><span class="p">)</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a>                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">onnx_file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a>                    <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>                <span class="n">profile</span><span class="p">:</span> <span class="n">IOptimizationProfile</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">create_optimization_profile</span><span class="p">()</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>                <span class="k">for</span> <span class="n">num_input</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">network_definition</span><span class="o">.</span><span class="n">num_inputs</span><span class="p">):</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>                    <span class="n">profile</span><span class="o">.</span><span class="n">set_shape</span><span class="p">(</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>                        <span class="nb">input</span><span class="o">=</span><span class="n">network_definition</span><span class="o">.</span><span class="n">get_input</span><span class="p">(</span><span class="n">num_input</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>                        <span class="nb">min</span><span class="o">=</span><span class="n">min_shape</span><span class="p">,</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>                        <span class="n">opt</span><span class="o">=</span><span class="n">optimal_shape</span><span class="p">,</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>                        <span class="nb">max</span><span class="o">=</span><span class="n">max_shape</span><span class="p">,</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>                    <span class="p">)</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a>                <span class="n">config</span><span class="o">.</span><span class="n">add_optimization_profile</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>                <span class="k">if</span> <span class="n">fp16</span><span class="p">:</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>                    <span class="n">network_definition</span> <span class="o">=</span> <span class="n">fix_fp16_network</span><span class="p">(</span><span class="n">network_definition</span><span class="p">)</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>                <span class="n">trt_engine</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build_serialized_network</span><span class="p">(</span><span class="n">network_definition</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>                <span class="n">engine</span><span class="p">:</span> <span class="n">ICudaEngine</span> <span class="o">=</span> <span class="n">runtime</span><span class="o">.</span><span class="n">deserialize_cuda_engine</span><span class="p">(</span><span class="n">trt_engine</span><span class="p">)</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>                <span class="k">assert</span> <span class="n">engine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;error during engine generation, check error messages above :-(&quot;</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>                <span class="k">return</span> <span class="n">engine</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.fix_fp16_network" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">fix_fp16_network</span><span class="p">(</span><span class="n">network_definition</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.fix_fp16_network" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Mixed precision on TensorRT can generate scores very far from Pytorch because of some operator being saturated.
+Indeed, FP16 can't store very large and very small numbers like FP32.
+Here, we search for some patterns of operators to keep in FP32, in most cases, it is enough to fix the inference
+and don't hurt performances.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>network_definition</code></td>
+        <td><code>INetworkDefinition</code></td>
+        <td><p>graph generated by TensorRT after parsing ONNX file (during the model building)</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>INetworkDefinition</code></td>
+      <td><p>patched network definition</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">fix_fp16_network</span><span class="p">(</span><span class="n">network_definition</span><span class="p">:</span> <span class="n">INetworkDefinition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">INetworkDefinition</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Mixed precision on TensorRT can generate scores very far from Pytorch because of some operator being saturated.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    Indeed, FP16 can&#39;t store very large and very small numbers like FP32.</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    Here, we search for some patterns of operators to keep in FP32, in most cases, it is enough to fix the inference</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    and don&#39;t hurt performances.</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param network_definition: graph generated by TensorRT after parsing ONNX file (during the model building)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    :return: patched network definition</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="c1"># search for patterns which may overflow in FP16 precision, we force FP32 precisions for those nodes</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="k">for</span> <span class="n">layer_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">network_definition</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="n">layer</span><span class="p">:</span> <span class="n">ILayer</span> <span class="o">=</span> <span class="n">network_definition</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="n">layer_index</span><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>        <span class="n">next_layer</span><span class="p">:</span> <span class="n">ILayer</span> <span class="o">=</span> <span class="n">network_definition</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="n">layer_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>        <span class="c1"># POW operation usually followed by mean reduce</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>        <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">trt</span><span class="o">.</span><span class="n">LayerType</span><span class="o">.</span><span class="n">ELEMENTWISE</span> <span class="ow">and</span> <span class="n">next_layer</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">trt</span><span class="o">.</span><span class="n">LayerType</span><span class="o">.</span><span class="n">REDUCE</span><span class="p">:</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>            <span class="c1"># casting to get access to op attribute</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>            <span class="n">layer</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">IElementWiseLayer</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>            <span class="n">next_layer</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">IReduceLayer</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">op</span> <span class="o">==</span> <span class="n">trt</span><span class="o">.</span><span class="n">ElementWiseOperation</span><span class="o">.</span><span class="n">POW</span><span class="p">:</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>                <span class="n">layer</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">DataType</span><span class="o">.</span><span class="n">FLOAT</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>                <span class="n">next_layer</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">DataType</span><span class="o">.</span><span class="n">FLOAT</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>            <span class="n">layer</span><span class="o">.</span><span class="n">set_output_type</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">trt</span><span class="o">.</span><span class="n">DataType</span><span class="o">.</span><span class="n">FLOAT</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>            <span class="n">next_layer</span><span class="o">.</span><span class="n">set_output_type</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">trt</span><span class="o">.</span><span class="n">DataType</span><span class="o">.</span><span class="n">FLOAT</span><span class="p">)</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="k">return</span> <span class="n">network_definition</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.get_binding_idxs" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">get_binding_idxs</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.get_binding_idxs" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Calculate start/end binding indices for current context's profile
+https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#opt_profiles_bindings</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>engine</code></td>
+        <td><code>ICudaEngine</code></td>
+        <td><p>TensorRT engine generated during the model building</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>profile_index</code></td>
+        <td><code>int</code></td>
+        <td><p>profile to use (several profiles can be set during building)</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td></td>
+      <td><p>input and output tensor indexes</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">get_binding_idxs</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">trt</span><span class="o">.</span><span class="n">ICudaEngine</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Calculate start/end binding indices for current context&#39;s profile</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#opt_profiles_bindings</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    :param engine: TensorRT engine generated during the model building</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param profile_index: profile to use (several profiles can be set during building)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :return: input and output tensor indexes</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">num_bindings_per_profile</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">num_bindings</span> <span class="o">//</span> <span class="n">engine</span><span class="o">.</span><span class="n">num_optimization_profiles</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">start_binding</span> <span class="o">=</span> <span class="n">profile_index</span> <span class="o">*</span> <span class="n">num_bindings_per_profile</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">end_binding</span> <span class="o">=</span> <span class="n">start_binding</span> <span class="o">+</span> <span class="n">num_bindings_per_profile</span>  <span class="c1"># Separate input and output binding indices for convenience</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">input_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">output_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="k">for</span> <span class="n">binding_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_binding</span><span class="p">,</span> <span class="n">end_binding</span><span class="p">):</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>        <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">binding_is_input</span><span class="p">(</span><span class="n">binding_index</span><span class="p">):</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>            <span class="n">input_binding_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binding_index</span><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>            <span class="n">output_binding_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binding_index</span><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="k">return</span> <span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.infer_tensorrt" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">infer_tensorrt</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">host_inputs</span><span class="p">,</span> <span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.infer_tensorrt" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Perform inference with TensorRT.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>context</code></td>
+        <td><code>IExecutionContext</code></td>
+        <td><p>shared variable</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>host_inputs</code></td>
+        <td><code>OrderedDict[str, numpy.ndarray]</code></td>
+        <td><p>input tensor</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>input_binding_idxs</code></td>
+        <td><code>List[int]</code></td>
+        <td><p>input tensor indexes</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>output_binding_idxs</code></td>
+        <td><code>List[int]</code></td>
+        <td><p>output tensor indexes</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>stream</code></td>
+        <td><code>Stream</code></td>
+        <td><p>GPU stream to synchronize memories</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ndarray</code></td>
+      <td><p>output tensor</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">infer_tensorrt</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">context</span><span class="p">:</span> <span class="n">IExecutionContext</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">host_inputs</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">input_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">output_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    Perform inference with TensorRT.</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    :param context: shared variable</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    :param host_inputs: input tensor</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param input_binding_idxs: input tensor indexes</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :param output_binding_idxs: output tensor indexes</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    :param stream: GPU stream to synchronize memories</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    :return: output tensor</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">input_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">device_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DeviceAllocation</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">host_inputs</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>        <span class="c1"># warning: small change in output if int64 is used instead of int32</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="n">tensor_int32</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="n">input_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor_int32</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="c1"># allocate GPU memory for input tensors</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">device_input</span><span class="p">:</span> <span class="n">DeviceAllocation</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">tensor_int32</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">device_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">device_input</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="n">cuda</span><span class="o">.</span><span class="n">memcpy_htod_async</span><span class="p">(</span><span class="n">device_input</span><span class="p">,</span> <span class="n">tensor_int32</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">stream</span><span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="c1"># calculate input shape, bind it, allocate GPU memory for the output</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="n">host_outputs</span><span class="p">,</span> <span class="n">device_outputs</span> <span class="o">=</span> <span class="n">setup_binding_shapes</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">input_list</span><span class="p">,</span> <span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span><span class="p">)</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="n">bindings</span> <span class="o">=</span> <span class="n">device_inputs</span> <span class="o">+</span> <span class="n">device_outputs</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="k">assert</span> <span class="n">context</span><span class="o">.</span><span class="n">execute_async_v2</span><span class="p">(</span><span class="n">bindings</span><span class="p">,</span> <span class="n">stream_handle</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">handle</span><span class="p">),</span> <span class="s2">&quot;failure during execution of inference&quot;</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">for</span> <span class="n">h_output</span><span class="p">,</span> <span class="n">d_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">host_outputs</span><span class="p">,</span> <span class="n">device_outputs</span><span class="p">):</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">cuda</span><span class="o">.</span><span class="n">memcpy_dtoh_async</span><span class="p">(</span><span class="n">h_output</span><span class="p">,</span> <span class="n">d_output</span><span class="p">)</span>  <span class="c1"># GPU to host</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">stream</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span>  <span class="c1"># sync all CUDA ops</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="k">return</span> <span class="n">host_outputs</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.load_engine" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">load_engine</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span> <span class="n">engine_file_path</span><span class="p">,</span> <span class="n">profile_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.load_engine" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Load serialized TensorRT engine.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>runtime</code></td>
+        <td><code>Runtime</code></td>
+        <td><p>shared variable</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>engine_file_path</code></td>
+        <td><code>str</code></td>
+        <td><p>path to the serialized engine</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>profile_index</code></td>
+        <td><code>int</code></td>
+        <td><p>which profile to load, 0 if you have not used multiple profiles</p></td>
+        <td><code>0</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Callable[[Dict[str, numpy.ndarray]], numpy.ndarray]</code></td>
+      <td><p>A function to perform inference</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">load_engine</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">runtime</span><span class="p">:</span> <span class="n">Runtime</span><span class="p">,</span> <span class="n">engine_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    Load serialized TensorRT engine.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param runtime: shared variable</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param engine_file_path: path to the serialized engine</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    :param profile_index: which profile to load, 0 if you have not used multiple profiles</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    :return: A function to perform inference</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">engine_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="n">engine</span><span class="p">:</span> <span class="n">ICudaEngine</span> <span class="o">=</span> <span class="n">runtime</span><span class="o">.</span><span class="n">deserialize_cuda_engine</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>        <span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span> <span class="o">=</span> <span class="n">cuda</span><span class="o">.</span><span class="n">Stream</span><span class="p">()</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>        <span class="n">context</span><span class="p">:</span> <span class="n">IExecutionContext</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">create_execution_context</span><span class="p">()</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>        <span class="n">context</span><span class="o">.</span><span class="n">set_optimization_profile_async</span><span class="p">(</span><span class="n">profile_index</span><span class="o">=</span><span class="n">profile_index</span><span class="p">,</span> <span class="n">stream_handle</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>        <span class="c1"># retrieve input/output IDs</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span> <span class="o">=</span> <span class="n">get_binding_idxs</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">)</span>  <span class="c1"># type: List[int], List[int]</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="k">def</span> <span class="nf">tensorrt_model</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>            <span class="k">return</span> <span class="n">infer_tensorrt</span><span class="p">(</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>                <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>                <span class="n">host_inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>                <span class="n">input_binding_idxs</span><span class="o">=</span><span class="n">input_binding_idxs</span><span class="p">,</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>                <span class="n">output_binding_idxs</span><span class="o">=</span><span class="n">output_binding_idxs</span><span class="p">,</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>                <span class="n">stream</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="k">return</span> <span class="n">tensorrt_model</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.save_engine" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">save_engine</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">engine_file_path</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.save_engine" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Serialize TensorRT engine to file.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>engine</code></td>
+        <td><code>ICudaEngine</code></td>
+        <td><p>TensorRT engine</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>engine_file_path</code></td>
+        <td><code>str</code></td>
+        <td><p>output path</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">save_engine</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">ICudaEngine</span><span class="p">,</span> <span class="n">engine_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Serialize TensorRT engine to file.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    :param engine: TensorRT engine</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    :param engine_file_path: output path</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">engine_file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.trt_utils.setup_binding_shapes" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">setup_binding_shapes</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">host_inputs</span><span class="p">,</span> <span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.trt_utils.setup_binding_shapes" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Reserve memory in GPU for input and output tensors.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>context</code></td>
+        <td><code>IExecutionContext</code></td>
+        <td><p>TensorRT context shared accross inference steps</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>host_inputs</code></td>
+        <td><code>List[numpy.ndarray]</code></td>
+        <td><p>input tensor</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>input_binding_idxs</code></td>
+        <td><code>List[int]</code></td>
+        <td><p>indexes of each input vector (should be the same than during building)</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>output_binding_idxs</code></td>
+        <td><code>List[int]</code></td>
+        <td><p>indexes of each output vector (should be the same than during building)</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Tuple[List[numpy.ndarray], List[pycuda._driver.DeviceAllocation]]</code></td>
+      <td><p>tensors where output will be stored and GPU memory address of output tensor</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/trt_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">setup_binding_shapes</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">context</span><span class="p">:</span> <span class="n">trt</span><span class="o">.</span><span class="n">IExecutionContext</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">host_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">input_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">output_binding_idxs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">DeviceAllocation</span><span class="p">]]:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    Reserve memory in GPU for input and output tensors.</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    :param context: TensorRT context shared accross inference steps</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    :param host_inputs: input tensor</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    :param input_binding_idxs: indexes of each input vector (should be the same than during building)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param output_binding_idxs: indexes of each output vector (should be the same than during building)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :return: tensors where output will be stored and GPU memory address of output tensor</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="c1"># explicitly set dynamic input shapes, so dynamic output shapes can be computed internally</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="k">for</span> <span class="n">host_input</span><span class="p">,</span> <span class="n">binding_index</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">host_inputs</span><span class="p">,</span> <span class="n">input_binding_idxs</span><span class="p">):</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="n">context</span><span class="o">.</span><span class="n">set_binding_shape</span><span class="p">(</span><span class="n">binding_index</span><span class="p">,</span> <span class="n">host_input</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="k">assert</span> <span class="n">context</span><span class="o">.</span><span class="n">all_binding_shapes_specified</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">host_outputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">device_outputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DeviceAllocation</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="k">for</span> <span class="n">binding_index</span> <span class="ow">in</span> <span class="n">output_binding_idxs</span><span class="p">:</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="n">output_shape</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get_binding_shape</span><span class="p">(</span><span class="n">binding_index</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="c1"># allocate buffers to hold output results after copying back to host</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">output_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">host_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="c1"># allocate output buffers on device</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="n">device_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_alloc</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">nbytes</span><span class="p">))</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">return</span> <span class="n">host_outputs</span><span class="p">,</span> <span class="n">device_outputs</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../ort_utils/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Ort utils" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Ort utils
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../benchmarks/utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Utils" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Utils
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2020 - 2021 Lefebvre Dalloz
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/pommedeterre33" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+    
+    
+      
+      
+    
+    <a href="https://medium.com/@pommedeterre33" target="_blank" rel="noopener" title="medium.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 32v448h448V32H0zm372.2 106.1-24 23c-2.1 1.6-3.1 4.2-2.7 6.7v169.3c-.4 2.6.6 5.2 2.7 6.7l23.5 23v5.1h-118V367l24.3-23.6c2.4-2.4 2.4-3.1 2.4-6.7V199.8l-67.6 171.6h-9.1L125 199.8v115c-.7 4.8 1 9.7 4.4 13.2l31.6 38.3v5.1H71.2v-5.1l31.6-38.3c3.4-3.5 4.9-8.4 4.1-13.2v-133c.4-3.7-1-7.3-3.8-9.8L75 138.1V133h87.3l67.4 148L289 133.1h83.2v5z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      
+    
+  </body>
+</html>

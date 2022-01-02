@@ -22,7 +22,7 @@ This module add quantization support to all Roberta architecture based models.
 import torch
 import torch.utils.checkpoint
 
-from transformer_deploy.QDQModels.ast_module_patch import PatchModule
+from transformer_deploy.QDQModels.ast_utils import PatchModule
 
 
 def qdq_create_position_tensorrt(input_ids, padding_idx, past_key_values_length=0):

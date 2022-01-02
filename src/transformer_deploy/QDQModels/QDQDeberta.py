@@ -20,7 +20,7 @@ This PR may help: https://github.com/microsoft/DeBERTa/pull/6
 
 import torch
 
-from transformer_deploy.QDQModels.ast_module_patch import PatchModule
+from transformer_deploy.QDQModels.ast_utils import PatchModule
 
 
 def get_attention_mask(self, attention_mask):

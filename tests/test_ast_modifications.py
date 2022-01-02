@@ -19,8 +19,8 @@ import logging
 import torch
 from torch import nn
 
-from transformer_deploy.QDQModels.ast_module_patch import add_quant_to_module, list_class_to_patch
-from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode
+from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode, PatchLayer
+from transformer_deploy.QDQModels.ast_utils import add_quant_to_module, list_class_to_patch
 
 
 class FakeModel(nn.Module):
@@ -35,13 +35,16 @@ class FakeModel(nn.Module):
         d = nn.LayerNorm(a + c)
         return d
 
+    def to_skip(self):
+        return self.linear
+
 
 expected_class = """
 class QDQFakeModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.linear = nn.Linear(in_features=5, out_features=5, bias=True)
+        self.linear = quant_nn.QuantLinear(in_features=5, out_features=5, bias=True)
         self.matmul_quantizer_0 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
         self.matmul_quantizer_1 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
         self.layernorm_quantizer_2 = TensorQuantizer(quant_nn.QuantLinear.default_quant_desc_input)
@@ -53,6 +56,9 @@ class QDQFakeModel(nn.Module):
         c = torch.matmul(self.matmul_quantizer_0(a), self.matmul_quantizer_1(b))
         d = nn.LayerNorm(self.layernorm_quantizer_2(a) + self.layernorm_quantizer_3(c))
         return d
+
+    def to_skip(self):
+        return self.linear
 """.strip()
 
 
@@ -90,3 +96,13 @@ def test_add_2_args_node():
         == "nn.LayerNorm(self.layernorm_quantizer_0(hidden_states) + self.layernorm_quantizer_1(input_tensor))"
     )
     assert head_patched == ["layernorm_quantizer_0", "layernorm_quantizer_1"]
+
+
+def test_replace_layer():
+    source_code = "nn.Linear(config.hidden_size, self.all_head_size)"
+    patch = PatchLayer(origin_module="nn", origin_layer="Linear", target_module="quant_nn", target_layer="QuantLinear")
+    head: ast.AST = ast.parse(source_code).body[0].value
+    assert patch.should_patch(head)
+    head_patched = patch.patch(node=head, nb_quant_node=0)
+    assert ast.unparse(head) == "quant_nn.QuantLinear(config.hidden_size, self.all_head_size)"
+    assert head_patched == []

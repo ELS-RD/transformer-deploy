@@ -1,6 +1,6 @@
 # Hugging Face Transformer submillisecond inference️ and deployment to production: 🤗 → 🤯
 
-[![tests](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml/badge.svg)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENCE) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) ![Website](https://img.shields.io/website?up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2Fsetup%2F)
+[![Website](https://img.shields.io/website?style=for-the-badge&up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2Fsetup%2F)](https://els-rd.github.io/transformer-deploy/) [![tests](https://img.shields.io/github/checks-status/ELS-RD/transformer-deploy/main?style=for-the-badge)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge)](./LICENCE) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-360/)
 
 ### Optimize and deploy in **production** Hugging Face Transformer models in a single command line.  
 

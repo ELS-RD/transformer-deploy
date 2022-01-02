@@ -476,20 +476,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../ast_module_patch/" class="md-nav__link">
-        Ast module patch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -597,6 +583,40 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 </li>
       
         <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer" class="md-nav__link">
+    PatchLayer
+  </a>
+  
+    <nav class="md-nav" aria-label="PatchLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.patch" class="md-nav__link">
+    patch()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.should_patch" class="md-nav__link">
+    should_patch()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode" class="md-nav__link">
     PatchNode
   </a>
@@ -668,6 +688,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ast_utils/" class="md-nav__link">
+        Ast utils
+      </a>
     </li>
   
 
@@ -1016,6 +1050,40 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 </li>
       
         <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer" class="md-nav__link">
+    PatchLayer
+  </a>
+  
+    <nav class="md-nav" aria-label="PatchLayer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.patch" class="md-nav__link">
+    patch()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.should_patch" class="md-nav__link">
+    should_patch()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode" class="md-nav__link">
     PatchNode
   </a>
@@ -1150,14 +1218,16 @@ Patch2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_operat
 <a id="__codelineno-0-15" name="__codelineno-0-15"></a>            <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">torch_op_to_quantize</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16"></a>        <span class="p">)</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="n">q_attr_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># only apply transfo to the 2 first args</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>            <span class="n">arg</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>            <span class="n">q_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_attr_names</span><span class="p">))</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>            <span class="n">q_attr_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_name</span><span class="p">)</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>            <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">q_name</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="k">return</span> <span class="n">q_attr_names</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="k">assert</span> <span class="s2">&quot;nb_quant_node&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;missing nb_quant_node paramter&quot;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>        <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;nb_quant_node&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="n">q_attr_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># only apply transfo to the 2 first args</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>            <span class="n">arg</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>            <span class="n">q_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_attr_names</span><span class="p">))</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>            <span class="n">q_attr_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_name</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">q_name</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">return</span> <span class="n">q_attr_names</span>
 </code></pre></div>
         </details>
 
@@ -1230,7 +1300,7 @@ Patch2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_operat
 
 
 <h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.Patch2ArgsNode.patch" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 
 <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.Patch2ArgsNode.patch" class="headerlink" title="Permanent link">#</a></h3>
@@ -1257,10 +1327,10 @@ Patch2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_operat
         <td><em>required</em></td>
       </tr>
       <tr>
-        <td><code>nb_quant_node</code></td>
-        <td><code>int</code></td>
-        <td><p>number of existing quantizer node</p></td>
-        <td><em>required</em></td>
+        <td><code>kwargs</code></td>
+        <td></td>
+        <td><p>additional parameters, like nb_quant_node for the number of existing quantizer node</p></td>
+        <td><code>{}</code></td>
       </tr>
   </tbody>
 </table>
@@ -1281,14 +1351,16 @@ Patch2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_operat
 </table>
         <details class="quote">
           <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">q_attr_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># only apply transfo to the 2 first args</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>        <span class="n">arg</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a>        <span class="n">q_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_attr_names</span><span class="p">))</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a>        <span class="n">q_attr_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_name</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">q_name</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="k">return</span> <span class="n">q_attr_names</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="k">assert</span> <span class="s2">&quot;nb_quant_node&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;missing nb_quant_node paramter&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;nb_quant_node&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">q_attr_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># only apply transfo to the 2 first args</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>        <span class="n">arg</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="n">q_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_attr_names</span><span class="p">))</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        <span class="n">q_attr_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_name</span><span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">q_name</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="k">return</span> <span class="n">q_attr_names</span>
 </code></pre></div>
         </details>
     </div>
@@ -1410,12 +1482,14 @@ PatchAdd2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_ope
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a>            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Add</span><span class="p">)</span>
 <a id="__codelineno-0-18" name="__codelineno-0-18"></a>        <span class="p">)</span>
 <a id="__codelineno-0-19" name="__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="n">left_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span><span class="p">)</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="n">right_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">right_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="k">return</span> <span class="p">[</span><span class="n">left_name</span><span class="p">,</span> <span class="n">right_name</span><span class="p">]</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="k">assert</span> <span class="s2">&quot;nb_quant_node&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;missing nb_quant_node paramter&quot;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;nb_quant_node&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="n">left_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span><span class="p">)</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">right_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">right_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">return</span> <span class="p">[</span><span class="n">left_name</span><span class="p">,</span> <span class="n">right_name</span><span class="p">]</span>
 </code></pre></div>
         </details>
 
@@ -1488,7 +1562,7 @@ PatchAdd2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_ope
 
 
 <h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchAdd2ArgsNode.patch" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 
 <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchAdd2ArgsNode.patch" class="headerlink" title="Permanent link">#</a></h3>
@@ -1515,10 +1589,10 @@ PatchAdd2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_ope
         <td><em>required</em></td>
       </tr>
       <tr>
-        <td><code>nb_quant_node</code></td>
-        <td><code>int</code></td>
-        <td><p>number of existing quantizer node</p></td>
-        <td><em>required</em></td>
+        <td><code>kwargs</code></td>
+        <td></td>
+        <td><p>additional parameters, like nb_quant_node for the number of existing quantizer node</p></td>
+        <td><code>{}</code></td>
       </tr>
   </tbody>
 </table>
@@ -1539,12 +1613,14 @@ PatchAdd2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_ope
 </table>
         <details class="quote">
           <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">left_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">right_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">right_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">left_name</span><span class="p">,</span> <span class="n">right_name</span><span class="p">]</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="k">assert</span> <span class="s2">&quot;nb_quant_node&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;missing nb_quant_node paramter&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;nb_quant_node&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">left_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">right_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_quant_name</span><span class="p">(</span><span class="n">nb_quant_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">left_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_attr</span><span class="p">(</span><span class="n">right_name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">left_name</span><span class="p">,</span> <span class="n">right_name</span><span class="p">]</span>
 </code></pre></div>
         </details>
     </div>
@@ -1635,6 +1711,286 @@ PatchAdd2ArgsNode            (<a title="src.transformer_deploy.QDQModels.ast_ope
 
 
 
+<h2 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer" class="doc doc-heading">
+        <code>
+PatchLayer            (<a title="src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode" href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode">PatchNode</a>)
+        </code>
+
+
+
+<a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">class</span> <span class="nc">PatchLayer</span><span class="p">(</span><span class="n">PatchNode</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin_module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">origin_layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">        Patch source code in the form a.b(...) to c.d(...)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">        :param origin_module: module to patch</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">        :param origin_layer: layer/method to patch</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">        :param target_module: new module to use</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">        :param target_layer: new layer/method to use</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">origin_module</span> <span class="o">=</span> <span class="n">origin_module</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">origin_layer</span> <span class="o">=</span> <span class="n">origin_layer</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">target_module</span> <span class="o">=</span> <span class="n">target_module</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">target_layer</span> <span class="o">=</span> <span class="n">target_layer</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="k">def</span> <span class="nf">should_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>        <span class="k">return</span> <span class="p">(</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Attribute</span><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>            <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin_module</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>            <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin_layer</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_module</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_layer</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">return</span> <span class="p">[]</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin_module</span><span class="p">,</span> <span class="n">origin_layer</span><span class="p">,</span> <span class="n">target_module</span><span class="p">,</span> <span class="n">target_layer</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+<a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.__init__" class="headerlink" title="Permanent link">#</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Patch source code in the form a.b(...) to c.d(...)</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>origin_module</code></td>
+        <td><code>str</code></td>
+        <td><p>module to patch</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>origin_layer</code></td>
+        <td><code>str</code></td>
+        <td><p>layer/method to patch</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>target_module</code></td>
+        <td><code>str</code></td>
+        <td><p>new module to use</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>target_layer</code></td>
+        <td><code>str</code></td>
+        <td><p>new layer/method to use</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin_module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">origin_layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Patch source code in the form a.b(...) to c.d(...)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    :param origin_module: module to patch</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    :param origin_layer: layer/method to patch</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param target_module: new module to use</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param target_layer: new layer/method to use</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">origin_module</span> <span class="o">=</span> <span class="n">origin_module</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">origin_layer</span> <span class="o">=</span> <span class="n">origin_layer</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">target_module</span> <span class="o">=</span> <span class="n">target_module</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">target_layer</span> <span class="o">=</span> <span class="n">target_layer</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.patch" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.patch" class="headerlink" title="Permanent link">#</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Patch node by adding quantizer nodes around the operator provided during the <strong>init</strong></p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>node</code></td>
+        <td><code>AST</code></td>
+        <td><p>node to patch</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>kwargs</code></td>
+        <td></td>
+        <td><p>additional parameters, like nb_quant_node for the number of existing quantizer node</p></td>
+        <td><code>{}</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>List[str]</code></td>
+      <td><p>return list of generated quantizer node names</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_module</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_layer</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="k">return</span> <span class="p">[]</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.should_patch" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">should_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchLayer.should_patch" class="headerlink" title="Permanent link">#</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Check if a node should be patched</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>node</code></td>
+        <td><code>AST</code></td>
+        <td><p>node to check</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>bool</code></td>
+      <td><p>return True if it matches the operator provided during the <strong>init</strong></p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">should_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="k">return</span> <span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>        <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Attribute</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>        <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin_module</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">attr</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin_layer</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
 <h2 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode" class="doc doc-heading">
         <code>
 PatchNode        </code>
@@ -1662,11 +2018,11 @@ PatchNode        </code>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;to implement&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16"></a>        <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        Patch node by adding quantizer nodes around the operator provided during the __init__</span>
 <a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        :param node: node to patch</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        :param nb_quant_node: number of existing quantizer node</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        :param kwargs: additional parameters, like nb_quant_node for the number of existing quantizer node</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">        :return: return list of generated quantizer node names</span>
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">        &quot;&quot;&quot;</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;to implement&quot;</span><span class="p">)</span>
@@ -1936,7 +2292,7 @@ even via super()).</p>
 
 
 <h3 id="src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode.patch" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 
 <a href="#src.transformer_deploy.QDQModels.ast_operator_patch.PatchNode.patch" class="headerlink" title="Permanent link">#</a></h3>
@@ -1963,10 +2319,10 @@ even via super()).</p>
         <td><em>required</em></td>
       </tr>
       <tr>
-        <td><code>nb_quant_node</code></td>
-        <td><code>int</code></td>
-        <td><p>number of existing quantizer node</p></td>
-        <td><em>required</em></td>
+        <td><code>kwargs</code></td>
+        <td></td>
+        <td><p>additional parameters, like nb_quant_node for the number of existing quantizer node</p></td>
+        <td><code>{}</code></td>
       </tr>
   </tbody>
 </table>
@@ -1988,11 +2344,11 @@ even via super()).</p>
         <details class="quote">
           <summary>Source code in <code>src/transformer_deploy/QDQModels/ast_operator_patch.py</code></summary>
           <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="n">nb_quant_node</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    Patch node by adding quantizer nodes around the operator provided during the __init__</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    :param node: node to patch</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param nb_quant_node: number of existing quantizer node</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param kwargs: additional parameters, like nb_quant_node for the number of existing quantizer node</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :return: return list of generated quantizer node names</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;to implement&quot;</span><span class="p">)</span>
@@ -2102,7 +2458,7 @@ even via super()).</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../ast_module_patch/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Ast module patch" rel="prev">
+        <a href="../QDQRoberta/" class="md-footer__link md-footer__link--prev" aria-label="Previous: QDQRoberta" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2111,20 +2467,20 @@ even via super()).</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Ast module patch
+              QDQRoberta
             </div>
           </div>
         </a>
       
       
         
-        <a href="../calibration_utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Calibration utils" rel="next">
+        <a href="../ast_utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Ast utils" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Calibration utils
+              Ast utils
             </div>
           </div>
           <div class="md-footer__button md-icon">

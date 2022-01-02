@@ -16,7 +16,7 @@ This module add quantization support to all Electra architecture based models.
 """
 
 
-from transformer_deploy.QDQModels.ast_module_patch import PatchModule
+from transformer_deploy.QDQModels.ast_utils import PatchModule
 
 
 qdq_electra_mapping: PatchModule = PatchModule(

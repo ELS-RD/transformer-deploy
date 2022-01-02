@@ -35,11 +35,11 @@ class PatchNode(object):
         raise Exception("to implement")
 
     @abc.abstractmethod
-    def patch(self, node: ast.AST, nb_quant_node: int) -> List[str]:
+    def patch(self, node: ast.AST, **kwargs) -> List[str]:
         """
         Patch node by adding quantizer nodes around the operator provided during the __init__
         :param node: node to patch
-        :param nb_quant_node: number of existing quantizer node
+        :param kwargs: additional parameters, like nb_quant_node for the number of existing quantizer node
         :return: return list of generated quantizer node names
         """
         raise Exception("to implement")
@@ -79,7 +79,9 @@ class Patch2ArgsNode(PatchNode):
             and node.func.attr == self.torch_op_to_quantize
         )
 
-    def patch(self, node: ast.AST, nb_quant_node: int) -> List[str]:
+    def patch(self, node: ast.AST, **kwargs) -> List[str]:
+        assert "nb_quant_node" in kwargs, "missing nb_quant_node paramter"
+        nb_quant_node: int = kwargs["nb_quant_node"]
         q_attr_names = list()
         for index in range(2):  # only apply transfo to the 2 first args
             arg = node.args[index]
@@ -108,9 +110,40 @@ class PatchAdd2ArgsNode(PatchNode):
             and isinstance(node.args[0].op, ast.Add)
         )
 
-    def patch(self, node: ast.AST, nb_quant_node: int) -> List[str]:
+    def patch(self, node: ast.AST, **kwargs) -> List[str]:
+        assert "nb_quant_node" in kwargs, "missing nb_quant_node paramter"
+        nb_quant_node: int = kwargs["nb_quant_node"]
         left_name = self.get_quant_name(nb_quant_node)
         right_name = self.get_quant_name(nb_quant_node + 1)
         node.args[0].left = self._wrap_attr(left_name, node.args[0].left)
         node.args[0].right = self._wrap_attr(right_name, node.args[0].right)
         return [left_name, right_name]
+
+
+class PatchLayer(PatchNode):
+    def __init__(self, origin_module: str, origin_layer: str, target_module: str, target_layer: str):
+        """
+        Patch source code in the form a.b(...) to c.d(...)
+        :param origin_module: module to patch
+        :param origin_layer: layer/method to patch
+        :param target_module: new module to use
+        :param target_layer: new layer/method to use
+        """
+        self.origin_module = origin_module
+        self.origin_layer = origin_layer
+        self.target_module = target_module
+        self.target_layer = target_layer
+
+    def should_patch(self, node: ast.AST) -> bool:
+        return (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == self.origin_module
+            and node.func.attr == self.origin_layer
+        )
+
+    def patch(self, node: ast.AST, **kwargs) -> List[str]:
+        node.func.value.id = self.target_module
+        node.func.attr = self.target_layer
+        return []

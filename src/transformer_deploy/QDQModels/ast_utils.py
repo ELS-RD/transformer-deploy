@@ -24,7 +24,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Tuple
 
-from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode, PatchNode
+from transformer_deploy.QDQModels.ast_operator_patch import Patch2ArgsNode, PatchAdd2ArgsNode, PatchLayer, PatchNode
 
 
 # list of Pytorch operations to optimize, you can reduce it to increase PTQ/QAT accuracy
@@ -33,6 +33,7 @@ op_to_quant: List[PatchNode] = [
     Patch2ArgsNode(op="add"),
     Patch2ArgsNode(op="bmm"),
     PatchAdd2ArgsNode(op="LayerNorm"),
+    PatchLayer(origin_module="nn", origin_layer="Linear", target_module="quant_nn", target_layer="QuantLinear"),
 ]
 
 
@@ -165,8 +166,6 @@ def load_missing_imports(model_module) -> None:
     import_code = """
     from pytorch_quantization import nn as quant_nn
     from pytorch_quantization.nn import TensorQuantizer
-    import torch
-    torch.nn.Linear = quant_nn.QuantLinear
     """
     # remove extra spaces
     import_code = inspect.cleandoc(import_code)

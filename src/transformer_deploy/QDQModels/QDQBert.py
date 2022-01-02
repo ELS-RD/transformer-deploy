@@ -15,7 +15,7 @@
 This module add quantization support to all Bert architecture based models.
 """
 
-from transformer_deploy.QDQModels.ast_module_patch import PatchModule
+from transformer_deploy.QDQModels.ast_utils import PatchModule
 
 
 qdq_bert_mapping: PatchModule = PatchModule(

@@ -21,7 +21,7 @@ import inspect
 import logging
 from typing import List, Optional
 
-from transformer_deploy.QDQModels.ast_module_patch import PatchModule, add_quantization_to_model
+from transformer_deploy.QDQModels.ast_utils import PatchModule, add_quantization_to_model
 from transformer_deploy.QDQModels.QDQAlbert import qdq_albert_mapping
 from transformer_deploy.QDQModels.QDQBert import qdq_bert_mapping
 from transformer_deploy.QDQModels.QDQDeberta import qdq_deberta_mapping, qdq_deberta_v2_mapping

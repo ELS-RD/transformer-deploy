@@ -66,11 +66,17 @@ extra:
   generator: false
 
 nav:
-    - ❓ Why this tool: index.md
-    - 🏗️ Installation: setup.md
-    - 🤓 run (1 command): started.md
-    - 🐍 TensorRT in Python: python.md
-    - 🤗 end to end reproduction of Hugging Face Infinity demo: demo.md
-    - 🏎️ GPU quantization: quantization.ipynb
-    - ⏱ benchmarks: benchmarks.md
-    - Library API: reference/
+    - Why this tool?: index.md
+    - Installation: setup.md
+    - Run (1 command): started.md
+    - Compare inference engines: compare.md
+    - What is done during inference optimization? : optimizations.md
+    - How ONNX conversion works? : onnx_convert.md
+    - TensorRT in Python: python.md
+    - GPU quantization: quantization.ipynb
+    - Benchmarks: benchmarks.md
+    - Hugging Face Infinity:
+        - context: infinity/context.md
+        - baseline: infinity/baseline.md
+        - optimize: infinity/onnx_optimizations.md
+    - API: reference/

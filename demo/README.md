@@ -14,18 +14,18 @@ Those examples may help you to implement the querying part in your own applicati
 
 ### Infinity demo information
 
-Hugging Face has announced a commercial product called [Infinity](https://huggingface.co/infinity) to perform enterprise scale inference solution.  
+:hugging: Hugging Face has announced a commercial product called [Infinity](https://huggingface.co/infinity) to perform enterprise scale inference solution.  
 There are very few information about its performances outside this video:  
 [demo video (Youtube)](https://www.youtube.com/watch?v=jiftCAhOYQA)
 
 Setup they used for their own demo:
 
 * AWS virtual machine: `g4dn.xlarge` (T4 GPU)
-* model: `"philschmid/MiniLM-L6-H384-uncased-sst2"` (Hugging Face hub URL)
+* model: `"philschmid/MiniLM-L6-H384-uncased-sst2"` (:hugging: Hugging Face hub URL)
 * experience 1 : batch size 1, seq len 16 tokens -> `1.7ms`/query
 * experience 2 : batch size 1, seq len 128 tokens -> `2.5ms`/query
 
-![](../resources/infinity.png)
+![](../docs/infinity/infinity.png)
 
 ### Model optimization
 

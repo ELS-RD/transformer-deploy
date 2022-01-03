@@ -10,19 +10,19 @@
       
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
     
     
       
-        <title>QDQAlbert - transformer-deploy by Lefebvre Dalloz</title>
+        <title>Compare inference engines - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,9 +40,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-skip">
+        <a href="#high-level-tool-comparaison" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              QDQAlbert
+              Compare inference engines
             
           </span>
         </div>
@@ -188,7 +188,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -219,7 +219,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         Why this tool?
       </a>
     </li>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../setup/" class="md-nav__link">
+      <a href="../setup/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../started/" class="md-nav__link">
+      <a href="../started/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -262,11 +262,21 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../../compare/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Compare inference engines
       </a>
+      
     </li>
   
 
@@ -279,7 +289,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../onnx_convert/" class="md-nav__link">
+      <a href="../onnx_convert/" class="md-nav__link">
         How ONNX conversion works?
       </a>
     </li>
@@ -294,7 +304,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../optimizations/" class="md-nav__link">
+      <a href="../optimizations/" class="md-nav__link">
         What is done during inference optimization?
       </a>
     </li>
@@ -309,7 +319,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../python/" class="md-nav__link">
+      <a href="../python/" class="md-nav__link">
         TensorRT in Python
       </a>
     </li>
@@ -324,7 +334,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../quantization/" class="md-nav__link">
+      <a href="../quantization/" class="md-nav__link">
         GPU quantization with TensorRT
       </a>
     </li>
@@ -339,7 +349,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../demo/" class="md-nav__link">
+      <a href="../demo/" class="md-nav__link">
         End to end demo, from optimization to deployment
       </a>
     </li>
@@ -354,7 +364,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../benchmarks/" class="md-nav__link">
+      <a href="../benchmarks/" class="md-nav__link">
         AWS benchmarks
       </a>
     </li>
@@ -367,14 +377,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" >
       
       
       
@@ -397,7 +405,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../convert/" class="md-nav__link">
+      <a href="../reference/convert/" class="md-nav__link">
         Convert
       </a>
     </li>
@@ -409,14 +417,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" >
       
       
       
@@ -437,48 +443,11 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          QDQAlbert
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/QDQModels/QDQAlbert/" class="md-nav__link">
         QDQAlbert
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -490,7 +459,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQBert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQBert/" class="md-nav__link">
         QDQBert
       </a>
     </li>
@@ -504,7 +473,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDeberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDeberta/" class="md-nav__link">
         QDQDeberta
       </a>
     </li>
@@ -518,7 +487,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDistilbert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
         QDQDistilbert
       </a>
     </li>
@@ -532,7 +501,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQElectra/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQElectra/" class="md-nav__link">
         QDQElectra
       </a>
     </li>
@@ -546,7 +515,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQRoberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQRoberta/" class="md-nav__link">
         QDQRoberta
       </a>
     </li>
@@ -560,7 +529,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_operator_patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
         Ast operator patch
       </a>
     </li>
@@ -574,7 +543,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_utils/" class="md-nav__link">
         Ast utils
       </a>
     </li>
@@ -588,7 +557,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../calibration_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/calibration_utils/" class="md-nav__link">
         Calibration utils
       </a>
     </li>
@@ -602,7 +571,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/patch/" class="md-nav__link">
         Patch
       </a>
     </li>
@@ -649,7 +618,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/ort_utils/" class="md-nav__link">
+      <a href="../reference/backends/ort_utils/" class="md-nav__link">
         Ort utils
       </a>
     </li>
@@ -663,7 +632,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/trt_utils/" class="md-nav__link">
+      <a href="../reference/backends/trt_utils/" class="md-nav__link">
         Trt utils
       </a>
     </li>
@@ -710,7 +679,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../benchmarks/utils/" class="md-nav__link">
+      <a href="../reference/benchmarks/utils/" class="md-nav__link">
         Utils
       </a>
     </li>
@@ -757,7 +726,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../templates/triton/" class="md-nav__link">
+      <a href="../reference/templates/triton/" class="md-nav__link">
         Triton
       </a>
     </li>
@@ -804,7 +773,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../utils/args/" class="md-nav__link">
+      <a href="../reference/utils/args/" class="md-nav__link">
         Args
       </a>
     </li>
@@ -842,21 +811,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -869,35 +825,70 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-  <h1>QDQAlbert</h1>
-
-<div class="doc doc-object doc-module">
-
-<a id="src.transformer_deploy.QDQModels.QDQAlbert"></a>
-    <div class="doc doc-contents first">
-
-      <p>This module add quantization support to all Albert architecture based models.</p>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-  </div>
+<h1 id="high-level-tool-comparaison">High level tool comparaison<a class="headerlink" href="#high-level-tool-comparaison" title="Permanent link">#</a></h1>
+<div class="admonition summary">
+<p class="admonition-title">Summary</p>
+<ul>
+<li>don't use Pytorch in production for inference</li>
+<li>ONNX Runtime is your good enough API for most inference jobs</li>
+<li>if you need best performances, use TensorRT</li>
+</ul>
+</div>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">Nvidia TensorRT</th>
+<th align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3h9v9H2V3m9 19H2v-9h9v9M21 3v9h-9V3h9m0 19h-9v-9h9v9z"/></svg></span> Microsoft ONNX Runtime</th>
+<th align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 0 0 8.44-9.9c0-5.53-4.5-10.02-10-10.02z"/></svg></span> Meta Pytorch</th>
+<th align="left">comments</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 10a3.04 3.04 0 0 1 3-3 3.04 3.04 0 0 1 3 3 3.04 3.04 0 0 1-3 3 3.04 3.04 0 0 1-3-3m3 9 4 1v-3.08A7.54 7.54 0 0 1 12 18a7.54 7.54 0 0 1-4-1.08V20m4-16a5.78 5.78 0 0 0-4.24 1.74A5.78 5.78 0 0 0 6 10a5.78 5.78 0 0 0 1.76 4.23A5.78 5.78 0 0 0 12 16a5.78 5.78 0 0 0 4.24-1.77A5.78 5.78 0 0 0 18 10a5.78 5.78 0 0 0-1.76-4.26A5.78 5.78 0 0 0 12 4m8 6a8.04 8.04 0 0 1-.57 2.8A7.84 7.84 0 0 1 18 15.28V23l-6-2-6 2v-7.72A7.9 7.9 0 0 1 4 10a7.68 7.68 0 0 1 2.33-5.64A7.73 7.73 0 0 1 12 2a7.73 7.73 0 0 1 5.67 2.36A7.68 7.68 0 0 1 20 10z"/></svg></span> Licence</td>
+<td align="left">Apache 2, optimization engine is closed source</td>
+<td align="left">MIT</td>
+<td align="left">Modified BSD</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 7H5a2 2 0 0 0-2 2v8h2v-4h2v4h2V9a2 2 0 0 0-2-2m0 4H5V9h2m7-2h-4v10h2v-4h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2m0 4h-2V9h2m6 0v6h1v2h-4v-2h1V9h-1V7h4v2z"/></svg></span> ease of use (API)</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm0-144c-33.6 0-65.2 14.8-86.8 40.6-8.5 10.2-7.1 25.3 3.1 33.8s25.3 7.2 33.8-3c24.8-29.7 75-29.7 99.8 0 8.1 9.7 23.2 11.9 33.8 3 10.2-8.5 11.5-23.6 3.1-33.8-21.6-25.8-53.2-40.6-86.8-40.6zm-48-72c10.3 0 19.9-6.7 23-17.1 3.8-12.7-3.4-26.1-16.1-29.9l-80-24c-12.8-3.9-26.1 3.4-29.9 16.1-3.8 12.7 3.4 26.1 16.1 29.9l28.2 8.5c-3.1 4.9-5.3 10.4-5.3 16.6 0 17.7 14.3 32 32 32s32-14.4 32-32.1zm199-54.9c-3.8-12.7-17.1-19.9-29.9-16.1l-80 24c-12.7 3.8-19.9 17.2-16.1 29.9 3.1 10.4 12.7 17.1 23 17.1 0 17.7 14.3 32 32 32s32-14.3 32-32c0-6.2-2.2-11.7-5.3-16.6l28.2-8.5c12.7-3.7 19.9-17.1 16.1-29.8z"/></svg></span></td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7z"/></svg></span></td>
+<td align="left">:<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7z"/></svg></span></td>
+<td align="left">Nvidia has chosen to not hide technical details + model is specific to a single <code>hardware + model + data shapes</code> association</td>
+</tr>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h4v-1.91L12.09 18H6v-2h8.09l2-2H6v-2h12.09L20 10.09V8l-6-6H6m7 1.5L18.5 9H13V3.5m7.15 9.5a.55.55 0 0 0-.4.16l-1.02 1.02 2.09 2.08 1.02-1.01c.21-.22.21-.58 0-.79l-1.3-1.3a.544.544 0 0 0-.39-.16m-2.01 1.77L12 20.92V23h2.08l6.15-6.15-2.09-2.08z"/></svg></span> ease of use (documentation)</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 2v5.08A5.47 5.47 0 0 0 12 7a5.47 5.47 0 0 0-1 .08V2m5.9 13a5 5 0 0 1-.17.55L20 17.42V22h-2v-3.42l-2.26-1.29a4.94 4.94 0 0 1-7.48 0L6 18.58V22H4v-4.58l3.27-1.87A5 5 0 0 1 7.1 15H5.3l-2.75 1.83-1.1-1.66L4.7 13h2.4a5 5 0 0 1 .27-.88l-1.56-1-3.57.88-.48-2 4.43-1.08 2.31 1.53a5 5 0 0 1 7 0l2.27-1.53L22.24 10l-.48 2-3.57-.89-1.56 1a5 5 0 0 1 .27.89h2.4l3.25 2.16-1.1 1.66L18.7 15M11 14a1 1 0 1 0-1 1 1 1 0 0 0 1-1m4 0a1 1 0 1 0-1 1 1 1 0 0 0 1-1z"/></svg></span> <br/> (spread out, incomplete)</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 7 9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg></span> <br/> (improving)</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7z"/></svg></span> <br/> (strong community)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M6.5.75a.75.75 0 0 0-1.5 0V2H3.75A1.75 1.75 0 0 0 2 3.75V5H.75a.75.75 0 0 0 0 1.5H2v3H.75a.75.75 0 0 0 0 1.5H2v1.25c0 .966.784 1.75 1.75 1.75H5v1.25a.75.75 0 0 0 1.5 0V14h3v1.25a.75.75 0 0 0 1.5 0V14h1.25A1.75 1.75 0 0 0 14 12.25V11h1.25a.75.75 0 0 0 0-1.5H14v-3h1.25a.75.75 0 0 0 0-1.5H14V3.75A1.75 1.75 0 0 0 12.25 2H11V.75a.75.75 0 0 0-1.5 0V2h-3V.75zm5.75 11.75h-8.5a.25.25 0 0 1-.25-.25v-8.5a.25.25 0 0 1 .25-.25h8.5a.25.25 0 0 1 .25.25v8.5a.25.25 0 0 1-.25.25zM5.75 5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-4.5zm.75 4.5v-3h3v3h-3z"/></svg></span> Hardware support</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 7 9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg></span> <br/> GPU + Jetson</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7z"/></svg></span> <br/> CPU + GPU + IoT + Edge + Mobile</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 7 9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg></span> <br/> CPU + GPU</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5.75.75A.75.75 0 0 1 6.5 0h3a.75.75 0 0 1 0 1.5h-.75v1l-.001.041a6.718 6.718 0 0 1 3.464 1.435l.007-.006.75-.75a.75.75 0 1 1 1.06 1.06l-.75.75-.006.007a6.75 6.75 0 1 1-10.548 0L2.72 5.03l-.75-.75a.75.75 0 0 1 1.06-1.06l.75.75.007.006A6.718 6.718 0 0 1 7.25 2.541a.756.756 0 0 1 0-.041v-1H6.5a.75.75 0 0 1-.75-.75zM8 14.5A5.25 5.25 0 1 0 8 4a5.25 5.25 0 0 0 0 10.5zm.389-6.7 1.33-1.33a.75.75 0 1 1 1.061 1.06L9.45 8.861A1.502 1.502 0 0 1 8 10.75a1.5 1.5 0 1 1 .389-2.95z"/></svg></span> Performance</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg></span></td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1.38 9.14 12.06c-.34 1.04-.1 2.23.72 3.06a3.012 3.012 0 0 0 4.25 0c.79-.79 1.05-1.92.78-2.91m-.29-8.86.62 2.33A7.99 7.99 0 0 1 20 13c0 2.21-.89 4.21-2.34 5.65h-.01a.996.996 0 0 0 0 1.41c.39.39 1.03.39 1.42.01A9.969 9.969 0 0 0 22 13c0-4.62-3.14-8.5-7.4-9.65m-5.2.01C5.15 4.5 2 8.4 2 13c0 2.76 1.12 5.26 2.93 7.07.39.38 1.02.38 1.41-.01a.996.996 0 0 0 0-1.41A7.95 7.95 0 0 1 4 13c0-3.35 1.94-6.14 4.79-7.35"/></svg></span></td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16c1.66 0 3-1.34 3-3 0-1.12-.61-2.1-1.5-2.61L3.79 4.77l5.53 9.58c.5.98 1.51 1.65 2.68 1.65m0-13c-1.81 0-3.5.5-4.97 1.32l2.1 1.21C10 5.19 11 5 12 5c4.42 0 8 3.58 8 8 0 2.21-.89 4.21-2.34 5.65h-.01a.996.996 0 0 0 0 1.41c.39.39 1.03.39 1.42.01A9.969 9.969 0 0 0 22 13c0-5.5-4.5-10-10-10M2 13c0 2.76 1.12 5.26 2.93 7.07.39.38 1.02.38 1.41-.01a.996.996 0 0 0 0-1.41A7.95 7.95 0 0 1 4 13c0-1 .19-2 .54-2.9L3.33 8C2.5 9.5 2 11.18 2 13z"/></svg></span></td>
+<td align="left">TensorRT is usually 5 to 10X faster than Pytorch when you use quantization, etc.</td>
+</tr>
+<tr>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 2v2.07A8.002 8.002 0 0 0 4.07 11H2v2h2.07A8.002 8.002 0 0 0 11 19.93V22h2v-2.07A8.002 8.002 0 0 0 19.93 13H22v-2h-2.07A8.002 8.002 0 0 0 13 4.07V2m-2 4.08V8h2V6.09c2.5.41 4.5 2.41 4.92 4.91H16v2h1.91c-.41 2.5-2.41 4.5-4.91 4.92V16h-2v1.91C8.5 17.5 6.5 15.5 6.08 13H8v-2H6.09C6.5 8.5 8.5 6.5 11 6.08M12 11a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1z"/></svg></span> Accuracy</td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1.38 9.14 12.06c-.34 1.04-.1 2.23.72 3.06a3.012 3.012 0 0 0 4.25 0c.79-.79 1.05-1.92.78-2.91m-.29-8.86.62 2.33A7.99 7.99 0 0 1 20 13c0 2.21-.89 4.21-2.34 5.65h-.01a.996.996 0 0 0 0 1.41c.39.39 1.03.39 1.42.01A9.969 9.969 0 0 0 22 13c0-4.62-3.14-8.5-7.4-9.65m-5.2.01C5.15 4.5 2 8.4 2 13c0 2.76 1.12 5.26 2.93 7.07.39.38 1.02.38 1.41-.01a.996.996 0 0 0 0-1.41A7.95 7.95 0 0 1 4 13c0-3.35 1.94-6.14 4.79-7.35"/></svg></span></td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg></span></td>
+<td align="left"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg></span></td>
+<td align="left">TensorRT optimizations may be a bit too aggressive and decrease model accuracy. It requires manual modification to retrieve it.</td>
+</tr>
+</tbody>
+</table>
 
               
             </article>
@@ -911,7 +902,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../../convert/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Convert" rel="prev">
+        <a href="../started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Run (1 command)" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -920,20 +911,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               <span class="md-footer__direction">
                 Previous
               </span>
-              Convert
+              Run (1 command)
             </div>
           </div>
         </a>
       
       
         
-        <a href="../QDQBert/" class="md-footer__link md-footer__link--next" aria-label="Next: QDQBert" rel="next">
+        <a href="../onnx_convert/" class="md-footer__link md-footer__link--next" aria-label="Next: How ONNX conversion works?" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              QDQBert
+              How ONNX conversion works?
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -984,10 +975,10 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
       
     
   </body>

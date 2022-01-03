@@ -10,19 +10,19 @@
       
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
     
     
       
-        <title>QDQAlbert - transformer-deploy by Lefebvre Dalloz</title>
+        <title>What is done during inference optimization? - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,9 +40,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-skip">
+        <a href="#optimizing-a-model-for-inference" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              QDQAlbert
+              What is done during inference optimization?
             
           </span>
         </div>
@@ -188,7 +188,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -219,7 +219,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         Why this tool?
       </a>
     </li>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../setup/" class="md-nav__link">
+      <a href="../setup/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../started/" class="md-nav__link">
+      <a href="../started/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -264,7 +264,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../compare/" class="md-nav__link">
+      <a href="../compare/" class="md-nav__link">
         Compare inference engines
       </a>
     </li>
@@ -279,7 +279,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../onnx_convert/" class="md-nav__link">
+      <a href="../onnx_convert/" class="md-nav__link">
         How ONNX conversion works?
       </a>
     </li>
@@ -292,11 +292,21 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../../optimizations/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         What is done during inference optimization?
       </a>
+      
     </li>
   
 
@@ -309,7 +319,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../python/" class="md-nav__link">
+      <a href="../python/" class="md-nav__link">
         TensorRT in Python
       </a>
     </li>
@@ -324,7 +334,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../quantization/" class="md-nav__link">
+      <a href="../quantization/" class="md-nav__link">
         GPU quantization with TensorRT
       </a>
     </li>
@@ -339,7 +349,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../demo/" class="md-nav__link">
+      <a href="../demo/" class="md-nav__link">
         End to end demo, from optimization to deployment
       </a>
     </li>
@@ -354,7 +364,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../benchmarks/" class="md-nav__link">
+      <a href="../benchmarks/" class="md-nav__link">
         AWS benchmarks
       </a>
     </li>
@@ -367,14 +377,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" >
       
       
       
@@ -397,7 +405,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../convert/" class="md-nav__link">
+      <a href="../reference/convert/" class="md-nav__link">
         Convert
       </a>
     </li>
@@ -409,14 +417,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" >
       
       
       
@@ -437,48 +443,11 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          QDQAlbert
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/QDQModels/QDQAlbert/" class="md-nav__link">
         QDQAlbert
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -490,7 +459,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQBert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQBert/" class="md-nav__link">
         QDQBert
       </a>
     </li>
@@ -504,7 +473,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDeberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDeberta/" class="md-nav__link">
         QDQDeberta
       </a>
     </li>
@@ -518,7 +487,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDistilbert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
         QDQDistilbert
       </a>
     </li>
@@ -532,7 +501,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQElectra/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQElectra/" class="md-nav__link">
         QDQElectra
       </a>
     </li>
@@ -546,7 +515,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQRoberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQRoberta/" class="md-nav__link">
         QDQRoberta
       </a>
     </li>
@@ -560,7 +529,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_operator_patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
         Ast operator patch
       </a>
     </li>
@@ -574,7 +543,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_utils/" class="md-nav__link">
         Ast utils
       </a>
     </li>
@@ -588,7 +557,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../calibration_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/calibration_utils/" class="md-nav__link">
         Calibration utils
       </a>
     </li>
@@ -602,7 +571,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/patch/" class="md-nav__link">
         Patch
       </a>
     </li>
@@ -649,7 +618,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/ort_utils/" class="md-nav__link">
+      <a href="../reference/backends/ort_utils/" class="md-nav__link">
         Ort utils
       </a>
     </li>
@@ -663,7 +632,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/trt_utils/" class="md-nav__link">
+      <a href="../reference/backends/trt_utils/" class="md-nav__link">
         Trt utils
       </a>
     </li>
@@ -710,7 +679,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../benchmarks/utils/" class="md-nav__link">
+      <a href="../reference/benchmarks/utils/" class="md-nav__link">
         Utils
       </a>
     </li>
@@ -757,7 +726,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../templates/triton/" class="md-nav__link">
+      <a href="../reference/templates/triton/" class="md-nav__link">
         Triton
       </a>
     </li>
@@ -804,7 +773,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../utils/args/" class="md-nav__link">
+      <a href="../reference/utils/args/" class="md-nav__link">
         Args
       </a>
     </li>
@@ -842,21 +811,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -869,35 +825,22 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-  <h1>QDQAlbert</h1>
-
-<div class="doc doc-object doc-module">
-
-<a id="src.transformer_deploy.QDQModels.QDQAlbert"></a>
-    <div class="doc doc-contents first">
-
-      <p>This module add quantization support to all Albert architecture based models.</p>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-  </div>
+<h1 id="optimizing-a-model-for-inference">Optimizing a model for inference<a class="headerlink" href="#optimizing-a-model-for-inference" title="Permanent link">#</a></h1>
+<p>There are few ways to optimize a model for inference, some of them are basically a simplification of its graph:</p>
+<ul>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg></span> <code>find and remove redundant operations</code>: for instance dropout has no use outside the training loop, it can be removed without any impact on inference;</li>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6c1.38 0 2.63.56 3.54 1.46L12 10h6V4l-2.05 2.05A6.976 6.976 0 0 0 11 4c-3.53 0-6.43 2.61-6.92 6H6.1A5 5 0 0 1 11 6m5.64 9.14A6.89 6.89 0 0 0 17.92 12H15.9a5 5 0 0 1-4.9 4c-1.38 0-2.63-.56-3.54-1.46L10 12H4v6l2.05-2.05A6.976 6.976 0 0 0 11 18c1.55 0 3-.5 4.14-1.36L20 21.5l1.5-1.5-4.86-4.86z"/></svg></span> <code>perform constant folding</code>: meaning find some parts of the graph made of constant expressions, and compute the results at compile time instead of runtime (similar to most programming language compiler);</li>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8 17 4-4h3.2c.4 1.2 1.5 2 2.8 2 1.7 0 3-1.3 3-3s-1.3-3-3-3c-1.3 0-2.4.8-2.8 2H12L8 7V3H3v5h3l4.2 4L6 16H3v5h5v-4z"/></svg></span> <code>kernel fusion</code>: to avoid 1/ loading time, and 2/ share memory to avoid back and forth transfers with the global memory. Obviously, it will mainly benefit to memory bound operations (like multiply and add operations, a very common pattern in deep learning), it’s called “kernel fusion”;</li>
+</ul>
+<p>Another orthogonal approach is to use lower precision tensors, it may be FP16 float number or INT-8 quantization.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Mixed precision and INT-8 quantization may have an accuracy cost.
+The reason is that you can't code as many information in FP16 or INT-8 tensor that you can in FP32 tensor.<br />
+Sometimes you have not enough granularity, some other times the range is not big enough.
+When it happens, you need to modify the graph to keep some operators in full precision.<br />
+This library does it for mixed precision and provide you with a simple way to do it for INT-8 quantization</p>
+</div>
 
               
             </article>
@@ -911,7 +854,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../../convert/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Convert" rel="prev">
+        <a href="../onnx_convert/" class="md-footer__link md-footer__link--prev" aria-label="Previous: How ONNX conversion works?" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -920,20 +863,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               <span class="md-footer__direction">
                 Previous
               </span>
-              Convert
+              How ONNX conversion works?
             </div>
           </div>
         </a>
       
       
         
-        <a href="../QDQBert/" class="md-footer__link md-footer__link--next" aria-label="Next: QDQBert" rel="next">
+        <a href="../python/" class="md-footer__link md-footer__link--next" aria-label="Next: TensorRT in Python" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              QDQBert
+              TensorRT in Python
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -984,10 +927,10 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
       
     
   </body>

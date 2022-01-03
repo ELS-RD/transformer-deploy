@@ -10,19 +10,19 @@
       
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
     
     
       
-        <title>QDQAlbert - transformer-deploy by Lefebvre Dalloz</title>
+        <title>How ONNX conversion works? - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,9 +40,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-skip">
+        <a href="#convert-pytorch-model-to-onnx" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              QDQAlbert
+              How ONNX conversion works?
             
           </span>
         </div>
@@ -188,7 +188,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -219,7 +219,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         Why this tool?
       </a>
     </li>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../setup/" class="md-nav__link">
+      <a href="../setup/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../started/" class="md-nav__link">
+      <a href="../started/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -264,7 +264,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../compare/" class="md-nav__link">
+      <a href="../compare/" class="md-nav__link">
         Compare inference engines
       </a>
     </li>
@@ -277,11 +277,21 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../../onnx_convert/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         How ONNX conversion works?
       </a>
+      
     </li>
   
 
@@ -294,7 +304,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../optimizations/" class="md-nav__link">
+      <a href="../optimizations/" class="md-nav__link">
         What is done during inference optimization?
       </a>
     </li>
@@ -309,7 +319,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../python/" class="md-nav__link">
+      <a href="../python/" class="md-nav__link">
         TensorRT in Python
       </a>
     </li>
@@ -324,7 +334,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../quantization/" class="md-nav__link">
+      <a href="../quantization/" class="md-nav__link">
         GPU quantization with TensorRT
       </a>
     </li>
@@ -339,7 +349,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../demo/" class="md-nav__link">
+      <a href="../demo/" class="md-nav__link">
         End to end demo, from optimization to deployment
       </a>
     </li>
@@ -354,7 +364,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../../benchmarks/" class="md-nav__link">
+      <a href="../benchmarks/" class="md-nav__link">
         AWS benchmarks
       </a>
     </li>
@@ -367,14 +377,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" >
       
       
       
@@ -397,7 +405,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../convert/" class="md-nav__link">
+      <a href="../reference/convert/" class="md-nav__link">
         Convert
       </a>
     </li>
@@ -409,14 +417,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" >
       
       
       
@@ -437,48 +443,11 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          QDQAlbert
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/QDQModels/QDQAlbert/" class="md-nav__link">
         QDQAlbert
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -490,7 +459,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQBert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQBert/" class="md-nav__link">
         QDQBert
       </a>
     </li>
@@ -504,7 +473,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDeberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDeberta/" class="md-nav__link">
         QDQDeberta
       </a>
     </li>
@@ -518,7 +487,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQDistilbert/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
         QDQDistilbert
       </a>
     </li>
@@ -532,7 +501,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQElectra/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQElectra/" class="md-nav__link">
         QDQElectra
       </a>
     </li>
@@ -546,7 +515,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../QDQRoberta/" class="md-nav__link">
+      <a href="../reference/QDQModels/QDQRoberta/" class="md-nav__link">
         QDQRoberta
       </a>
     </li>
@@ -560,7 +529,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_operator_patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
         Ast operator patch
       </a>
     </li>
@@ -574,7 +543,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../ast_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/ast_utils/" class="md-nav__link">
         Ast utils
       </a>
     </li>
@@ -588,7 +557,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../calibration_utils/" class="md-nav__link">
+      <a href="../reference/QDQModels/calibration_utils/" class="md-nav__link">
         Calibration utils
       </a>
     </li>
@@ -602,7 +571,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../patch/" class="md-nav__link">
+      <a href="../reference/QDQModels/patch/" class="md-nav__link">
         Patch
       </a>
     </li>
@@ -649,7 +618,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/ort_utils/" class="md-nav__link">
+      <a href="../reference/backends/ort_utils/" class="md-nav__link">
         Ort utils
       </a>
     </li>
@@ -663,7 +632,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../backends/trt_utils/" class="md-nav__link">
+      <a href="../reference/backends/trt_utils/" class="md-nav__link">
         Trt utils
       </a>
     </li>
@@ -710,7 +679,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../benchmarks/utils/" class="md-nav__link">
+      <a href="../reference/benchmarks/utils/" class="md-nav__link">
         Utils
       </a>
     </li>
@@ -757,7 +726,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../templates/triton/" class="md-nav__link">
+      <a href="../reference/templates/triton/" class="md-nav__link">
         Triton
       </a>
     </li>
@@ -804,7 +773,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../../utils/args/" class="md-nav__link">
+      <a href="../reference/utils/args/" class="md-nav__link">
         Args
       </a>
     </li>
@@ -842,21 +811,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.QDQModels.QDQAlbert" class="md-nav__link">
-    src.transformer_deploy.QDQModels.QDQAlbert
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -869,35 +825,98 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-  <h1>QDQAlbert</h1>
-
-<div class="doc doc-object doc-module">
-
-<a id="src.transformer_deploy.QDQModels.QDQAlbert"></a>
-    <div class="doc doc-contents first">
-
-      <p>This module add quantization support to all Albert architecture based models.</p>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-  </div>
+<h1 id="convert-pytorch-model-to-onnx">Convert Pytorch model to ONNX<a class="headerlink" href="#convert-pytorch-model-to-onnx" title="Permanent link">#</a></h1>
+<p>To ease optimization we need to convert our Pytorch model written in imperative code in a mostly static graph.<br />
+Therefore, optimization tooling will be able to run static analysis and search for some pattern to optimize.<br />
+The target graph format is <code>ONNX</code>.</p>
+<div class="admonition quote">
+<p class="admonition-title">from https://onnx.ai/</p>
+<p>ONNX is an open format built to represent machine learning models. ONNX defines a common set of operators — the building blocks of machine learning and deep learning models — and a common file format to enable AI developers to use models with a variety of frameworks, tools, runtimes, and compilers.” (https://onnx.ai/). The format has initially been created by Facebook and Microsoft to have a bridge between Pytorch (research) and Caffee2 (production).</p>
+</div>
+<p>There are 2 ways to perform an export from Pytorch:</p>
+<ul>
+<li><code>tracing mode</code>: send some (dummy) data to the model, and the tool will trace them inside the model, that way it will guess what the graph looks like;</li>
+<li><code>scripting</code>: requires the models to be written in a certain way to work, its main advantage is that the dynamic logic is kept intact but adds many constraints in the way models are written.</li>
+</ul>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p><code>Tracing mode</code> is not magic, for instance it can’t see operations you are doing in numpy (if any), the graph will be static, some if/else code is fixed forever, for loop will be unrolled, etc. </p>
+</div>
+<p><img alt="🤗" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f917.svg" title=":hugging:" /> Hugging Face and model authors took care that main/most models are tracing mode compatible.</p>
+<p>Following commented code performs the ONNX conversion:</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">torch.onnx</span> <span class="kn">import</span> <span class="n">TrainingMode</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="k">def</span> <span class="nf">convert_to_onnx</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">model_pytorch</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="p">,</span> <span class="n">opset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    :param model_pytorch: Pytorch model</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    :param output_path: where to save ONNX file</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Should be on the same device than the model (CPU or GPU)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="c1"># dynamic axis == variable length axis</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="hll">    <span class="n">dynamic_axis</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+</span><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="hll">    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+</span><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="hll">        <span class="n">dynamic_axis</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;sequence&quot;</span><span class="p">}</span>
+</span><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="hll">    <span class="n">dynamic_axis</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">}</span>
+</span><a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>        <span class="n">torch</span><span class="o">.</span><span class="n">onnx</span><span class="o">.</span><span class="n">export</span><span class="p">(</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>            <span class="n">model_pytorch</span><span class="p">,</span>  <span class="c1"># model to optimize</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>            <span class="n">args</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>  <span class="c1"># tuple of multiple inputs</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>            <span class="n">f</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span>  <span class="c1"># output path / file object</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="n">opset_version</span><span class="o">=</span><span class="n">opset</span><span class="p">,</span>  <span class="c1"># the ONNX version to use, 13 if quantized model, 12 for not quantized ones</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>            <span class="n">do_constant_folding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># simplify model (replace constant expressions)</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>            <span class="n">input_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>  <span class="c1"># input names</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>            <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">],</span>  <span class="c1"># output axis name</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="hll">            <span class="n">dynamic_axes</span><span class="o">=</span><span class="n">dynamic_axis</span><span class="p">,</span>  <span class="c1"># declare dynamix axis for each input / output</span>
+</span><a id="__codelineno-0-31" name="__codelineno-0-31"></a>            <span class="n">training</span><span class="o">=</span><span class="n">TrainingMode</span><span class="o">.</span><span class="n">EVAL</span><span class="p">,</span>  <span class="c1"># always put the model in evaluation mode</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a>            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="p">)</span>
+</code></pre></div>
+</td></tr></table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>One particular point is that we declare some axis as dynamic.<br />
+If we were not doing that, the graph would only accept tensors with the exact same shape that the ones we are using to build it (the dummy data), so sequence length or batch size would be fixed.<br />
+The name we have given to input and output fields will be reused in other tools.</p>
+</div>
 
               
             </article>
@@ -911,7 +930,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../../convert/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Convert" rel="prev">
+        <a href="../compare/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compare inference engines" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -920,20 +939,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               <span class="md-footer__direction">
                 Previous
               </span>
-              Convert
+              Compare inference engines
             </div>
           </div>
         </a>
       
       
         
-        <a href="../QDQBert/" class="md-footer__link md-footer__link--next" aria-label="Next: QDQBert" rel="next">
+        <a href="../optimizations/" class="md-footer__link md-footer__link--next" aria-label="Next: What is done during inference optimization?" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              QDQBert
+              What is done during inference optimization?
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -984,10 +1003,10 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
       
     
   </body>

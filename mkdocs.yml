@@ -53,7 +53,7 @@ plugins:
       ignore_h1_titles: True
   - gen-files:
       scripts:
-        - docs/script/gen_doc_stubs.py
+        - resources/gen_doc_stubs.py
   - literate-nav:
       nav_file: SUMMARY.md
 
@@ -74,9 +74,6 @@ nav:
     - How ONNX conversion works? : onnx_convert.md
     - TensorRT in Python: python.md
     - GPU quantization: quantization.ipynb
-    - Benchmarks: benchmarks.md
-    - Hugging Face Infinity:
-        - context: infinity/context.md
-        - baseline: infinity/baseline.md
-        - optimize: infinity/onnx_optimizations.md
+    - End to end demo, from optimization to deployment: demo.md
+    - AWS benchmarks: benchmarks.md
     - API: reference/

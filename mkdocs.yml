@@ -73,7 +73,12 @@ nav:
     - How ONNX conversion works? : onnx_convert.md
     - What is done during inference optimization? : optimizations.md
     - TensorRT in Python: python.md
-    - GPU quantization with TensorRT: quantization.ipynb
+    - GPU quantization with TensorRT:
+        - Introduction: quantization_intro.md
+        - Theory: quantization_theory.md
+        - Python AST modification: quantization_ast.md
+        - PTQ and QAT: quantization_ptq.md
+        - End to end demo: quantization.ipynb
     - End to end demo, from optimization to deployment: demo.md
     - AWS benchmarks: benchmarks.md
     - API: reference/

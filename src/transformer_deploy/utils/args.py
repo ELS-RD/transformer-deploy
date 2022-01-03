@@ -55,7 +55,7 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
         type=int,
         nargs=3,
     )
-    parser.add_argument("-q", "--quantization", action="store_true", help="int-8 GPU quantization support")
+    parser.add_argument("-q", "--quantization", action="store_true", help="INT-8 GPU quantization support")
     parser.add_argument("-w", "--workspace-size", default=10000, help="workspace size in MiB (TensorRT)", type=int)
     parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
     parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")

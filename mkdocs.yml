@@ -70,10 +70,10 @@ nav:
     - Installation: setup.md
     - Run (1 command): started.md
     - Compare inference engines: compare.md
-    - What is done during inference optimization? : optimizations.md
     - How ONNX conversion works? : onnx_convert.md
+    - What is done during inference optimization? : optimizations.md
     - TensorRT in Python: python.md
-    - GPU quantization: quantization.ipynb
+    - GPU quantization with TensorRT: quantization.ipynb
     - End to end demo, from optimization to deployment: demo.md
     - AWS benchmarks: benchmarks.md
     - API: reference/

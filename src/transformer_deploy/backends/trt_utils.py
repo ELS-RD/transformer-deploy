@@ -140,7 +140,7 @@ def build_engine(
     :param workspace_size: GPU memory to use during the building, more is always better. If there is not enough memory,
     some optimization may fail, and the whole conversion process will crash.
     :param fp16: enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.
-    :param int8: enable int-8 quantization, best performance but model should have been quantized.
+    :param int8: enable INT-8 quantization, best performance but model should have been quantized.
     :return: TensorRT engine to use during inference
     """
     with trt.Builder(logger) as builder:  # type: Builder

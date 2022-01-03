@@ -53,7 +53,7 @@ plugins:
       ignore_h1_titles: True
   - gen-files:
       scripts:
-        - docs/script/gen_doc_stubs.py
+        - resources/gen_doc_stubs.py
   - literate-nav:
       nav_file: SUMMARY.md
 
@@ -66,11 +66,14 @@ extra:
   generator: false
 
 nav:
-    - ❓ Why this tool: index.md
-    - 🏗️ Installation: setup.md
-    - 🤓 run (1 command): started.md
-    - 🐍 TensorRT in Python: python.md
-    - 🤗 end to end reproduction of Hugging Face Infinity demo: demo.md
-    - 🏎️ GPU quantization: quantization.ipynb
-    - ⏱ benchmarks: benchmarks.md
-    - Library API: reference/
+    - Why this tool?: index.md
+    - Installation: setup.md
+    - Run (1 command): started.md
+    - Compare inference engines: compare.md
+    - How ONNX conversion works? : onnx_convert.md
+    - What is done during inference optimization? : optimizations.md
+    - TensorRT in Python: python.md
+    - GPU quantization with TensorRT: quantization.ipynb
+    - End to end demo, from optimization to deployment: demo.md
+    - AWS benchmarks: benchmarks.md
+    - API: reference/

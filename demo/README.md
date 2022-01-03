@@ -1,6 +1,6 @@
-# Demo scripts
+# Optimize and deploy model on Nvidia Triton server
 
-To understand why this demo, read [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
+> To better understand the context of this demo, check [Hugging Face Transformer inference UNDER 1 millisecond latency](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)
 
 This folder contains scripts to run different benchmarks:
 
@@ -10,22 +10,43 @@ This folder contains scripts to run different benchmarks:
 * `triton_client_tokenizer.py`: query the tokenizer only
 * `fast_api_server_onnx.py`: FastAPI inference server to compare to Nvidia Triton
 
-Those examples may help you to implement the querying part in your own application.
-
 ### Infinity demo information
 
-Hugging Face has announced a commercial product called [Infinity](https://huggingface.co/infinity) to perform enterprise scale inference solution.  
-There are very few information about its performances outside this video:  
+In sept 2021, 🤗 Hugging Face released a new product called [Infinity](https://huggingface.co/infinity).   
+It’s described as a server to perform inference at *enterprise scale*.   
+The communication is around the promise that the product can perform Transformer inference at 1 millisecond latency on the GPU. 
+
+There are very few information about its performances outside this YouTube video:  
 [demo video (Youtube)](https://www.youtube.com/watch?v=jiftCAhOYQA)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/jiftCAhOYQA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+According to the demo presenter, :hugging: Hugging Face Infinity server costs at least 💰20 000$/year for a single model deployed on a single machine (no information is publicly available on price scalability).
+
+In the next parts we will try to compare this open source library with the commercial solution from :hugging: Hugging Face.
 
 Setup they used for their own demo:
 
-* AWS virtual machine: `g4dn.xlarge` (T4 GPU)
-* model: `"philschmid/MiniLM-L6-H384-uncased-sst2"` (Hugging Face hub URL)
-* experience 1 : batch size 1, seq len 16 tokens -> `1.7ms`/query
-* experience 2 : batch size 1, seq len 128 tokens -> `2.5ms`/query
+| AWS instance |    GPU    | model                                  | seq len | batch size | latency |
+|:-------------|:---------:|:---------------------------------------|:--------|:-----------|:--------|
+| g4dn x.large | Nvidia T4 | philschmid/MiniLM-L6-H384-uncased-sst2 | 16      | 1          | 1.7ms   |
+| g4dn x.large | Nvidia T4 | philschmid/MiniLM-L6-H384-uncased-sst2 | 128     | 1          | 2.5ms   |
 
-![](../resources/infinity.png)
+
+![latencies](../docs/infinity/infinity.png)
+
+The purpose of this tutorial is to explain how to heavily optimize a Transformer from Hugging Face and deploy it on a production-ready inference server, end to end.   
+
+The performance improvement brought by this process applies to all scenarios, from short sequences to long ones, from a batch of size 1 to large batches. When the architecture is compliant with the expectations of the tools, the process always brings a significant performance boost compared to vanilla PyTorch.
+
+The process is in 3 steps:
+
+* convert Pytorch model to a graph
+* optimize the graph
+* deploy the graph on a performant inference server
+
+At the end we will compare the performance of our inference server to the numbers shown by :hugging: Hugging Face during the demo and will see that we are faster for both 16 and 128 tokens input sequences with batch size 1 (as far as I know, :hugging: Hugging Face has not publicly shared information on other scenarios).
+
 
 ### Model optimization
 

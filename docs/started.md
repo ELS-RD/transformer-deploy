@@ -2,7 +2,7 @@
 
 With the single command below, you will:
 
-* **download** the model and its tokenizer from Hugging Face hub, 
+* **download** the model and its tokenizer from :hugging: Hugging Face hub, 
 * **convert** the model to ONNX graph,
 * **optimize** 
   * the model with ONNX Runtime and save artefact (`model.onnx`),

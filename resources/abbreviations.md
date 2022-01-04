@@ -6,3 +6,5 @@
 *[CUDA]: Compute Unified Device Architecture
 *[cuDNN]: CUDA Deep Neural Network
 *[BSD]: Berkeley Software Distribution
+*[GPU]: Graphics Processing Unit
+*[CPU]: Central Processing Unit

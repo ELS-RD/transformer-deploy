@@ -86,4 +86,5 @@ nav:
         - End to end demo: quantization.ipynb
     - End to end demo, from optimization to deployment: demo.md
     - AWS benchmarks: benchmarks.md
+    - FAQ: faq.md
     - API: reference/

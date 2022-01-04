@@ -15,3 +15,5 @@ Another orthogonal approach is to use lower precision tensors, it may be FP16 fl
     Sometimes you have not enough granularity, some other times the range is not big enough.
     When it happens, you need to modify the graph to keep some operators in full precision.  
     This library does it for mixed precision and provide you with a simple way to do it for INT-8 quantization
+
+--8<-- "resources/abbreviations.md"

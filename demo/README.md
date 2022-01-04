@@ -58,7 +58,7 @@ and Pytorch the simplest approach (at least it's the most well known tool).
 ```shell
 # add -v $PWD/src:/opt/tritonserver/src to apply source code modification to the container
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.1.1 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.3.0 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \
@@ -66,7 +66,8 @@ docker run -it --rm --gpus all \
 ```
 
 > 16 128 128 means that the TensorRT model will optimize for a sequence length between 16 and 128 tokens.
-> ONNX Runtime don't use this information.
+> Most of the time it's a bad idea to use dynamic axis on sequence length, it makes TensorRT slower.
+> ONNX Runtime don't use this information and it has no impact on it.
 
 After a few minutes, it should display something like this:
 
@@ -95,7 +96,7 @@ Launch `Nvidia Triton inference server`:
 ```shell
 # add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.11-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 

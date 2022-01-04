@@ -90,3 +90,5 @@ print(tensorrt_output)
     * `Backends/Trt utils`
 
     ... and if you are looking for inspiration, check [onnx-tensorrt](https://github.com/onnx/onnx-tensorrt)
+
+--8<-- "resources/abbreviations.md"

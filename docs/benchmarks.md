@@ -1,6 +1,6 @@
 # Benchmarks
 
-Most transformer encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
+Most `Transformer` encoder based models are supported like Bert, Roberta, miniLM, Camembert, Albert, XLM-R, Distilbert, etc.  
 **Best results are obtained with TensorRT 8.2.**  
 Below examples are representative of the performance gain to expect from this library.  
 Other improvements not shown here include GPU memory usage decrease, multi stream, etc.
@@ -146,3 +146,5 @@ latencies:
 ```
 
 </details>
+
+--8<-- "resources/abbreviations.md"

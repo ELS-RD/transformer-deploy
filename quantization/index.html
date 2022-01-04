@@ -15,7 +15,7 @@
     
     
       
-        <title>GPU quantization with TensorRT - transformer-deploy by Lefebvre Dalloz</title>
+        <title>End to end demo - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              GPU quantization with TensorRT
+              End to end demo
             
           </span>
         </div>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../setup_local/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../started/" class="md-nav__link">
+      <a href="../run/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -325,6 +325,90 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     
   
   
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8">
+          GPU quantization with TensorRT
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="GPU quantization with TensorRT" data-md-level="1">
+        <label class="md-nav__title" for="__nav_8">
+          <span class="md-nav__icon md-icon"></span>
+          GPU quantization with TensorRT
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_theory/" class="md-nav__link">
+        Theory
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_ast/" class="md-nav__link">
+        Python AST modification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_ptq/" class="md-nav__link">
+        PTQ and QAT
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
@@ -334,12 +418,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          GPU quantization with TensorRT
+          End to end demo
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        GPU quantization with TensorRT
+        End to end demo
       </a>
       
         
@@ -356,20 +440,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#a-very-short-intro-to-int-8-quantization" class="md-nav__link">
-    A (very) short intro to INT-8 quantization
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-this-notebook" class="md-nav__link">
-    Why this notebook?
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#project-setup" class="md-nav__link">
@@ -414,21 +484,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#post-training-quantization-ptq" class="md-nav__link">
-    Post Training Quantization (PTQ)
-  </a>
-  
-    <nav class="md-nav" aria-label="Post Training Quantization (PTQ)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calibration-percentile-grid-search" class="md-nav__link">
-    Calibration percentile grid search
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#per-layer-quantization-analysis" class="md-nav__link">
     Per layer quantization analysis
   </a>
@@ -439,11 +494,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   <a href="#operator-quantization-analysis" class="md-nav__link">
     Operator quantization analysis
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -554,6 +604,13 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     </li>
   
 
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
     
       
       
@@ -592,22 +649,37 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11">
+        <label class="md-nav__link" for="__nav_12">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_11">
+        <label class="md-nav__title" for="__nav_12">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -636,18 +708,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_2">
+        <label class="md-nav__link" for="__nav_12_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_2">
+        <label class="md-nav__title" for="__nav_12_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -809,18 +881,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_3" type="checkbox" id="__nav_11_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_3">
+        <label class="md-nav__link" for="__nav_12_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_3">
+        <label class="md-nav__title" for="__nav_12_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -870,18 +942,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_4" type="checkbox" id="__nav_11_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_4">
+        <label class="md-nav__link" for="__nav_12_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_4">
+        <label class="md-nav__title" for="__nav_12_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -917,18 +989,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_5" type="checkbox" id="__nav_11_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_5">
+        <label class="md-nav__link" for="__nav_12_5">
           Templates
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_5">
+        <label class="md-nav__title" for="__nav_12_5">
           <span class="md-nav__icon md-icon"></span>
           Templates
         </label>
@@ -964,18 +1036,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_6" type="checkbox" id="__nav_11_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_6">
+        <label class="md-nav__link" for="__nav_12_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_6">
+        <label class="md-nav__title" for="__nav_12_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -1035,20 +1107,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#a-very-short-intro-to-int-8-quantization" class="md-nav__link">
-    A (very) short intro to INT-8 quantization
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-this-notebook" class="md-nav__link">
-    Why this notebook?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#project-setup" class="md-nav__link">
     Project setup
   </a>
@@ -1091,21 +1149,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#post-training-quantization-ptq" class="md-nav__link">
-    Post Training Quantization (PTQ)
-  </a>
-  
-    <nav class="md-nav" aria-label="Post Training Quantization (PTQ)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calibration-percentile-grid-search" class="md-nav__link">
-    Calibration percentile grid search
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#per-layer-quantization-analysis" class="md-nav__link">
     Per layer quantization analysis
   </a>
@@ -1116,11 +1159,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   <a href="#operator-quantization-analysis" class="md-nav__link">
     Operator quantization analysis
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1952,158 +1990,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>Quantization is one of the most effective and generic approaches to make model inference faster.
-Basically, it replaces high precision float numbers in model tensors encoded in 32 or 16 bits by lower precision ones encoded in 8 bits or less:</p>
-<ul>
-<li>it takes less memory</li>
-<li>computation is easier / faster</li>
-</ul>
-<p>It can be applied to any model in theory, and, if done well, it should maintain accuracy.</p>
-<p>The purpose of this notebook is to show a process to perform quantization on any <code>transformer</code> architectures.</p>
-<p>Moreover, the library is designed to offer a simple API and still let advanced users tweak the algorithm.</p>
-<p><strong>TL;DR, we benchmarked Pytorch and Nvidia TensorRT, on both CPU and GPU, with/without quantization, our methods provide the fastest inference by large margin</strong>.</p>
-<table>
-<thead><tr>
-<th style="text-align:left">Framework</th>
-<th>Precision</th>
-<th>Latency (ms)</th>
-<th>Accuracy</th>
-<th style="text-align:left">Speedup</th>
-<th style="text-align:center">Hardware</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">Pytorch</td>
-<td>FP32</td>
-<td>4267</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">Pytorch</td>
-<td>FP16</td>
-<td>4428</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">Pytorch</td>
-<td>INT-8</td>
-<td>3300</td>
-<td>85.9 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">Pytorch</td>
-<td>FP32</td>
-<td>77</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 1</td>
-<td style="text-align:center">GPU</td>
-</tr>
-<tr>
-<td style="text-align:left">Pytorch</td>
-<td>FP16</td>
-<td>56</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 1.38</td>
-<td style="text-align:center">GPU</td>
-</tr>
-<tr>
-<td style="text-align:left">ONNX Runtime</td>
-<td>FP32</td>
-<td>76</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 1.01</td>
-<td style="text-align:center">GPU</td>
-</tr>
-<tr>
-<td style="text-align:left">ONNX Runtime</td>
-<td>FP16</td>
-<td>34</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 2.26</td>
-<td style="text-align:center">GPU</td>
-</tr>
-<tr>
-<td style="text-align:left">ONNX Runtime</td>
-<td>FP32</td>
-<td>4023</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">ONNX Runtime</td>
-<td>FP16</td>
-<td>3957</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">ONNX Runtime</td>
-<td>INT-8</td>
-<td>3336</td>
-<td>86.5 %</td>
-<td style="text-align:left">X 0.02</td>
-<td style="text-align:center">CPU</td>
-</tr>
-<tr>
-<td style="text-align:left">TensorRT</td>
-<td>FP16</td>
-<td>30</td>
-<td>86.6 %</td>
-<td style="text-align:left">X 2.57</td>
-<td style="text-align:center">GPU</td>
-</tr>
-<tr>
-<td style="text-align:left">TensorRT (<strong>our method</strong>)</td>
-<td><strong>INT-8</strong></td>
-<td><strong>17</strong></td>
-<td>86.2 %</td>
-<td style="text-align:left"><strong>X 4.53</strong></td>
-<td style="text-align:center"><strong>GPU</strong></td>
-</tr>
-</tbody>
-</table>
-<blockquote><p>measures done on a Nvidia RTX 3090 GPU + 12 cores i7 Intel CPU (support AVX-2 instruction)</p>
-<p><code>base</code> architecture flavor with batch of size 32 / seq len 256, similar results obtained for other sizes/seq len not included in the table.</p>
-<p>accuracy obtained after a single epoch, no LR search or any hyper parameter optimization</p>
-</blockquote>
-<h2 id="a-very-short-intro-to-int-8-quantization">A (very) short intro to INT-8 quantization<a class="anchor-link" href="#a-very-short-intro-to-int-8-quantization">&#182;</a></h2><p>Basic idea behind model quantization is to replace tensors made of float numbers (usually encoded on 32 bits) by lower precision representation (integers encoded on 8 bits for Nvidia GPUs).
-Therefore computation is faster and model memory footprint is lower. Making tensor storage smaller makes memory transfer faster... and is also a source of computation acceleration.
-This approach is very interesting for its trade-off: you reduce inference time significantly, and it costs close to nothing in accuracy.</p>
-<p>Replacing float numbers by integers is done through a mapping.
-This step is called <code>calibration</code>, and its purpose is to compute for each tensor or each channel of a tensor (one of its dimensions) a range covering most weights and then define a scale and a distribution center to map float numbers to 8 bits integers.</p>
-<p>There are several ways to perform quantization, depending of how and when the <code>calibration</code> is performed:</p>
-<ul>
-<li>dynamically: the mapping is done online, during the inference, there are some overhead but it's usually the easiest to leverage, end user has very few configuration to set,</li>
-<li>statically, after training (<code>post training quantization</code> or <code>PTQ</code>): this way is efficient because quantization is done offline, before inference, but it may have an accuracy cost,</li>
-<li>statically, after training (<code>quantization aware training</code> or <code>QAT</code>): like a PTQ followed by a second fine tuning. Same efficiency but usually slightly better accuracy.</li>
-</ul>
-<p>Nvidia GPUs don't support dynamic quantization, CPU supports all types of quantization.<br>
-Compared to <code>PTQ</code>, <code>QAT</code> better preserves accuracy and should be preferred in most cases.</p>
-<p>During the quantization aware <em>training</em>:</p>
-<ul>
-<li>in the inside, Pytorch will train with high precision float numbers,</li>
-<li>on the outside, Pytorch will simulate that a quantization has already been applied and output results accordingly (for loss computation for instance)</li>
-</ul>
-<p>The simulation process is done through the add of quantization / dequantization nodes, most often called <code>QDQ</code>, it's an abbreviation you will see often in the quantization world.</p>
-<blockquote><p>Want to learn more about quantization?</p>
-<ul>
-<li>You can check this <a href="https://leimao.github.io/article/Neural-Networks-Quantization/">high quality blog post</a> for more information.</li>
-<li>The process is well described in this <a href="https://on-demand.gputechconf.com/gtc/2017/presentation/s7310-8-bit-inference-with-tensorrt.pdf">Nvidia presentation</a></li>
-</ul>
-</blockquote>
-<h2 id="why-this-notebook">Why this notebook?<a class="anchor-link" href="#why-this-notebook">&#182;</a></h2><p>CPU quantization is supported out of the box by <code>Pytorch</code> and <code>ONNX Runtime</code>.
-<strong>GPU quantization on the other side requires specific tools and process to be applied</strong>.</p>
-<p>In the specific case of <code>transformer</code> models, few demos from Nvidia and Microsoft exist; they are all for the old vanilla Bert architecture.</p>
-<p>It doesn't support modern architectures out of the box, like <code>Albert</code>, <code>Roberta</code>, <code>Deberta</code> or <code>Electra</code>.</p>
+<p>For some context and explanations, please check our documentation here: <a href="https://els-rd.github.io/transformer-deploy/quantization_intro/">https://els-rd.github.io/transformer-deploy/quantization_intro/</a>.</p>
 
 </div>
 </div>
@@ -2798,28 +2685,7 @@ model_fp16.save_pretrained("model_trained_fp16")</div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h2 id="add-quantization-support-to-any-model">Add quantization support to any model<a class="anchor-link" href="#add-quantization-support-to-any-model">&#182;</a></h2><p>The idea is to take the source code of a specific model and add automatically <code>QDQ</code> nodes. QDQ nodes will be placed before and after an operation that we want to quantize, that’s inside these nodes that the information to perform the mapping between high precision and low precision number is stored.</p>
-<p>That way, quantization will work out of the box for the final user.</p>
-<p>The process is based on Python AST modification, basically we parse the model source code in RAM, we convert it to a tree, then we patch the tree to add the QDQ nodes and we replace, still in RAM, the original module source code. Our library also offer the option to restore original behavior.</p>
-<p>In theory it works for any model. However, not related to quantization, some models are not fully compliant with <code>TensorRT</code> (unsupported operators, etc.).
-For those models, we rewrite some part of the source code, these patches are manually written but are applied to the model at run time (like the AST manipulation).</p>
-<blockquote><p>concrete examples on <code>Roberta</code> architecture: in HF library, there is a <code>cumsum</code> operator used during the position embedding generation. Something very simple. It takes as input an integer tensor and output an integer tensor. It happens that the <code>cumsum</code> operator from TensorRT supports float but not integer (<a href="https://github.com/onnx/onnx-tensorrt/blob/master/docs/operators.md">https://github.com/onnx/onnx-tensorrt/blob/master/docs/operators.md</a>). It leads to a crash during the model conversion with a strange error message. Converting the input to float tensor fixes the issue.</p>
-</blockquote>
-<p>The process below is:</p>
-<ul>
-<li>Calibrate</li>
-<li>Quantization Aware training (QAT)</li>
-</ul>
-<blockquote><p>there are many ways to get a QDQ model, you can modify Pytorch source code (including doing it at runtime like here), patch ONNX graph (this approach is used at Microsoft for instance but only support PTQ, not QAT as ONNX file can't be trained on Pytorch for now) or leverage the new FX Pytorch interface (it's a bit experimental and it seems to miss some feature to support Nvidia QAT library). Modifying the source code is the most straightforward, and doing it through AST is the least intrusive (no need to duplicate the work of HF).</p>
-</blockquote>
-<h3 id="post-training-quantization-ptq">Post Training Quantization (PTQ)<a class="anchor-link" href="#post-training-quantization-ptq">&#182;</a></h3><p>A PTQ is basically a fine tuned model where we add quantization nodes and that we calibrate.</p>
-<p>Calibration is a key step in the static quantization process. Its quality depends on the final accuracy (the inference speed will stay the same).<br>
-Moreover, a good PTQ is a good basis for a good Quantization Aware Training (QAT).</p>
-<p>By calling <code>with QATCalibrate(...) as qat:</code>, the lib will patch transformer model AST (source code) in RAM, basically adding quantization support to each model.</p>
-<h4 id="calibration-percentile-grid-search">Calibration percentile grid search<a class="anchor-link" href="#calibration-percentile-grid-search">&#182;</a></h4><p>One of the things we try to guess during the calibration is what range of tensor values capture most of the information stored in the tensor. Indeed, a FP32 tensor can store at the same time very large and very small values, we obviously can't do the same with a 8-bits integer tensors and a scale. An 8-bits integer can only encode 255 values so we need to fix some limits and say, if a value is outside our limits, it just takes a maximum value instead of its real one. For instance, if we say our range is -1000 to +1000 and a tensor contains the value +4000, it will be replaced by the maximum value, +1000.</p>
-<p>As said before, we will use the histogram method to find the perfect range. We also need to choose a percentile. Usually, you will choose something very close to 100.</p>
-<p>If the percentile is too small, we put too many values outside the covered range. Values outside the range will be replaced by a single maximum value and you lose some granularity in model weights.</p>
-<p>If the percentile is too big, your range will be very large and because 8-bits signed integers can only encode values between -127 to +127, even when you use a scale you lose in granularity.</p>
-<p>Therefore, we launch a grid search on percentile hyper parameter.</p>
+<p>If you want to know more, check our documentation on: <a href="https://els-rd.github.io/transformer-deploy/quantization_intro/">https://els-rd.github.io/transformer-deploy/quantization_intro/</a></p>
 
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
@@ -5230,7 +5096,7 @@ measure_accuracy(infer=infer_ort, int64=True)</div>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../python/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TensorRT in Python" rel="prev">
+        <a href="../quantization_ptq/" class="md-footer__link md-footer__link--prev" aria-label="Previous: PTQ and QAT" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -5239,7 +5105,7 @@ measure_accuracy(infer=infer_ort, int64=True)</div>
               <span class="md-footer__direction">
                 Previous
               </span>
-              TensorRT in Python
+              PTQ and QAT
             </div>
           </div>
         </a>

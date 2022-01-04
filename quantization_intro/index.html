@@ -15,7 +15,7 @@
     
     
       
-        <title>Run (1 command) - transformer-deploy by Lefebvre Dalloz</title>
+        <title>Introduction - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#run-in-a-single-command" class="md-skip">
+        <a href="#nvidia-gpu-int-8-quantization" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Run (1 command)
+              Introduction
             
           </span>
         </div>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../setup/" class="md-nav__link">
+      <a href="../setup_local/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -247,21 +247,11 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../run/" class="md-nav__link">
         Run (1 command)
       </a>
-      
     </li>
   
 
@@ -332,11 +322,150 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8">
+          GPU quantization with TensorRT
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="GPU quantization with TensorRT" data-md-level="1">
+        <label class="md-nav__title" for="__nav_8">
+          <span class="md-nav__icon md-icon"></span>
+          GPU quantization with TensorRT
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Introduction
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-it-about" class="md-nav__link">
+    What is it about?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark" class="md-nav__link">
+    Benchmark
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_theory/" class="md-nav__link">
+        Theory
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_ast/" class="md-nav__link">
+        Python AST modification
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quantization_ptq/" class="md-nav__link">
+        PTQ and QAT
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
   
     <li class="md-nav__item">
       <a href="../quantization/" class="md-nav__link">
-        GPU quantization with TensorRT
+        End to end demo
       </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -378,22 +507,37 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11" type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11">
+        <label class="md-nav__link" for="__nav_12">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_11">
+        <label class="md-nav__title" for="__nav_12">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -422,18 +566,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_2" type="checkbox" id="__nav_11_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_2">
+        <label class="md-nav__link" for="__nav_12_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_2">
+        <label class="md-nav__title" for="__nav_12_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -595,18 +739,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_3" type="checkbox" id="__nav_11_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_3">
+        <label class="md-nav__link" for="__nav_12_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_3">
+        <label class="md-nav__title" for="__nav_12_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -656,18 +800,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_4" type="checkbox" id="__nav_11_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_4">
+        <label class="md-nav__link" for="__nav_12_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_4">
+        <label class="md-nav__title" for="__nav_12_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -703,18 +847,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_5" type="checkbox" id="__nav_11_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_5">
+        <label class="md-nav__link" for="__nav_12_5">
           Templates
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_5">
+        <label class="md-nav__title" for="__nav_12_5">
           <span class="md-nav__icon md-icon"></span>
           Templates
         </label>
@@ -750,18 +894,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_11_6" type="checkbox" id="__nav_11_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_11_6">
+        <label class="md-nav__link" for="__nav_12_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_11_6">
+        <label class="md-nav__title" for="__nav_12_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -814,6 +958,28 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-it-about" class="md-nav__link">
+    What is it about?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark" class="md-nav__link">
+    Benchmark
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -825,69 +991,139 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-<h1 id="run-in-a-single-command">Run in a single command<a class="headerlink" href="#run-in-a-single-command" title="Permanent link">#</a></h1>
-<p>With the single command below, you will:</p>
+<h1 id="nvidia-gpu-int-8-quantization">Nvidia <abbr title="Graphics Processing Unit">GPU</abbr> INT-8 quantization<a class="headerlink" href="#nvidia-gpu-int-8-quantization" title="Permanent link">#</a></h1>
+<h2 id="what-is-it-about">What is it about?<a class="headerlink" href="#what-is-it-about" title="Permanent link">#</a></h2>
+<p>Quantization is one of the most effective and generic approaches to make model inference faster.
+Basically, it replaces high precision float numbers in model tensors encoded in 32 or 16 bits by lower precision ones encoded in 8 bits or less:</p>
 <ul>
-<li><strong>download</strong> the model and its tokenizer from <img alt="🤗" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f917.svg" title=":hugging:" /> Hugging Face hub, </li>
-<li><strong>convert</strong> the model to ONNX graph,</li>
-<li><strong>optimize</strong> </li>
-<li>the model with ONNX Runtime and save artefact (<code>model.onnx</code>),</li>
-<li>the model with TensorRT and save artefact (<code>model.plan</code>),</li>
-<li><strong>benchmark</strong> each backend (including Pytorch),</li>
-<li><strong>generate</strong> configuration files for Triton inference server</li>
+<li>it takes less memory</li>
+<li>computation is easier / faster</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend onnx --seq-len <span class="m">128</span> <span class="m">128</span> <span class="m">128</span> --batch-size <span class="m">1</span> <span class="m">32</span> <span class="m">32</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="c1"># ...</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="c1"># latencies:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="c1"># [Pytorch (FP32)] mean=8.75ms, sd=0.30ms, min=8.60ms, max=11.20ms, median=8.68ms, 95p=9.15ms, 99p=10.77ms</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="c1"># [Pytorch (FP16)] mean=6.75ms, sd=0.22ms, min=6.66ms, max=8.99ms, median=6.71ms, 95p=6.88ms, 99p=7.95ms</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="c1"># [ONNX Runtime (FP32)] mean=8.10ms, sd=0.43ms, min=7.93ms, max=11.76ms, median=8.02ms, 95p=8.39ms, 99p=11.30ms</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="c1"># [ONNX Runtime (optimized)] mean=3.66ms, sd=0.23ms, min=3.57ms, max=6.46ms, median=3.62ms, 95p=3.70ms, 99p=4.95ms</span>
-</code></pre></div>
-<blockquote>
-<p><strong>128 128 128</strong> -&gt; minimum, optimal, maximum sequence length, to help TensorRT better optimize your model. 
-Better to have the same value for seq len to get best performances from TensorRT (ONNX Runtime has not this limitation).</p>
-<p><strong>1 32 32</strong> -&gt; batch size, same as above. Good idea to get 1 as minimum value. No impact on TensorRT performance.</p>
-</blockquote>
-<ul>
-<li>Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:21.11-py3 <span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a>  bash -c <span class="s2">&quot;pip install transformers sentencepiece &amp;&amp; tritonserver --model-repository=/models&quot;</span>
-</code></pre></div>
-<blockquote>
-<p>As you can see we install Transformers and then launch the server itself.<br />
-This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.</p>
-</blockquote>
-<p>Right now, only TensorRT 8.0.3 backend is available in Triton.<br />
-Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime backend.   </p>
-<ul>
-<li>Query the inference server:</li>
-</ul>
-<p>First you need to convert your strings to a binary file following the format of <code>demo/query_body.bin</code>.<br />
-The <code>Json</code> part is straightforward, the second part a bit less.<br />
-Please follow the code below for the recipe for a single string.<br />
-If you have several strings, just concatenate the results.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">struct</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;This live event is great. I will sign-up for Infinity.</span><span class="se">\n</span><span class="s2">&quot;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="n">text_b</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text_b</span><span class="p">))</span><span class="o">+</span><span class="n">text_b</span><span class="p">)</span>  <span class="c1"># &lt;I means little-endian unsigned integers, followed by the number of elements</span>
-</code></pre></div>
-<blockquote>
-<p>check implementation from https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/<strong>init</strong>.py#L187</p>
-</blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="c1"># https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="c1"># @ means no data conversion (curl feature)</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4"></a>  --data-binary <span class="s2">&quot;@demo/query_body.bin&quot;</span> <span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
-</code></pre></div>
-<blockquote>
-<p>check <a href="./demo"><code>demo</code></a> folder to discover more performant ways to query the server from Python or elsewhere.</p>
-</blockquote>
+<p>It can be applied to any model in theory, and, if done well, it should maintain accuracy.</p>
+<p>The purpose of this notebook is to show a process to perform quantization on any <code>Transformer</code> architectures.</p>
+<p>Moreover, the library is designed to offer a simple API and still let advanced users tweak the algorithm.</p>
+<h2 id="benchmark">Benchmark<a class="headerlink" href="#benchmark" title="Permanent link">#</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">TL;DR</p>
+<p>We benchmarked Pytorch and Nvidia TensorRT, on both <abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr>, with/without quantization, our methods provide the fastest inference by large margin.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th align="left">Framework</th>
+<th>Precision</th>
+<th>Latency (ms)</th>
+<th>Accuracy</th>
+<th align="left">Speedup</th>
+<th align="center">Hardware</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP32</td>
+<td>4267</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP16</td>
+<td>4428</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>INT-8</td>
+<td>3300</td>
+<td>85.9 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP32</td>
+<td>77</td>
+<td>86.6 %</td>
+<td align="left">X 1</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP16</td>
+<td>56</td>
+<td>86.6 %</td>
+<td align="left">X 1.38</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP32</td>
+<td>76</td>
+<td>86.6 %</td>
+<td align="left">X 1.01</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP16</td>
+<td>34</td>
+<td>86.6 %</td>
+<td align="left">X 2.26</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP32</td>
+<td>4023</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP16</td>
+<td>3957</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>INT-8</td>
+<td>3336</td>
+<td>86.5 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">TensorRT</td>
+<td>FP16</td>
+<td>30</td>
+<td>86.6 %</td>
+<td align="left">X 2.57</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left">TensorRT (<strong>our method</strong>)</td>
+<td><strong>INT-8</strong></td>
+<td><strong>17</strong></td>
+<td>86.2 %</td>
+<td align="left"><strong>X 4.53</strong></td>
+<td align="center"><strong><abbr title="Graphics Processing Unit">GPU</abbr></strong></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>measures done on a Nvidia RTX 3090 <abbr title="Graphics Processing Unit">GPU</abbr> + 12 cores i7 Intel <abbr title="Central Processing Unit">CPU</abbr> (support AVX-2 instruction)
+Roberta <code>base</code> architecture flavor with batch of size 32 / seq len 256, similar results obtained for other sizes/seq len not included in the table.
+Accuracy obtained after a single epoch, no LR search or any hyper parameter optimization</p>
+</div>
+<p>Check the end to end demo to see where these numbers are from.</p>
 
               
             </article>
@@ -901,7 +1137,7 @@ If you have several strings, just concatenate the results.</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../setup/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation" rel="prev">
+        <a href="../python/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TensorRT in Python" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -910,20 +1146,20 @@ If you have several strings, just concatenate the results.</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Installation
+              TensorRT in Python
             </div>
           </div>
         </a>
       
       
         
-        <a href="../compare/" class="md-footer__link md-footer__link--next" aria-label="Next: Compare inference engines" rel="next">
+        <a href="../quantization_theory/" class="md-footer__link md-footer__link--next" aria-label="Next: Theory" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Compare inference engines
+              Theory
             </div>
           </div>
           <div class="md-footer__button md-icon">

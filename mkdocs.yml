@@ -39,6 +39,10 @@ markdown_extensions:
   - pymdownx.superfences
   - toc:
       permalink: "#"
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
 
 plugins:
   - search
@@ -67,7 +71,7 @@ extra:
 
 nav:
     - Why this tool?: index.md
-    - Installation: setup.md
+    - Installation: setup_local.md
     - Run (1 command): started.md
     - Compare inference engines: compare.md
     - How ONNX conversion works? : onnx_convert.md

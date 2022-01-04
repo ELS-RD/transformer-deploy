@@ -30,4 +30,4 @@ Usually, you will choose something very close to 100.
 
 ## One step further, the QAT
 
-If it's not enough, the last step is to just fine tune a second the mode
+If it's not enough, the last step is to just fine tune a second the model. It helps to retrieve a bit of accuracy.

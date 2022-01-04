@@ -1,5 +1,17 @@
 # Run in a single command
 
+!!! tip
+
+    You can run commands below from Docker directly (no need to install Nvidia dependencies outside Docker one), like:
+    ```shell
+    docker run -it --rm --gpus all \
+    -v $PWD:/project ghcr.io/els-rd/transformer-deploy:latest \
+    bash -c "cd /project && \
+      convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
+      --backend onnx \
+      --seq-len 128 128 128"
+    ```
+
 With the single command below, you will:
 
 * **download** the model and its tokenizer from :hugging: Hugging Face hub, 

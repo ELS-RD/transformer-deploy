@@ -38,3 +38,5 @@ CPU quantization is supported out of the box by `Pytorch` and `ONNX Runtime`.
 In the specific case of `Transformer` models, few demos from Nvidia and Microsoft exist; they are all for the old vanilla Bert architecture.
 
 It doesn't support modern architectures out of the box, like `Albert`, `Roberta`, `Deberta` or `Electra`.
+
+--8<-- "resources/abbreviations.md"

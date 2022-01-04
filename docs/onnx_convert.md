@@ -2,7 +2,7 @@
 
 To ease optimization we need to convert our Pytorch model written in imperative code in a mostly static graph.  
 Therefore, optimization tooling will be able to run static analysis and search for some pattern to optimize.  
-The target graph format is `ONNX`.
+The target graph format is ONNX.
 
 !!! quote "from https://onnx.ai/"
 
@@ -62,3 +62,5 @@ def convert_to_onnx(
     One particular point is that we declare some axis as dynamic.  
     If we were not doing that, the graph would only accept tensors with the exact same shape that the ones we are using to build it (the dummy data), so sequence length or batch size would be fixed.  
     The name we have given to input and output fields will be reused in other tools.
+
+--8<-- "resources/abbreviations.md"

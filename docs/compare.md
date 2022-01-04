@@ -1,4 +1,4 @@
-# High level tool comparaison
+# High level comparaison
 
 !!! summary
 
@@ -14,3 +14,5 @@
 | :octicons-cpu-16: Hardware support                        | :material-check: <br/> GPU + Jetson                     | :material-check-all: <br/> CPU + GPU + IoT + Edge + Mobile | :material-check: <br/> CPU + GPU              |                                                                                                                                 |
 | :octicons-stopwatch-16: Performance                       | :material-speedometer:                                  | :material-speedometer-medium:                              | :material-speedometer-slow:                   | TensorRT is usually 5 to 10X faster than Pytorch when you use quantization, etc.                                                | 
 | :material-target: Accuracy                                | :material-speedometer-medium:                           | :material-speedometer:                                     | :material-speedometer:                        | TensorRT optimizations may be a bit too aggressive and decrease model accuracy. It requires manual modification to retrieve it. |
+
+--8<-- "resources/abbreviations.md"

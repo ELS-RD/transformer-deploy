@@ -33,10 +33,12 @@ convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend onnx --seq-len
 # [ONNX Runtime (optimized)] mean=3.66ms, sd=0.23ms, min=3.57ms, max=6.46ms, median=3.62ms, 95p=3.70ms, 99p=4.95ms
 ```
 
-> **128 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model. 
-> Better to have the same value for seq len to get best performances from TensorRT (ONNX Runtime has not this limitation).
->  
-> **1 32 32** -> batch size, same as above. Good idea to get 1 as minimum value. No impact on TensorRT performance.
+!!! info
+
+    **128 128 128** -> minimum, optimal, maximum sequence length, to help TensorRT better optimize your model. 
+    Better to have the same value for seq len to get best performances from TensorRT (ONNX Runtime has not this limitation).
+
+    **1 32 32** -> batch size, same as above. Good idea to get 1 as minimum value. No impact on TensorRT performance.
 
 * Launch Nvidia Triton inference server to play with both ONNX and TensorRT models:
 
@@ -67,7 +69,10 @@ text_b = text.encode('UTF-8')
 print(struct.pack("<I", len(text_b))+text_b)  # <I means little-endian unsigned integers, followed by the number of elements
 ```
 
-> check implementation from https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187
+!!! tip
+
+    check Nvidia implementation from [https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187](https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187)
+    for more information.
 
 ```shell
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
@@ -78,3 +83,5 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 ```
 
 > check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
+
+--8<-- "resources/abbreviations.md"

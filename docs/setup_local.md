@@ -1,5 +1,11 @@
 # Installation
 
+!!! tip
+
+    Use Docker if you don't want to install all Nvidia dependencies (for a first try for instance).  
+    In the long term, local install is probably a better idea.
+
+
 !!! danger "6 rules to install locally Nvidia dependencies"
 
     You may have heard or experienced difficulties in installing Nvidia dependencies, or making them detected by your system.
@@ -9,7 +15,7 @@
 
     **2nd rule**:  don't follow install guides from Nvidia dependency manual, they are not always up to date  
 
-    **3rd rule**: only follow install guides from Nvidia ==downlad page==, they are the only ones always up to date  
+    **3rd rule**: only follow install guides from Nvidia ==downlad pages==, they are the only ones with updated instructions  
 
     **4th rule**: uninstall all your Nvidia dependencies not coming directly from a Nvidia repo (including the Ubuntu driver)  
     and reinstall them from Nvidia repositories  
@@ -23,9 +29,9 @@ The list of dependencies you will need to run this library locally:
 
 * [CUDA](https://developer.nvidia.com/cuda-toolkit) >= 11.4.x
 * [cuDNN](https://developer.nvidia.com/cudnn-download-survey) 8.2
-* [TensorRT](https://developer.nvidia.com/tensorrt) v8.2.1 (GA)
+* [TensorRT](https://developer.nvidia.com/tensorrt) 8.2.1 (GA)
 
-Optional, to run this library from Docker:
+Optional, to run this library from Docker (so you don't have to install all other dependencies):
 
 * [nvidia-docker](https://nvidia.github.io/nvidia-docker/)
 
@@ -43,7 +49,7 @@ git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 ```
 
-* for GPU support:
+* for CPU/GPU support:
 
 ```shell
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
@@ -51,7 +57,7 @@ pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.htm
 pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\&subdirectory=tools/pytorch-quantization/
 ```
 
-* for CPU support:
+* for CPU **only** support:
 
 ```shell
 pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
@@ -62,3 +68,5 @@ To build your own version of the Docker image:
 ```shell
 make build_docker
 ```
+
+--8<-- "resources/abbreviations.md"

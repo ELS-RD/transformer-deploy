@@ -43,3 +43,5 @@ Moreover, the library is designed to offer a simple API and still let advanced u
     Accuracy obtained after a single epoch, no LR search or any hyper parameter optimization
 
 Check the end to end demo to see where these numbers are from.
+
+--8<-- "resources/abbreviations.md"

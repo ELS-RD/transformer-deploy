@@ -43,6 +43,7 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.mark
   - pymdownx.tilde
+  - abbr
 
 plugins:
   - search
@@ -72,7 +73,7 @@ extra:
 nav:
     - Why this tool?: index.md
     - Installation: setup_local.md
-    - Run (1 command): started.md
+    - Run (1 command): run.md
     - Compare inference engines: compare.md
     - How ONNX conversion works? : onnx_convert.md
     - What is done during inference optimization? : optimizations.md

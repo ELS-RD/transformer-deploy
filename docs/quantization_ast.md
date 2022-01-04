@@ -53,3 +53,5 @@ with QATCalibrate() as qat:
 !!! info
 
     The first `context manager` will enable quantization support, and the `setup_model_qat()` method will add the QDQ nodes.
+
+--8<-- "resources/abbreviations.md"

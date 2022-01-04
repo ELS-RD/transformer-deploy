@@ -146,3 +146,5 @@ latencies:
 ```
 
 </details>
+
+--8<-- "resources/abbreviations.md"

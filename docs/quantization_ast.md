@@ -47,8 +47,10 @@ with QATCalibrate() as qat:
         for data in my_data_loader:
             model_q(**data)  # <- calibration happens here
 
-# export ONNX and perform inference...
+model_q.save_model_to_file("path/to/somewhere")
 ```
+
+... and then in shell `convert_model -m path/to/somewhere --quantization ...`
 
 !!! info
 

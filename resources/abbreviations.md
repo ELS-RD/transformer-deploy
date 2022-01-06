@@ -8,3 +8,4 @@
 *[BSD]: Berkeley Software Distribution
 *[GPU]: Graphics Processing Unit
 *[CPU]: Central Processing Unit
+*[IoT]: Internet Of Things

@@ -22,8 +22,13 @@ from typing import Dict, List
 
 import numpy as np
 
-# noinspection PyUnresolvedReferences
-import triton_python_backend_utils as pb_utils
+
+try:
+    # noinspection PyUnresolvedReferences
+    import triton_python_backend_utils as pb_utils
+except ImportError:
+    pass  # triton_python_backend_utils exists only inside Triton Python backend.
+
 from transformers import AutoTokenizer, PreTrainedTokenizer, TensorType
 
 
@@ -42,7 +47,7 @@ class TritonPythonModel:
         self.is_tensorrt = "tensorrt" in model_name
         self.tokenizer = AutoTokenizer.from_pretrained(path)
 
-    def execute(self, requests) -> List[List[pb_utils.Tensor]]:
+    def execute(self, requests) -> "List[List[pb_utils.Tensor]]":
         """
         Parse and tokenize each request
         :param requests: 1 or more requests received by Triton server.

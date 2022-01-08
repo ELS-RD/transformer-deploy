@@ -15,7 +15,7 @@
     
     
       
-        <title>Python AST modification - transformer-deploy by Lefebvre Dalloz</title>
+        <title>How is it implemented? - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Python AST modification
+              How is it implemented?
             
           </span>
         </div>
@@ -220,7 +220,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
-        Why this tool?
+        Why transformer-deploy?
       </a>
     </li>
   
@@ -235,7 +235,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../setup_local/" class="md-nav__link">
-        Installation
+        Installation (local or Docker only)
       </a>
     </li>
   
@@ -265,7 +265,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../compare/" class="md-nav__link">
-        Compare inference engines
+        Which tool to choose?
       </a>
     </li>
   
@@ -310,7 +310,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../python/" class="md-nav__link">
-        TensorRT in Python
+        Use TensorRT in Python script
       </a>
     </li>
   
@@ -335,14 +335,14 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link" for="__nav_8">
-          GPU quantization with TensorRT
+          GPU quantization for X2 speed-up
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="GPU quantization with TensorRT" data-md-level="1">
+      <nav class="md-nav" aria-label="GPU quantization for X2 speed-up" data-md-level="1">
         <label class="md-nav__title" for="__nav_8">
           <span class="md-nav__icon md-icon"></span>
-          GPU quantization with TensorRT
+          GPU quantization for X2 speed-up
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -353,7 +353,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../quantization_intro/" class="md-nav__link">
-        Introduction
+        Why using quantization?
       </a>
     </li>
   
@@ -367,7 +367,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../quantization_theory/" class="md-nav__link">
-        Theory
+        What is the theory?
       </a>
     </li>
   
@@ -390,7 +390,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Python AST modification
+        How is it implemented?
       </a>
       
     </li>
@@ -405,7 +405,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../quantization_ptq/" class="md-nav__link">
-        PTQ and QAT
+        PTQ and QAT, who are they?
       </a>
     </li>
   
@@ -441,7 +441,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../demo/" class="md-nav__link">
-        End to end demo, from optimization to deployment
+        From optimization to deployment: end to end demo
       </a>
     </li>
   
@@ -986,9 +986,10 @@ Converting the input to float tensor fixes the issue. </p>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">my_data_loader</span><span class="p">:</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a>            <span class="n">model_q</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># &lt;- calibration happens here</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="c1"># export ONNX and perform inference...</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="n">model_q</span><span class="o">.</span><span class="n">save_model_to_file</span><span class="p">(</span><span class="s2">&quot;path/to/somewhere&quot;</span><span class="p">)</span>
 </code></pre></div>
 </td></tr></table>
+<p>... and then in shell <code>convert_model -m path/to/somewhere --quantization ...</code></p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>The first <code>context manager</code> will enable quantization support, and the <code>setup_model_qat()</code> method will add the <abbr title="Quantize and Dequantize nodes">QDQ</abbr> nodes.</p>
@@ -1006,7 +1007,7 @@ Converting the input to float tensor fixes the issue. </p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../quantization_theory/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Theory" rel="prev">
+        <a href="../quantization_theory/" class="md-footer__link md-footer__link--prev" aria-label="Previous: What is the theory?" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1015,20 +1016,20 @@ Converting the input to float tensor fixes the issue. </p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              Theory
+              What is the theory?
             </div>
           </div>
         </a>
       
       
         
-        <a href="../quantization_ptq/" class="md-footer__link md-footer__link--next" aria-label="Next: PTQ and QAT" rel="next">
+        <a href="../quantization_ptq/" class="md-footer__link md-footer__link--next" aria-label="Next: PTQ and QAT, who are they?" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              PTQ and QAT
+              PTQ and QAT, who are they?
             </div>
           </div>
           <div class="md-footer__button md-icon">

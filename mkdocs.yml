@@ -71,20 +71,20 @@ extra:
   generator: false
 
 nav:
-    - Why this tool?: index.md
-    - Installation: setup_local.md
+    - Why transformer-deploy?: index.md
+    - Installation (local or Docker only): setup_local.md
     - Run (1 command): run.md
-    - Compare inference engines: compare.md
+    - Which tool to choose?: compare.md
     - How ONNX conversion works? : onnx_convert.md
     - What is done during inference optimization? : optimizations.md
-    - TensorRT in Python: python.md
-    - GPU quantization with TensorRT:
-        - Introduction: quantization_intro.md
-        - Theory: quantization_theory.md
-        - Python AST modification: quantization_ast.md
-        - PTQ and QAT: quantization_ptq.md
+    - Use TensorRT in Python script: python.md
+    - GPU quantization for X2 speed-up:
+        - Why using quantization?: quantization_intro.md
+        - What is the theory?: quantization_theory.md
+        - How is it implemented?: quantization_ast.md
+        - PTQ and QAT, who are they?: quantization_ptq.md
         - End to end demo: quantization.ipynb
-    - End to end demo, from optimization to deployment: demo.md
+    - "From optimization to deployment: end to end demo": demo.md
     - AWS benchmarks: benchmarks.md
     - FAQ: faq.md
     - API: reference/

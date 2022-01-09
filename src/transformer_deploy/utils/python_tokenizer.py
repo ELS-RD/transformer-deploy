@@ -63,12 +63,10 @@ class TritonPythonModel:
                 # tensorrt uses int32 as input type, ort uses int64
                 tokens = {k: v.astype(np.int32) for k, v in tokens.items()}
             # communicate the tokenization results to Triton server
-            input_ids = pb_utils.Tensor("input_ids", tokens["input_ids"])
-            attention = pb_utils.Tensor("attention_mask", tokens["attention_mask"])
-            outputs = [input_ids, attention]
-            if "token_type_ids" in tokens.keys():
-                token_type_ids = pb_utils.Tensor("token_type_ids", tokens["token_type_ids"])
-                outputs.append(token_type_ids)
+            outputs = list()
+            for input_name in self.tokenizer.model_input_names:
+                tensor_input = pb_utils.Tensor(input_name, tokens[input_name])
+                outputs.append(tensor_input)
 
             inference_response = pb_utils.InferenceResponse(output_tensors=outputs)
             responses.append(inference_response)

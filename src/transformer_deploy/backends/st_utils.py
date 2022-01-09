@@ -37,11 +37,11 @@ class STransformerWrapper(nn.Module):
 
     def forward(self, *kargs, **kwargs):
         inputs = dict()
-        if len(kargs) > 0:
+        if len(kargs) >= 2:
             inputs["input_ids"] = kargs[0]
-            inputs["attention_mask"] = kargs[1]
-        if len(kargs) == 3:
-            inputs["token_type_ids"] = kargs[2]
+            inputs["attention_mask"] = kargs[-1]
+            if len(kargs) == 3:
+                inputs["token_type_ids"] = kargs[1]
         if len(kwargs) > 0:
             inputs = kwargs
         assert 2 <= len(inputs) <= 3, f"unexpected number of inputs: {len(inputs)}"

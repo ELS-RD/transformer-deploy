@@ -29,33 +29,8 @@ from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
-from torch import nn
 from torch.onnx import TrainingMode
 from transformers import PreTrainedModel
-
-
-try:
-    # noinspection PyUnresolvedReferences
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    pass
-
-
-class STransformerWrapper(nn.Module):
-    """
-    Wrap sentence-transformers model to provide a forward function with multiple inputs as expected by ONNX export tool.
-    """
-
-    def __init__(self, model: "SentenceTransformer"):
-        super().__init__()
-        self.model = model
-
-    def forward(self, *kargs):
-        assert 2 <= len(kargs) <= 3, f"unexpected number of inputs: {len(kargs)}"
-        outputs = self.model.forward({"input_ids": kargs[0], "attention_mask": kargs[1]})
-        if len(kargs) == 3:
-            outputs["token_type_ids"] = kargs[2]
-        return outputs["sentence_embedding"]
 
 
 def create_model_for_provider(
@@ -82,23 +57,19 @@ def create_model_for_provider(
 
 
 def convert_to_onnx(
-    model_pytorch: Union[PreTrainedModel, "SentenceTransformer"],
+    model_pytorch: PreTrainedModel,
     output_path: str,
     inputs_pytorch: Od[str, torch.Tensor],
     opset: int = 12,
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
-    :param model_pytorch: Pytorch model (transformers or sentence-transformers)
+    :param model_pytorch: Pytorch model (transformers)
     :param output_path: where to save ONNX file
     :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
     Should be on the same device than the model (CPU or GPU)
     :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model
     """
-    if type(model_pytorch).__name__ == "SentenceTransformer":
-        print("here")
-        logging.info("wrap sentence-transformers model for ONNX export")
-        model_pytorch = STransformerWrapper(model=model_pytorch)
     # dynamic axis == variable length axis
     print(type(model_pytorch).__name__)
     dynamic_axis = OrderedDict()

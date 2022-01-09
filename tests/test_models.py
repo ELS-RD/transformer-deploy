@@ -122,3 +122,25 @@ def test_camembert_gpu():
     ]
     args = parse_args(commands=commands)
     main(commands=args)
+
+
+def test_sentence_transformers_cpu():
+    commands = [
+        "--model",
+        "sentence-transformers/msmarco-MiniLM-L6-cos-v5",
+        "--backend",
+        "onnx",
+        "--sentence-transformers",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)

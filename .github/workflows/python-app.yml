@@ -24,6 +24,7 @@ jobs:
         pip install -U pip
         python -m pip install --upgrade pip
         pip install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
+        pip install sentence-transformers
 
     - name: linter and tests
       run: |

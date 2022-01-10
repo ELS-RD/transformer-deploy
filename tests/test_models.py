@@ -20,10 +20,10 @@ from transformer_deploy.utils.args import parse_args
 
 
 @pytest.mark.gpu
-def test_minilm_gpu():
+def test_albert_gpu():
     commands = [
         "--model",
-        "philschmid/MiniLM-L6-H384-uncased-sst2",
+        "nreimers/albert-small-v2",
         "--backend",
         "tensorrt",
         "onnx",
@@ -124,10 +124,33 @@ def test_camembert_gpu():
     main(commands=args)
 
 
+@pytest.mark.gpu
+def test_electra_gpu():
+    commands = [
+        "--model",
+        "google/electra-small-discriminator",
+        "--backend",
+        "tensorrt",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
 def test_sentence_transformers_cpu():
     commands = [
         "--model",
-        "sentence-transformers/msmarco-MiniLM-L6-cos-v5",
+        "sentence-transformers/msmarco-distilbert-cos-v5",
         "--backend",
         "onnx",
         "--sentence-transformers",

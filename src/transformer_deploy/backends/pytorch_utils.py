@@ -77,19 +77,32 @@ def get_model_size(path: str) -> Tuple[int, int]:
 
 
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel,
-    output_path: str,
-    inputs_pytorch: Od[str, torch.Tensor],
-    opset: int = 12,
+    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor], quantization: bool
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
+    ONNX opset 12 used for non quantized models, and 13 otherwise.
     :param model_pytorch: Pytorch model (transformers)
     :param output_path: where to save ONNX file
     :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
     Should be on the same device than the model (CPU or GPU)
-    :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model
+    :param quantization: model is quantized
     """
+    if quantization:
+        try:
+            from pytorch_quantization.nn import TensorQuantizer
+        except ImportError:
+            raise ImportError(
+                "It seems that pytorch-quantization is not yet installed. "
+                "It is required when you enable the quantization flag and use CUDA device."
+                "Please find installation instructions on "
+                "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization or use:\n"
+                "pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\\&"
+                "subdirectory=tools/pytorch-quantization/"
+            )
+
+        TensorQuantizer.use_fb_fake_quant = True
+
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():
@@ -100,7 +113,7 @@ def convert_to_onnx(
             model_pytorch,  # model to optimize
             args=tuple(inputs_pytorch.values()),  # tuple of multiple inputs
             f=output_path,  # output path / file object
-            opset_version=opset,  # the ONNX version to use, 13 if quantized model, 12 for not quantized ones
+            opset_version=13,  # the ONNX version to use, >= 13 supports channel quantized model
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
             output_names=["output"],  # output axis name
@@ -108,19 +121,5 @@ def convert_to_onnx(
             training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,
         )
-
-
-def convert_to_quant_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor]
-) -> None:
-    """
-    Convert a quantized Pytorch model to ONNX file.
-    :param model_pytorch: Pytorch model
-    :param output_path: ONNX file path
-    :param inputs_pytorch: some dummy input (Pytorch tensor on the same device than the model)
-    """
-    from pytorch_quantization.nn import TensorQuantizer
-
-    TensorQuantizer.use_fb_fake_quant = True
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=output_path, inputs_pytorch=inputs_pytorch, opset=13)
-    TensorQuantizer.use_fb_fake_quant = False
+    if quantization:
+        TensorQuantizer.use_fb_fake_quant = False

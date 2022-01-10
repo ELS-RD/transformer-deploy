@@ -36,7 +36,7 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 * deploy model on `Nvidia Triton` inference server (enterprise-grade), 6X faster than `FastAPI`
 * add quantization support for both CPU and GPU
 * simple to use: optimization done in a single command line!
-* supported model: any model than can be exported on ONNX (-> most of them)
+* supported model: any model than can be exported to ONNX (-> most of them)
 * supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)
 
 <!--why-end-->

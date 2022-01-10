@@ -118,7 +118,7 @@ def main(commands: argparse.Namespace):
     onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
     if run_on_cuda:
-        assert torch.cuda.is_available(), "CUDA/GPU is not available. Please check your CUDA installation"
+        assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
@@ -143,28 +143,12 @@ def main(commands: argparse.Namespace):
     )
 
     # create onnx model and compare results
-    opset = 12
-    if commands.quantization and run_on_cuda:
-        try:
-            from pytorch_quantization.nn import TensorQuantizer
-        except ImportError:
-            raise ImportError(
-                "It seems that pytorch-quantization is not yet installed. "
-                "It is required when you enable the quantization flag and use CUDA device."
-                "Please find installation instructions on "
-                "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization or use:\n"
-                "pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\\&"
-                "subdirectory=tools/pytorch-quantization/"
-            )
-
-        TensorQuantizer.use_fb_fake_quant = True
-        opset = 13
-
     convert_to_onnx(
-        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch[0], opset=opset
+        model_pytorch=model_pytorch,
+        output_path=onnx_model_path,
+        inputs_pytorch=inputs_pytorch[0],
+        quantization=commands.quantization,
     )
-    if commands.quantization and run_on_cuda:
-        TensorQuantizer.use_fb_fake_quant = False
 
     timings = {}
     pytorch_infer = (

@@ -35,9 +35,12 @@ input2.set_data_from_numpy(np.ones((1, nb_tokens), dtype=np.int64), binary_data=
 output = tritonclient.http.InferRequestedOutput("output", binary_data=False)
 
 
-def perform_random_inference():
+def perform_random_inference() -> np.ndarray:
     input0.set_data_from_numpy(np.random.randint(10000, size=(1, nb_tokens), dtype=np.int64), binary_data=False)
-    triton_client.infer(model_name, model_version=model_version, inputs=[input0, input1, input2], outputs=[output])
+    resp = triton_client.infer(
+        model_name, model_version=model_version, inputs=[input0, input1, input2], outputs=[output]
+    )
+    return resp.as_numpy("output")
 
 
 # warmup

@@ -29,12 +29,14 @@ import torch
 from numpy import ndarray
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from transformer_deploy.backends.ort_utils import (
+from transformer_deploy.backends.ort_utils import cpu_quantization, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.pytorch_utils import (
     convert_to_onnx,
-    cpu_quantization,
-    create_model_for_provider,
-    optimize_onnx,
+    get_model_size,
+    infer_classification_pytorch,
+    infer_feature_extraction_pytorch,
 )
+from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
     generate_multiple_inputs,
@@ -110,23 +112,24 @@ def main(commands: argparse.Namespace):
         auth_token = commands.auth_token
     else:
         auth_token = None
-
+    run_on_cuda: bool = commands.device.startswith("cuda")
     Path(commands.output).mkdir(parents=True, exist_ok=True)
     onnx_model_path = os.path.join(commands.output, "model-original.onnx")
     onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
-    if commands.device == "cuda":
-        assert torch.cuda.is_available(), "CUDA is not available. Please check your CUDA installation"
+    if run_on_cuda:
+        assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
-    model_pytorch: PreTrainedModel = AutoModelForSequenceClassification.from_pretrained(
-        commands.model, use_auth_token=auth_token
-    )
+    if commands.sentence_transformers:
+        model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
+    else:
+        model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     model_pytorch.eval()
-    if commands.device == "cuda":
+    if run_on_cuda:
         model_pytorch.cuda()
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
@@ -140,54 +143,33 @@ def main(commands: argparse.Namespace):
     )
 
     # create onnx model and compare results
-    opset = 12
-    if commands.quantization and commands.device == "cuda":
-        try:
-            from pytorch_quantization.nn import TensorQuantizer
-        except ImportError:
-            raise ImportError(
-                "It seems that pytorch-quantization is not yet installed. "
-                "It is required when you enable the quantization flag and use CUDA device."
-                "Please find installation instructions on "
-                "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization or use:\n"
-                "pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\\&"
-                "subdirectory=tools/pytorch-quantization/"
-            )
-
-        TensorQuantizer.use_fb_fake_quant = True
-        opset = 13
-
     convert_to_onnx(
-        model_pytorch=model_pytorch, output_path=onnx_model_path, inputs_pytorch=inputs_pytorch[0], opset=opset
+        model_pytorch=model_pytorch,
+        output_path=onnx_model_path,
+        inputs_pytorch=inputs_pytorch[0],
+        quantization=commands.quantization,
     )
-    if commands.quantization and commands.device == "cuda":
-        TensorQuantizer.use_fb_fake_quant = False
 
     timings = {}
-
-    def infer_classification_pytorch(model: PreTrainedModel) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
-        def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-            model_output = model(**inputs).logits.detach().cpu().numpy()  # noqa: F821
-            if commands.device == "cuda":
-                torch.cuda.synchronize()
-            return model_output
-
-        return infer
-
+    pytorch_infer = (
+        infer_feature_extraction_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
+        if commands.sentence_transformers
+        else infer_classification_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
+    )
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=infer_classification_pytorch(model=model_pytorch),
+            infer=pytorch_infer,
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
         timings["Pytorch (FP32)"] = time_buffer
-        if commands.device == "cuda":
+        if run_on_cuda:
             from torch.cuda.amp import autocast
 
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=infer_classification_pytorch(model=model_pytorch),
+                    infer=pytorch_infer,
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
@@ -202,7 +184,7 @@ def main(commands: argparse.Namespace):
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
             pytorch_int8_output, time_buffer = launch_inference(
-                infer=infer_classification_pytorch(model=model_pytorch),
+                infer=pytorch_infer,
                 inputs=inputs_pytorch,
                 nb_measures=commands.nb_measures,
             )
@@ -273,17 +255,20 @@ def main(commands: argparse.Namespace):
         conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
     if "onnx" in commands.backend:
+        num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,
             onnx_optim_model_path=onnx_optim_model_path,
-            fp16=commands.device == "cuda",
-            use_cuda=commands.device == "cuda",
+            fp16=run_on_cuda,
+            use_cuda=run_on_cuda,
+            num_attention_heads=num_attention_heads,
+            hidden_size=hidden_size,
         )
         if commands.device == "cpu" and commands.quantization:
             cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)
 
-        ort_provider = "CUDAExecutionProvider" if commands.device == "cuda" else "CPUExecutionProvider"
+        ort_provider = "CUDAExecutionProvider" if run_on_cuda else "CPUExecutionProvider"
         for provider, model_path, benchmark_name in [
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
             (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
@@ -322,7 +307,7 @@ def main(commands: argparse.Namespace):
         )
         conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 
-    if commands.device == "cuda":
+    if run_on_cuda:
         from torch.cuda import get_device_name
 
         print(f"Inference done on {get_device_name(0)}")

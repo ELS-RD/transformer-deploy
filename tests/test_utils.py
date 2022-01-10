@@ -16,6 +16,7 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
+from transformer_deploy.backends.pytorch_utils import get_model_size
 from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs
 
 
@@ -50,3 +51,14 @@ def test_multiple_generate_input():
     assert len(multiple_inputs_pytorch) == 4
     assert len(multiple_inputs_onnx) == 4
     assert set(multiple_inputs_pytorch[0].keys()) == {"input_ids", "attention_mask"}
+
+
+def test_extract_model_info():
+    models = [
+        "philschmid/MiniLM-L6-H384-uncased-sst2",
+        "camembert-base",
+        "sentence-transformers/msmarco-distilbert-cos-v5",
+    ]
+    for m in models:
+        att, hidden_size = get_model_size(path=m)
+        assert att > 0 and hidden_size > 0

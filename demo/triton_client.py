@@ -25,7 +25,7 @@ if __name__ == "__main__":
         description="require inference", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--length", required=True, help="sequence length", choices=(16, 128), type=int)
-    parser.add_argument("--model", required=True, help="sequence length", choices=("onnx", "tensorrt"))
+    parser.add_argument("--model", required=True, help="model type", choices=("onnx", "tensorrt"))
     args, _ = parser.parse_known_args()
 
     setup_logging()

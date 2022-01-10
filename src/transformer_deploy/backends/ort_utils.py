@@ -18,19 +18,13 @@ All the tooling to ease ONNX Runtime usage.
 
 import logging
 import multiprocessing
-from collections import OrderedDict
-from typing import List
-from typing import OrderedDict as Od
-from typing import Union
+from typing import List, Union
 
-import torch
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
-from torch.onnx import TrainingMode
-from transformers import PreTrainedModel
 
 
 def create_model_for_provider(
@@ -56,54 +50,14 @@ def create_model_for_provider(
     return InferenceSession(path, options, providers=provider_to_use)
 
 
-def convert_to_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor], opset: int = 12
+def optimize_onnx(
+    onnx_path: str,
+    onnx_optim_model_path: str,
+    fp16: bool,
+    use_cuda: bool,
+    num_attention_heads: int = 0,
+    hidden_size: int = 0,
 ) -> None:
-    """
-    Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
-    :param model_pytorch: Pytorch model
-    :param output_path: where to save ONNX file
-    :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
-    Should be on the same device than the model (CPU or GPU)
-    :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model
-    """
-    # dynamic axis == variable length axis
-    dynamic_axis = OrderedDict()
-    for k in inputs_pytorch.keys():
-        dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
-    dynamic_axis["output"] = {0: "batch_size"}
-    with torch.no_grad():
-        torch.onnx.export(
-            model_pytorch,  # model to optimize
-            args=tuple(inputs_pytorch.values()),  # tuple of multiple inputs
-            f=output_path,  # output path / file object
-            opset_version=opset,  # the ONNX version to use, 13 if quantized model, 12 for not quantized ones
-            do_constant_folding=True,  # simplify model (replace constant expressions)
-            input_names=list(inputs_pytorch.keys()),  # input names
-            output_names=["output"],  # output axis name
-            dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
-            training=TrainingMode.EVAL,  # always put the model in evaluation mode
-            verbose=False,
-        )
-
-
-def convert_to_quant_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor]
-) -> None:
-    """
-    Convert a quantized Pytorch model to ONNX file.
-    :param model_pytorch: Pytorch model
-    :param output_path: ONNX file path
-    :param inputs_pytorch: some dummy input (Pytorch tensor on the same device than the model)
-    """
-    from pytorch_quantization.nn import TensorQuantizer
-
-    TensorQuantizer.use_fb_fake_quant = True
-    convert_to_onnx(model_pytorch=model_pytorch, output_path=output_path, inputs_pytorch=inputs_pytorch, opset=13)
-    TensorQuantizer.use_fb_fake_quant = False
-
-
-def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cuda: bool) -> None:
     """
     ONNX Runtime transformer graph optimization.
     Performs some operator fusion (merge several nodes of the graph in a single one)
@@ -112,6 +66,8 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
     :param onnx_optim_model_path: where to save optimized model
     :param fp16: use mixed precision (faster inference)
     :param use_cuda: perform optimization on GPU (should )
+    :param num_attention_heads: number of attention heads of a model (0 -> try to detect)
+    :param hidden_size: hidden layer size of a model (0 -> try to detect)
     """
     optimization_options = FusionOptions("bert")
     optimization_options.enable_gelu_approximation = False  # additional optimization
@@ -120,8 +76,8 @@ def optimize_onnx(onnx_path: str, onnx_optim_model_path: str, fp16: bool, use_cu
         model_type="bert",
         use_gpu=use_cuda,
         opt_level=1,
-        num_heads=0,  # automatic detection may not work with opset 13
-        hidden_size=0,  # automatic detection
+        num_heads=num_attention_heads,  # automatic detection with 0 may not work with opset 13 or distilbert models
+        hidden_size=hidden_size,  # automatic detection with 0
         optimization_options=optimization_options,
     )
     if fp16:

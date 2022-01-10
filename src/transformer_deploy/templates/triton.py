@@ -16,12 +16,15 @@
 Generate Nvidia Triton server configuration files.
 """
 
+import inspect
 import os
 import shutil
 from enum import Enum
 from pathlib import Path
 
 from transformers import PreTrainedTokenizer
+
+from transformer_deploy.utils import python_tokenizer
 
 
 class ModelType(Enum):
@@ -272,7 +275,7 @@ ensemble_scheduling {{
 
         tokenizer_model_folder_path = wd_path.joinpath(self.tokenizer_folder_name).joinpath("1")
         tokenizer.save_pretrained(str(tokenizer_model_folder_path.absolute()))
-        tokenizer_model_path = Path(__file__).absolute().parent.parent.joinpath("utils").joinpath("python_tokenizer.py")
-        shutil.copy(str(tokenizer_model_path), str(Path(tokenizer_model_folder_path).joinpath("model.py")))
+        source_code: str = inspect.getsource(python_tokenizer)
+        Path(tokenizer_model_folder_path).joinpath("model.py").write_text(source_code)
         model_folder_path = wd_path.joinpath(self.model_folder_name).joinpath("1")
         shutil.copy(model_path, os.path.join(model_folder_path, "model.bin"))

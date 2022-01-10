@@ -36,6 +36,8 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 * deploy model on `Nvidia Triton` inference server (enterprise-grade), 6X faster than `FastAPI`
 * add quantization support for both CPU and GPU
 * simple to use: optimization done in a single command line!
+* supported model: any model than can be exported to ONNX (-> most of them)
+* supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)
 
 <!--why-end-->
 
@@ -43,4 +45,4 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 > read [🤗 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="120">
 
-# Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.
+## Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.

@@ -71,7 +71,8 @@ def test_minilm_cpu():
     main(commands=args)
 
 
-def test_minilm_quantization_cpu():
+@pytest.mark.gpu
+def test_minilm_quantization():
     commands = [
         "--model",
         "philschmid/MiniLM-L6-H384-uncased-sst2",
@@ -85,8 +86,6 @@ def test_minilm_quantization_cpu():
         "8",
         "8",
         "8",
-        "--device",
-        "cpu",
         "--warmup",
         "5",
         "--nb-measures",

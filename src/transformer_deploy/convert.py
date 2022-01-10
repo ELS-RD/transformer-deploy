@@ -29,13 +29,13 @@ import torch
 from numpy import ndarray
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from transformer_deploy.backends.ort_utils import (
+from transformer_deploy.backends.ort_utils import cpu_quantization, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.pytorch_utils import (
     convert_to_onnx,
-    cpu_quantization,
-    create_model_for_provider,
-    optimize_onnx,
+    get_model_size,
+    infer_classification_pytorch,
+    infer_feature_extraction_pytorch,
 )
-from transformer_deploy.backends.pytorch_utils import infer_classification_pytorch, infer_feature_extraction_pytorch
 from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
@@ -271,12 +271,15 @@ def main(commands: argparse.Namespace):
         conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
     if "onnx" in commands.backend:
+        num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,
             onnx_optim_model_path=onnx_optim_model_path,
             fp16=run_on_cuda,
             use_cuda=run_on_cuda,
+            num_attention_heads=num_attention_heads,
+            hidden_size=hidden_size,
         )
         if commands.device == "cpu" and commands.quantization:
             cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)

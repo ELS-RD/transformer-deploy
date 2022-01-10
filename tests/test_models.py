@@ -139,6 +139,8 @@ def test_sentence_transformers_cpu():
         "8",
         "8",
         "8",
+        "--device",
+        "cpu",
         "--output",
         tempfile.mkdtemp(),
     ]

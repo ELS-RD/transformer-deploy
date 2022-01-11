@@ -10,19 +10,19 @@
       
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
     
     
       
-        <title>PTQ and QAT, who are they? - transformer-deploy by Lefebvre Dalloz</title>
+        <title>St utils - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.edf004c2.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,9 +40,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#post-training-quantization-ptq-and-quantization-aware-training-qat" class="md-skip">
+        <a href="#src.transformer_deploy.backends.st_utils" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              PTQ and QAT, who are they?
+              St utils
             
           </span>
         </div>
@@ -188,7 +188,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href="../../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -219,7 +219,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         Why transformer-deploy?
       </a>
     </li>
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../setup_local/" class="md-nav__link">
+      <a href="../../../setup_local/" class="md-nav__link">
         Installation (local or Docker only)
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../run/" class="md-nav__link">
+      <a href="../../../run/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -264,7 +264,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../compare/" class="md-nav__link">
+      <a href="../../../compare/" class="md-nav__link">
         Which tool to choose?
       </a>
     </li>
@@ -279,7 +279,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../onnx_convert/" class="md-nav__link">
+      <a href="../../../onnx_convert/" class="md-nav__link">
         How ONNX conversion works?
       </a>
     </li>
@@ -294,7 +294,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../optimizations/" class="md-nav__link">
+      <a href="../../../optimizations/" class="md-nav__link">
         What is done during inference optimization?
       </a>
     </li>
@@ -309,7 +309,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../python/" class="md-nav__link">
+      <a href="../../../python/" class="md-nav__link">
         Use TensorRT in Python script
       </a>
     </li>
@@ -322,14 +322,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
       
       
       
@@ -352,7 +350,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_intro/" class="md-nav__link">
+      <a href="../../../quantization_intro/" class="md-nav__link">
         Why using quantization?
       </a>
     </li>
@@ -366,7 +364,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_theory/" class="md-nav__link">
+      <a href="../../../quantization_theory/" class="md-nav__link">
         What is the theory?
       </a>
     </li>
@@ -380,7 +378,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_ast/" class="md-nav__link">
+      <a href="../../../quantization_ast/" class="md-nav__link">
         How is it implemented?
       </a>
     </li>
@@ -392,66 +390,11 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          PTQ and QAT, who are they?
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../quantization_ptq/" class="md-nav__link">
         PTQ and QAT, who are they?
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-it" class="md-nav__link">
-    What is it?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-tune-a-ptq" class="md-nav__link">
-    How to tune a PTQ?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#one-step-further-the-qat" class="md-nav__link">
-    One step further, the QAT
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -463,7 +406,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization/" class="md-nav__link">
+      <a href="../../../quantization/" class="md-nav__link">
         End to end demo
       </a>
     </li>
@@ -485,7 +428,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../demo/" class="md-nav__link">
+      <a href="../../../demo/" class="md-nav__link">
         From optimization to deployment: end to end demo
       </a>
     </li>
@@ -500,7 +443,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../benchmarks/" class="md-nav__link">
+      <a href="../../../benchmarks/" class="md-nav__link">
         AWS benchmarks
       </a>
     </li>
@@ -515,7 +458,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
+      <a href="../../../faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -528,12 +471,14 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" checked>
       
       
       
@@ -556,7 +501,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/convert/" class="md-nav__link">
+      <a href="../../convert/" class="md-nav__link">
         Convert
       </a>
     </li>
@@ -596,7 +541,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQAlbert/" class="md-nav__link">
+      <a href="../../QDQModels/QDQAlbert/" class="md-nav__link">
         QDQAlbert
       </a>
     </li>
@@ -610,7 +555,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQBert/" class="md-nav__link">
+      <a href="../../QDQModels/QDQBert/" class="md-nav__link">
         QDQBert
       </a>
     </li>
@@ -624,7 +569,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQDeberta/" class="md-nav__link">
+      <a href="../../QDQModels/QDQDeberta/" class="md-nav__link">
         QDQDeberta
       </a>
     </li>
@@ -638,7 +583,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
+      <a href="../../QDQModels/QDQDistilbert/" class="md-nav__link">
         QDQDistilbert
       </a>
     </li>
@@ -652,7 +597,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQElectra/" class="md-nav__link">
+      <a href="../../QDQModels/QDQElectra/" class="md-nav__link">
         QDQElectra
       </a>
     </li>
@@ -666,7 +611,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQRoberta/" class="md-nav__link">
+      <a href="../../QDQModels/QDQRoberta/" class="md-nav__link">
         QDQRoberta
       </a>
     </li>
@@ -680,7 +625,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
+      <a href="../../QDQModels/ast_operator_patch/" class="md-nav__link">
         Ast operator patch
       </a>
     </li>
@@ -694,7 +639,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/ast_utils/" class="md-nav__link">
+      <a href="../../QDQModels/ast_utils/" class="md-nav__link">
         Ast utils
       </a>
     </li>
@@ -708,7 +653,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/calibration_utils/" class="md-nav__link">
+      <a href="../../QDQModels/calibration_utils/" class="md-nav__link">
         Calibration utils
       </a>
     </li>
@@ -722,7 +667,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/patch/" class="md-nav__link">
+      <a href="../../QDQModels/patch/" class="md-nav__link">
         Patch
       </a>
     </li>
@@ -741,12 +686,14 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" checked>
       
       
       
@@ -769,7 +716,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/ort_utils/" class="md-nav__link">
+      <a href="../ort_utils/" class="md-nav__link">
         Ort utils
       </a>
     </li>
@@ -783,7 +730,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/pytorch_utils/" class="md-nav__link">
+      <a href="../pytorch_utils/" class="md-nav__link">
         Pytorch utils
       </a>
     </li>
@@ -795,11 +742,75 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../reference/backends/st_utils/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          St utils
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         St utils
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.st_utils" class="md-nav__link">
+    src.transformer_deploy.backends.st_utils
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper" class="md-nav__link">
+    STransformerWrapper
+  </a>
+  
+    <nav class="md-nav" aria-label="STransformerWrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper.forward" class="md-nav__link">
+    forward()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.st_utils.load_sentence_transformers" class="md-nav__link">
+    load_sentence_transformers()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -811,7 +822,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/trt_utils/" class="md-nav__link">
+      <a href="../trt_utils/" class="md-nav__link">
         Trt utils
       </a>
     </li>
@@ -858,7 +869,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/benchmarks/utils/" class="md-nav__link">
+      <a href="../../benchmarks/utils/" class="md-nav__link">
         Utils
       </a>
     </li>
@@ -905,7 +916,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/templates/triton/" class="md-nav__link">
+      <a href="../../templates/triton/" class="md-nav__link">
         Triton
       </a>
     </li>
@@ -952,7 +963,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/utils/args/" class="md-nav__link">
+      <a href="../../utils/args/" class="md-nav__link">
         Args
       </a>
     </li>
@@ -990,8 +1001,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1000,22 +1009,35 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-is-it" class="md-nav__link">
-    What is it?
+  <a href="#src.transformer_deploy.backends.st_utils" class="md-nav__link">
+    src.transformer_deploy.backends.st_utils
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-tune-a-ptq" class="md-nav__link">
-    How to tune a PTQ?
+  <a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper" class="md-nav__link">
+    STransformerWrapper
   </a>
+  
+    <nav class="md-nav" aria-label="STransformerWrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper.forward" class="md-nav__link">
+    forward()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#one-step-further-the-qat" class="md-nav__link">
-    One step further, the QAT
+  <a href="#src.transformer_deploy.backends.st_utils.load_sentence_transformers" class="md-nav__link">
+    load_sentence_transformers()
   </a>
   
 </li>
@@ -1033,28 +1055,214 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-<h1 id="post-training-quantization-ptq-and-quantization-aware-training-qat">Post Training Quantization (<abbr title="Post Training Quantization">PTQ</abbr>) and Quantization Aware Training (<abbr title="Quantization Aware Training">QAT</abbr>)<a class="headerlink" href="#post-training-quantization-ptq-and-quantization-aware-training-qat" title="Permanent link">#</a></h1>
-<h2 id="what-is-it">What is it?<a class="headerlink" href="#what-is-it" title="Permanent link">#</a></h2>
-<p>A <abbr title="Post Training Quantization">PTQ</abbr> is basically a fine tuned model where we add quantization nodes and that we calibrate.</p>
-<p>Calibration is a key step in the static quantization process. Its quality depends on the final accuracy (the inference speed will stay the same).<br />
-Moreover, a good <abbr title="Post Training Quantization">PTQ</abbr> is a good basis for a good Quantization Aware Training (<abbr title="Quantization Aware Training">QAT</abbr>).</p>
-<p>By calling <code>with QATCalibrate(...) as qat:</code>, the lib will patch <code>Transformer</code> model <abbr title="Abstract Syntax Tree">AST</abbr> (source code) in RAM, basically adding quantization support to each model.</p>
-<h2 id="how-to-tune-a-ptq">How to tune a <abbr title="Post Training Quantization">PTQ</abbr>?<a class="headerlink" href="#how-to-tune-a-ptq" title="Permanent link">#</a></h2>
-<p>One of the things we try to guess during the calibration is what range of tensor values capture most of the information stored in the tensor.<br />
-Indeed, a FP32 tensor can store at the same time very large and very small values, we obviously can't do the same with a 8-bits integer tensors and a scale.<br />
-An 8-bits integer can only encode 255 values so we need to fix some limits and say, if a value is outside our limits, it just takes a maximum value instead of its real one.<br />
-For instance, if we say our range is -1000 to +1000 and a tensor contains the value +4000, it will be replaced by the maximum value, +1000.</p>
-<p>As said before, we will use the histogram method to find the perfect range. We also need to choose a percentile.<br />
-Usually, you will choose something very close to 100.</p>
-<div class="admonition danger">
-<p class="admonition-title">Danger</p>
-<p>If the percentile is too small, we put too many values outside the covered range.<br />
-Values outside the range will be replaced by a single maximum value and you lose some granularity in model weights.</p>
-<p>If the percentile is too big, your range will be very large and because 8-bits signed integers can only encode values between -127 to +127, even when you use a scale you lose in granularity.</p>
-<p>Therefore, we in our demo, we launched a grid search on percentile hyper parameter and retrived 1 accuracy point with very little effort.</p>
-</div>
-<h2 id="one-step-further-the-qat">One step further, the <abbr title="Quantization Aware Training">QAT</abbr><a class="headerlink" href="#one-step-further-the-qat" title="Permanent link">#</a></h2>
-<p>If it's not enough, the last step is to just fine tune a second the model. It helps to retrieve a bit of accuracy.</p>
+  <h1>St utils</h1>
+
+<div class="doc doc-object doc-module">
+
+<a id="src.transformer_deploy.backends.st_utils"></a>
+    <div class="doc doc-contents first">
+
+      <p>Utils related to sentence-transformers.</p>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="src.transformer_deploy.backends.st_utils.STransformerWrapper" class="doc doc-heading">
+        <code>
+STransformerWrapper            (<span title="torch.nn.modules.module.Module">Module</span>)
+        </code>
+
+
+
+<a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Wrap sentence-transformers model to provide a forward function with multiple inputs as expected by ONNX export tool.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/st_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">class</span> <span class="nc">STransformerWrapper</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Wrap sentence-transformers model to provide a forward function with multiple inputs as expected by ONNX export tool.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="s2">&quot;SentenceTransformer&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>        <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kargs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>            <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>            <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>                <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;token_type_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>            <span class="n">inputs</span> <span class="o">=</span> <span class="n">kwargs</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="k">assert</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;unexpected number of inputs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>        <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>        <span class="k">return</span> <span class="n">outputs</span><span class="p">[</span><span class="s2">&quot;sentence_embedding&quot;</span><span class="p">]</span>
+</code></pre></div>
+        </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="src.transformer_deploy.backends.st_utils.STransformerWrapper.forward" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.st_utils.STransformerWrapper.forward" class="headerlink" title="Permanent link">#</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<p>.. note::
+    Although the recipe for forward pass needs to be defined within
+    this function, one should call the :class:<code>Module</code> instance afterwards
+    instead of this since the former takes care of running the
+    registered hooks while the latter silently ignores them.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/st_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kargs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>            <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;token_type_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kargs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>        <span class="n">inputs</span> <span class="o">=</span> <span class="n">kwargs</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="k">assert</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;unexpected number of inputs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">inputs</span><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="k">return</span> <span class="n">outputs</span><span class="p">[</span><span class="s2">&quot;sentence_embedding&quot;</span><span class="p">]</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h2 id="src.transformer_deploy.backends.st_utils.load_sentence_transformers" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">load_sentence_transformers</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></code>
+
+
+<a href="#src.transformer_deploy.backends.st_utils.load_sentence_transformers" class="headerlink" title="Permanent link">#</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Load sentence-transformers model and wrap it to make it behave like any other transformers model</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>path</code></td>
+        <td><code>str</code></td>
+        <td><p>path to the model</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>STransformerWrapper</code></td>
+      <td><p>wrapped sentence-transformers model</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>src/transformer_deploy/backends/st_utils.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">load_sentence_transformers</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">STransformerWrapper</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    Load sentence-transformers model and wrap it to make it behave like any other transformers model</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    :param path: path to the model</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    :return: wrapped sentence-transformers model</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>        <span class="kn">from</span> <span class="nn">sentence_transformers</span> <span class="kn">import</span> <span class="n">SentenceTransformer</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>            <span class="s2">&quot;sentence-transformers library is not present, please install it: pip install sentence-transformers&quot;</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">model</span><span class="p">:</span> <span class="n">SentenceTransformer</span> <span class="o">=</span> <span class="n">SentenceTransformer</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="k">return</span> <span class="n">STransformerWrapper</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
 
               
             </article>
@@ -1068,7 +1276,7 @@ Values outside the range will be replaced by a single maximum value and you lose
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../quantization_ast/" class="md-footer__link md-footer__link--prev" aria-label="Previous: How is it implemented?" rel="prev">
+        <a href="../pytorch_utils/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pytorch utils" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1077,20 +1285,20 @@ Values outside the range will be replaced by a single maximum value and you lose
               <span class="md-footer__direction">
                 Previous
               </span>
-              How is it implemented?
+              Pytorch utils
             </div>
           </div>
         </a>
       
       
         
-        <a href="../quantization/" class="md-footer__link md-footer__link--next" aria-label="Next: End to end demo" rel="next">
+        <a href="../trt_utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Trt utils" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              End to end demo
+              Trt utils
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1141,10 +1349,10 @@ Values outside the range will be replaced by a single maximum value and you lose
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.e1a181d9.min.js"></script>
       
     
   </body>

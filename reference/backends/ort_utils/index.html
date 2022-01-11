@@ -753,20 +753,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 </li>
       
         <li class="md-nav__item">
-  <a href="#src.transformer_deploy.backends.ort_utils.convert_to_onnx" class="md-nav__link">
-    convert_to_onnx()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.backends.ort_utils.convert_to_quant_onnx" class="md-nav__link">
-    convert_to_quant_onnx()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#src.transformer_deploy.backends.ort_utils.cpu_quantization" class="md-nav__link">
     cpu_quantization()
   </a>
@@ -791,6 +777,34 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pytorch_utils/" class="md-nav__link">
+        Pytorch utils
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../st_utils/" class="md-nav__link">
+        St utils
+      </a>
     </li>
   
 
@@ -996,20 +1010,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 </li>
       
         <li class="md-nav__item">
-  <a href="#src.transformer_deploy.backends.ort_utils.convert_to_onnx" class="md-nav__link">
-    convert_to_onnx()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#src.transformer_deploy.backends.ort_utils.convert_to_quant_onnx" class="md-nav__link">
-    convert_to_quant_onnx()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#src.transformer_deploy.backends.ort_utils.cpu_quantization" class="md-nav__link">
     cpu_quantization()
   </a>
@@ -1060,165 +1060,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 
 
-
-
-
-  <div class="doc doc-object doc-function">
-
-
-
-<h2 id="src.transformer_deploy.backends.ort_utils.convert_to_onnx" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">convert_to_onnx</span><span class="p">(</span><span class="n">model_pytorch</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="p">,</span> <span class="n">opset</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span></code>
-
-
-<a href="#src.transformer_deploy.backends.ort_utils.convert_to_onnx" class="headerlink" title="Permanent link">#</a></h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.</p>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>model_pytorch</code></td>
-        <td><code>PreTrainedModel</code></td>
-        <td><p>Pytorch model</p></td>
-        <td><em>required</em></td>
-      </tr>
-      <tr>
-        <td><code>output_path</code></td>
-        <td><code>str</code></td>
-        <td><p>where to save ONNX file</p></td>
-        <td><em>required</em></td>
-      </tr>
-      <tr>
-        <td><code>inputs_pytorch</code></td>
-        <td><code>OrderedDict[str, torch.Tensor]</code></td>
-        <td><p>Tensor, can be dummy data, shape is not important as we declare all axes as dynamic. Should be on the same device than the model (CPU or GPU)</p></td>
-        <td><em>required</em></td>
-      </tr>
-      <tr>
-        <td><code>opset</code></td>
-        <td><code>int</code></td>
-        <td><p>version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model</p></td>
-        <td><code>12</code></td>
-      </tr>
-  </tbody>
-</table>
-        <details class="quote">
-          <summary>Source code in <code>src/transformer_deploy/backends/ort_utils.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">convert_to_onnx</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">model_pytorch</span><span class="p">:</span> <span class="n">PreTrainedModel</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="p">:</span> <span class="n">Od</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">opset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param model_pytorch: Pytorch model</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param output_path: where to save ONNX file</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    Should be on the same device than the model (CPU or GPU)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    :param opset: version of ONNX protocol to use, usually 12, or 13 if you use per channel quantized model</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="c1"># dynamic axis == variable length axis</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">dynamic_axis</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>        <span class="n">dynamic_axis</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;sequence&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">dynamic_axis</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>        <span class="n">torch</span><span class="o">.</span><span class="n">onnx</span><span class="o">.</span><span class="n">export</span><span class="p">(</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>            <span class="n">model_pytorch</span><span class="p">,</span>  <span class="c1"># model to optimize</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>            <span class="n">args</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>  <span class="c1"># tuple of multiple inputs</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>            <span class="n">f</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span>  <span class="c1"># output path / file object</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>            <span class="n">opset_version</span><span class="o">=</span><span class="n">opset</span><span class="p">,</span>  <span class="c1"># the ONNX version to use, 13 if quantized model, 12 for not quantized ones</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>            <span class="n">do_constant_folding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># simplify model (replace constant expressions)</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>            <span class="n">input_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">inputs_pytorch</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>  <span class="c1"># input names</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>            <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">],</span>  <span class="c1"># output axis name</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="n">dynamic_axes</span><span class="o">=</span><span class="n">dynamic_axis</span><span class="p">,</span>  <span class="c1"># declare dynamix axis for each input / output</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>            <span class="n">training</span><span class="o">=</span><span class="n">TrainingMode</span><span class="o">.</span><span class="n">EVAL</span><span class="p">,</span>  <span class="c1"># always put the model in evaluation mode</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="p">)</span>
-</code></pre></div>
-        </details>
-    </div>
-
-  </div>
-
-
-
-  <div class="doc doc-object doc-function">
-
-
-
-<h2 id="src.transformer_deploy.backends.ort_utils.convert_to_quant_onnx" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">convert_to_quant_onnx</span><span class="p">(</span><span class="n">model_pytorch</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="p">)</span></code>
-
-
-<a href="#src.transformer_deploy.backends.ort_utils.convert_to_quant_onnx" class="headerlink" title="Permanent link">#</a></h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Convert a quantized Pytorch model to ONNX file.</p>
-
-<p><strong>Parameters:</strong></p>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Description</th>
-      <th>Default</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td><code>model_pytorch</code></td>
-        <td><code>PreTrainedModel</code></td>
-        <td><p>Pytorch model</p></td>
-        <td><em>required</em></td>
-      </tr>
-      <tr>
-        <td><code>output_path</code></td>
-        <td><code>str</code></td>
-        <td><p>ONNX file path</p></td>
-        <td><em>required</em></td>
-      </tr>
-      <tr>
-        <td><code>inputs_pytorch</code></td>
-        <td><code>OrderedDict[str, torch.Tensor]</code></td>
-        <td><p>some dummy input (Pytorch tensor on the same device than the model)</p></td>
-        <td><em>required</em></td>
-      </tr>
-  </tbody>
-</table>
-        <details class="quote">
-          <summary>Source code in <code>src/transformer_deploy/backends/ort_utils.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">convert_to_quant_onnx</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">model_pytorch</span><span class="p">:</span> <span class="n">PreTrainedModel</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="p">:</span> <span class="n">Od</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    Convert a quantized Pytorch model to ONNX file.</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param model_pytorch: Pytorch model</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param output_path: ONNX file path</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    :param inputs_pytorch: some dummy input (Pytorch tensor on the same device than the model)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="kn">from</span> <span class="nn">pytorch_quantization.nn</span> <span class="kn">import</span> <span class="n">TensorQuantizer</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">TensorQuantizer</span><span class="o">.</span><span class="n">use_fb_fake_quant</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">convert_to_onnx</span><span class="p">(</span><span class="n">model_pytorch</span><span class="o">=</span><span class="n">model_pytorch</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span> <span class="n">inputs_pytorch</span><span class="o">=</span><span class="n">inputs_pytorch</span><span class="p">,</span> <span class="n">opset</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="n">TensorQuantizer</span><span class="o">.</span><span class="n">use_fb_fake_quant</span> <span class="o">=</span> <span class="kc">False</span>
-</code></pre></div>
-        </details>
-    </div>
-
-  </div>
 
 
 
@@ -1388,7 +1229,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 
 <h2 id="src.transformer_deploy.backends.ort_utils.optimize_onnx" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">optimize_onnx</span><span class="p">(</span><span class="n">onnx_path</span><span class="p">,</span> <span class="n">onnx_optim_model_path</span><span class="p">,</span> <span class="n">fp16</span><span class="p">,</span> <span class="n">use_cuda</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">optimize_onnx</span><span class="p">(</span><span class="n">onnx_path</span><span class="p">,</span> <span class="n">onnx_optim_model_path</span><span class="p">,</span> <span class="n">fp16</span><span class="p">,</span> <span class="n">use_cuda</span><span class="p">,</span> <span class="n">num_attention_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
 
 <a href="#src.transformer_deploy.backends.ort_utils.optimize_onnx" class="headerlink" title="Permanent link">#</a></h2>
@@ -1434,35 +1275,56 @@ and may convert some nodes to reduced precision.</p>
         <td><p>perform optimization on GPU (should )</p></td>
         <td><em>required</em></td>
       </tr>
+      <tr>
+        <td><code>num_attention_heads</code></td>
+        <td><code>int</code></td>
+        <td><p>number of attention heads of a model (0 -&gt; try to detect)</p></td>
+        <td><code>0</code></td>
+      </tr>
+      <tr>
+        <td><code>hidden_size</code></td>
+        <td><code>int</code></td>
+        <td><p>hidden layer size of a model (0 -&gt; try to detect)</p></td>
+        <td><code>0</code></td>
+      </tr>
   </tbody>
 </table>
         <details class="quote">
           <summary>Source code in <code>src/transformer_deploy/backends/ort_utils.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">optimize_onnx</span><span class="p">(</span><span class="n">onnx_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">onnx_optim_model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fp16</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_cuda</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="sd">    ONNX Runtime transformer graph optimization.</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="sd">    Performs some operator fusion (merge several nodes of the graph in a single one)</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="sd">    and may convert some nodes to reduced precision.</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="sd">    :param onnx_path: ONNX input path</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="sd">    :param onnx_optim_model_path: where to save optimized model</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="sd">    :param fp16: use mixed precision (faster inference)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="sd">    :param use_cuda: perform optimization on GPU (should )</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">optimization_options</span> <span class="o">=</span> <span class="n">FusionOptions</span><span class="p">(</span><span class="s2">&quot;bert&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">optimization_options</span><span class="o">.</span><span class="n">enable_gelu_approximation</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># additional optimization</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">optimized_model</span><span class="p">:</span> <span class="n">BertOnnxModel</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">optimize_model</span><span class="p">(</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>        <span class="nb">input</span><span class="o">=</span><span class="n">onnx_path</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>        <span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;bert&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>        <span class="n">use_gpu</span><span class="o">=</span><span class="n">use_cuda</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="n">opt_level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>        <span class="n">num_heads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># automatic detection may not work with opset 13</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="n">hidden_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># automatic detection</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>        <span class="n">optimization_options</span><span class="o">=</span><span class="n">optimization_options</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="p">)</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="k">if</span> <span class="n">fp16</span><span class="p">:</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="n">optimized_model</span><span class="o">.</span><span class="n">convert_float_to_float16</span><span class="p">()</span>  <span class="c1"># FP32 -&gt; FP16</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;optimizations applied: </span><span class="si">{</span><span class="n">optimized_model</span><span class="o">.</span><span class="n">get_fused_operator_statistics</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="n">optimized_model</span><span class="o">.</span><span class="n">save_model_to_file</span><span class="p">(</span><span class="n">onnx_optim_model_path</span><span class="p">)</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">def</span> <span class="nf">optimize_onnx</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">onnx_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">onnx_optim_model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">fp16</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">use_cuda</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">num_attention_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>    <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="sd">    ONNX Runtime transformer graph optimization.</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    Performs some operator fusion (merge several nodes of the graph in a single one)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    and may convert some nodes to reduced precision.</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :param onnx_path: ONNX input path</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    :param onnx_optim_model_path: where to save optimized model</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    :param fp16: use mixed precision (faster inference)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    :param use_cuda: perform optimization on GPU (should )</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :param num_attention_heads: number of attention heads of a model (0 -&gt; try to detect)</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    :param hidden_size: hidden layer size of a model (0 -&gt; try to detect)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">optimization_options</span> <span class="o">=</span> <span class="n">FusionOptions</span><span class="p">(</span><span class="s2">&quot;bert&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">optimization_options</span><span class="o">.</span><span class="n">enable_gelu_approximation</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># additional optimization</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">optimized_model</span><span class="p">:</span> <span class="n">BertOnnxModel</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">optimize_model</span><span class="p">(</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>        <span class="nb">input</span><span class="o">=</span><span class="n">onnx_path</span><span class="p">,</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="n">model_type</span><span class="o">=</span><span class="s2">&quot;bert&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="n">use_gpu</span><span class="o">=</span><span class="n">use_cuda</span><span class="p">,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="n">opt_level</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="n">num_heads</span><span class="o">=</span><span class="n">num_attention_heads</span><span class="p">,</span>  <span class="c1"># automatic detection with 0 may not work with opset 13 or distilbert models</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span>  <span class="c1"># automatic detection with 0</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="n">optimization_options</span><span class="o">=</span><span class="n">optimization_options</span><span class="p">,</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="p">)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">if</span> <span class="n">fp16</span><span class="p">:</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">optimized_model</span><span class="o">.</span><span class="n">convert_float_to_float16</span><span class="p">()</span>  <span class="c1"># FP32 -&gt; FP16</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;optimizations applied: </span><span class="si">{</span><span class="n">optimized_model</span><span class="o">.</span><span class="n">get_fused_operator_statistics</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="n">optimized_model</span><span class="o">.</span><span class="n">save_model_to_file</span><span class="p">(</span><span class="n">onnx_optim_model_path</span><span class="p">)</span>
 </code></pre></div>
         </details>
     </div>
@@ -1508,13 +1370,13 @@ and may convert some nodes to reduced precision.</p>
       
       
         
-        <a href="../trt_utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Trt utils" rel="next">
+        <a href="../pytorch_utils/" class="md-footer__link md-footer__link--next" aria-label="Next: Pytorch utils" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Trt utils
+              Pytorch utils
             </div>
           </div>
           <div class="md-footer__button md-icon">

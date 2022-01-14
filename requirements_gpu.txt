@@ -1,6 +1,6 @@
 onnxruntime-gpu==1.9.0
 pycuda
-torch==1.10.0+cu113
+torch==1.10.1+cu113
 nvidia-tensorrt
 onnx_graphsurgeon
 polygraphy

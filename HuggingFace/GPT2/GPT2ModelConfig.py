@@ -15,14 +15,15 @@
 #
 
 import argparse
-
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from itertools import product
 from typing import Dict
 
-# TRT-HuggingFace
-from HuggingFace.NNDF.networks import Precision, NetworkMetadata, NNConfig, Dims
 from HuggingFace.NNDF.interface import MetadataArgparseInteropMixin
+
+# TRT-HuggingFace
+from HuggingFace.NNDF.networks import Dims, NetworkMetadata, NNConfig, Precision
+
 
 # Limitation of namedtuples. You must declare namedtuples in module scope and not in classes.
 # Otherwise pickle doesn't work.
@@ -59,9 +60,7 @@ class GPT2Metadata(_GPT2Metadata, MetadataArgparseInteropMixin):
     @staticmethod
     def add_inference_args(parser: argparse.ArgumentParser) -> None:
         inference_group = parser.add_argument_group("inference group")
-        inference_group.add_argument(
-            "--fp16", action="store_true", help="Enables fp16 TensorRT tactics."
-        )
+        inference_group.add_argument("--fp16", action="store_true", help="Enables fp16 TensorRT tactics.")
 
     @staticmethod
     def from_inference_args(args: argparse.Namespace):
@@ -85,9 +84,7 @@ class GPT2ModelTRTConfig(NNConfig):
         precision_fp16 = [False, True]
         kv_caches = [False]
         variants = []
-        for variant, fp16, kv_cache in product(
-            GPT2ModelTRTConfig.TARGET_MODELS, precision_fp16, kv_caches
-        ):
+        for variant, fp16, kv_cache in product(GPT2ModelTRTConfig.TARGET_MODELS, precision_fp16, kv_caches):
             variants.append(
                 NetworkMetadata(
                     variant=variant,

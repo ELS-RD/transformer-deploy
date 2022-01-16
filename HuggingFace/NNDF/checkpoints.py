@@ -20,11 +20,11 @@ Helper file for generating common checkpoints.
 
 from typing import List
 
-# TRT-HuggingFace
-from HuggingFace.NNDF.networks import NetworkMetadata, NetworkResult
-
 # externals
 import toml
+
+# TRT-HuggingFace
+from HuggingFace.NNDF.networks import NetworkMetadata, NetworkResult
 
 
 class NNTomlCheckpoint:
@@ -48,10 +48,13 @@ class NNTomlCheckpoint:
         addendum_default = addendum.get("default", {})
         addendum_specific = addendum.get(metadata.variant, {})
         self.data = {
-            k: {**self.baseline[k],
+            k: {
+                **self.baseline[k],
                 **specific_general_data.get(k, {}),
                 **addendum_default.get(k, {}),
-                **addendum_specific.get(k, {})} for k in self.baseline.keys()
+                **addendum_specific.get(k, {}),
+            }
+            for k in self.baseline.keys()
         }
 
         # Used when accuracy() is called
@@ -114,6 +117,9 @@ class NNSemanticCheckpoint(NNTomlCheckpoint):
             key = self._lookup_cache[r.input]
             # remove new line characters
             r_new = r.semantic_output[0] if isinstance(r.semantic_output, list) else r.semantic_output
-            correct_count += int(self.data[key]["label"].replace('\\n','').replace('\n','') == r_new.replace('\\n','').replace('\n',''))
+            correct_count += int(
+                self.data[key]["label"].replace("\\n", "").replace("\n", "")
+                == r_new.replace("\\n", "").replace("\n", "")
+            )
 
         return correct_count / len(results)

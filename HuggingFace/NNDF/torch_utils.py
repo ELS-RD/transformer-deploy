@@ -25,6 +25,7 @@ import torch
 # NNDF
 from HuggingFace.NNDF.logger import G_LOGGER
 
+
 # Function Decorators #
 def use_cuda(func: Callable):
     """
@@ -47,9 +48,7 @@ def use_cuda(func: Callable):
 
     def wrapper(*args, **kwargs):
         caller_kwargs = inspect.getcallargs(func, *args, **kwargs)
-        assert (
-            "use_cuda" in caller_kwargs
-        ), "Function must have 'use_cuda' as a parameter."
+        assert "use_cuda" in caller_kwargs, "Function must have 'use_cuda' as a parameter."
 
         if caller_kwargs["use_cuda"]:
             new_kwargs = {}

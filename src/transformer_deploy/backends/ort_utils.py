@@ -57,6 +57,7 @@ def optimize_onnx(
     use_cuda: bool,
     num_attention_heads: int = 0,
     hidden_size: int = 0,
+    architecture: str = "bert",
 ) -> None:
     """
     ONNX Runtime transformer graph optimization.
@@ -68,12 +69,14 @@ def optimize_onnx(
     :param use_cuda: perform optimization on GPU (should )
     :param num_attention_heads: number of attention heads of a model (0 -> try to detect)
     :param hidden_size: hidden layer size of a model (0 -> try to detect)
+    :param architecture: model architecture to optimize. One of [bert, bart, gpt2]
     """
-    optimization_options = FusionOptions("bert")
+    assert architecture in ["bert", "bart", "gpt2"], f"unsupported architecture: {architecture}"
+    optimization_options = FusionOptions(model_type=architecture)
     optimization_options.enable_gelu_approximation = False  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
-        model_type="bert",
+        model_type=architecture,
         use_gpu=use_cuda,
         opt_level=1,
         num_heads=num_attention_heads,  # automatic detection with 0 may not work with opset 13 or distilbert models

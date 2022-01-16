@@ -16,15 +16,11 @@
 
 import os
 import sys
-
 from typing import List
 
 # huggingface
-from transformers import (
-    T5ForConditionalGeneration,
-    T5Tokenizer,
-    T5Config,
-)
+from transformers import T5Config, T5ForConditionalGeneration, T5Tokenizer
+
 
 # Add syspath for custom library
 if __name__ == "__main__":
@@ -32,35 +28,25 @@ if __name__ == "__main__":
     project_root = os.path.join(filepath, os.pardir)
     sys.path.append(project_root)
 
+from NNDF.general_utils import NNFolderWorkspace, confirm_folder_delete
+
 # TRT-HuggingFace
 from NNDF.interface import FrameworkCommand
-from NNDF.networks import (
-    NetworkResult,
-    NetworkMetadata,
-    NetworkRuntime,
-    NetworkModels,
-    NetworkModel,
-    TimingProfile,
-)
-from T5.export import T5EncoderTorchFile, T5DecoderTorchFile
-from T5.T5ModelConfig import T5ModelTRTConfig
+from NNDF.networks import NetworkMetadata, NetworkModel, NetworkModels, NetworkResult, NetworkRuntime, TimingProfile
+from T5.export import T5DecoderTorchFile, T5EncoderTorchFile
 from T5.measurements import decoder_inference, encoder_inference, full_inference_greedy
-from NNDF.general_utils import confirm_folder_delete, NNFolderWorkspace
+from T5.T5ModelConfig import T5ModelTRTConfig
 
 
 class T5FHuggingFace(FrameworkCommand):
     def __init__(self):
-        super().__init__(
-            T5ModelTRTConfig, description="Runs framework results for T5 model."
-        )
+        super().__init__(T5ModelTRTConfig, description="Runs framework results for T5 model.")
 
         self.onnx_t5_encoder = None
         self.onnx_t5_decoder = None
         self.torch_t5_dir = None
 
-    def generate_and_download_framework(
-        self, metadata: NetworkMetadata, workspace: NNFolderWorkspace
-    ) -> NetworkModels:
+    def generate_and_download_framework(self, metadata: NetworkMetadata, workspace: NNFolderWorkspace) -> NetworkModels:
 
         cache_variant = False
         if metadata.other.kv_cache:
@@ -81,35 +67,23 @@ class T5FHuggingFace(FrameworkCommand):
         )
         if not os.path.exists(pytorch_model_dir):
             # Generate the pre-trained weights
-            model = T5ForConditionalGeneration(tfm_config).from_pretrained(
-                metadata.variant
-            )
+            model = T5ForConditionalGeneration(tfm_config).from_pretrained(metadata.variant)
             model.save_pretrained(pytorch_model_dir)
             print("Pytorch Model saved to {}".format(pytorch_model_dir))
         else:
-            print(
-                "Frameworks file already exists, skipping generation and loading from file instead."
-            )
-            model = T5ForConditionalGeneration(tfm_config).from_pretrained(
-                pytorch_model_dir
-            )
+            print("Frameworks file already exists, skipping generation and loading from file instead.")
+            model = T5ForConditionalGeneration(tfm_config).from_pretrained(pytorch_model_dir)
 
         # These ONNX models can be converted using special encoder and decoder classes.
         root_onnx_model_name = "{}.onnx".format(metadata_serialized)
-        root_onnx_model_fpath = os.path.join(
-            os.getcwd(), workspace_dir, root_onnx_model_name
-        )
+        root_onnx_model_fpath = os.path.join(os.getcwd(), workspace_dir, root_onnx_model_name)
         encoder_onnx_model_fpath = root_onnx_model_fpath + "-encoder.onnx"
         decoder_onnx_model_fpath = root_onnx_model_fpath + "-decoder-with-lm-head.onnx"
 
         t5_encoder = T5EncoderTorchFile(model, metadata)
         t5_decoder = T5DecoderTorchFile(model, metadata)
-        self.onnx_t5_encoder = t5_encoder.as_onnx_model(
-            encoder_onnx_model_fpath, force_overwrite=False
-        )
-        self.onnx_t5_decoder = t5_decoder.as_onnx_model(
-            decoder_onnx_model_fpath, force_overwrite=False
-        )
+        self.onnx_t5_encoder = t5_encoder.as_onnx_model(encoder_onnx_model_fpath, force_overwrite=False)
+        self.onnx_t5_decoder = t5_decoder.as_onnx_model(decoder_onnx_model_fpath, force_overwrite=False)
 
         onnx_models = [
             NetworkModel(
@@ -121,11 +95,7 @@ class T5FHuggingFace(FrameworkCommand):
                 fpath=self.onnx_t5_encoder.fpath,
             ),
         ]
-        torch_models = [
-            NetworkModel(
-                name=T5ModelTRTConfig.NETWORK_FULL_NAME, fpath=pytorch_model_dir
-            )
-        ]
+        torch_models = [NetworkModel(name=T5ModelTRTConfig.NETWORK_FULL_NAME, fpath=pytorch_model_dir)]
 
         return NetworkModels(torch=torch_models, onnx=onnx_models, trt=None)
 
@@ -174,7 +144,7 @@ class T5FHuggingFace(FrameworkCommand):
         inference_input: str,
         timing_profile: TimingProfile,
         use_cpu: bool,
-        batch_size: int = 1
+        batch_size: int = 1,
     ) -> NetworkResult:
 
         # Execute some tests
@@ -190,15 +160,17 @@ class T5FHuggingFace(FrameworkCommand):
         t5_model = T5ForConditionalGeneration(config).from_pretrained(t5_torch_fpath)
 
         t5_torch_encoder = T5EncoderTorchFile.TorchModule(t5_model.encoder)
-        t5_torch_decoder = T5DecoderTorchFile.TorchModule(
-            t5_model.decoder, t5_model.lm_head, t5_model.config
-        )
+        t5_torch_decoder = T5DecoderTorchFile.TorchModule(t5_model.decoder, t5_model.lm_head, t5_model.config)
 
         encoder_last_hidden_state, encoder_e2e_median_time = encoder_inference(
             t5_torch_encoder, input_ids, timing_profile, use_cuda=(not use_cpu)
         )
         _, decoder_e2e_median_time = decoder_inference(
-            t5_torch_decoder, input_ids, encoder_last_hidden_state, timing_profile, use_cuda=(not use_cpu),
+            t5_torch_decoder,
+            input_ids,
+            encoder_last_hidden_state,
+            timing_profile,
+            use_cuda=(not use_cpu),
         )
         decoder_output_greedy, full_e2e_median_runtime = full_inference_greedy(
             t5_torch_encoder,
@@ -208,13 +180,11 @@ class T5FHuggingFace(FrameworkCommand):
             timing_profile,
             max_length=T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[metadata.variant],
             use_cuda=(not use_cpu),
-            batch_size=batch_size
+            batch_size=batch_size,
         )
 
         # Remove the padding and end tokens.
-        semantic_outputs = tokenizer.decode(
-            decoder_output_greedy[-1, :], skip_special_tokens=True
-        )
+        semantic_outputs = tokenizer.decode(decoder_output_greedy[-1, :], skip_special_tokens=True)
 
         if isinstance(semantic_outputs, list):
             semantic_outputs = " ".join(semantic_outputs).strip()
@@ -249,22 +219,18 @@ class T5FHuggingFace(FrameworkCommand):
         keep_pytorch_model: bool,
         timing_profile: TimingProfile,
         use_cpu: bool = False,
-        batch_size: int = 1
+        batch_size: int = 1,
     ) -> List[NetworkResult]:
         """
         Main entry point of our function which compiles and generates our model data.
         """
         results = []
-        workspace = NNFolderWorkspace(
-            self.config.network_name, metadata, working_directory
-        )
+        workspace = NNFolderWorkspace(self.config.network_name, metadata, working_directory)
         try:
             network_fpaths = self.generate_and_download_framework(metadata, workspace)
             for ninput in network_input:
                 results.append(
-                    self.execute_inference(
-                        metadata, network_fpaths, ninput, timing_profile, use_cpu, batch_size
-                    )
+                    self.execute_inference(metadata, network_fpaths, ninput, timing_profile, use_cpu, batch_size)
                 )
         finally:
             self.cleanup(workspace, keep_onnx_model, keep_pytorch_model)

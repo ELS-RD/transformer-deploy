@@ -77,7 +77,11 @@ def get_model_size(path: str) -> Tuple[int, int]:
 
 
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor], quantization: bool
+    model_pytorch: PreTrainedModel,
+    output_path: str,
+    inputs_pytorch: Od[str, torch.Tensor],
+    quantization: bool,
+    var_output_seq: bool,
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
@@ -87,6 +91,7 @@ def convert_to_onnx(
     :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
     Should be on the same device than the model (CPU or GPU)
     :param quantization: model is quantized
+    :param var_output_seq: variable size sequence
     """
     if quantization:
         try:
@@ -108,6 +113,8 @@ def convert_to_onnx(
     for k in inputs_pytorch.keys():
         dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
     dynamic_axis["output"] = {0: "batch_size"}
+    if var_output_seq:
+        dynamic_axis["output"][1] = "sequence"
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize

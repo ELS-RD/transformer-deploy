@@ -148,6 +148,7 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
+        var_output_seq=False,
     )
 
     timings = {}

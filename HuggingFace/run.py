@@ -19,16 +19,16 @@ Demonstrates TensorRT capabilities with networks located in HuggingFace reposito
 Requires Python 3.5+
 """
 
-import os
-import sys
 import argparse
 import importlib
-
+import os
+import sys
 from abc import abstractmethod
 from typing import List
 
 # tabulate
 from tabulate import tabulate
+
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(ROOT_DIR)
@@ -40,14 +40,16 @@ WRAPPER_COMPARE_ACTION = "compare"
 WRAPPER_ACTIONS = [WRAPPER_RUN_ACTION, WRAPPER_LIST_ACTION, WRAPPER_COMPARE_ACTION]
 
 # NNDF
-from NNDF.general_utils import process_per_result_entries, process_results, register_network_folders, RANDOM_SEED
+from NNDF.general_utils import RANDOM_SEED, process_per_result_entries, process_results, register_network_folders
 from NNDF.logger import G_LOGGER
 
 # huggingface
 from transformers import set_seed
 
+
 # Force seed to 42 for reproducibility.
 set_seed(RANDOM_SEED)
+
 
 class Action:
     def __init__(self, networks: List[str], parser: argparse.ArgumentParser):
@@ -74,15 +76,11 @@ class NetworkScriptAction(Action):
 
     def add_args(self, parser):
         network_group = parser.add_argument_group("specify network")
-        network_group.add_argument(
-            "network", help="Network to run.", choices=self.networks
-        )
+        network_group.add_argument("network", help="Network to run.", choices=self.networks)
 
     def load_script(self, script_name: str, args: argparse.Namespace):
         """Helper for loading a specific script for given network."""
-        assert (
-            script_name in self.PER_NETWORK_SCRIPTS
-        ), "Script must be a reserved name."
+        assert script_name in self.PER_NETWORK_SCRIPTS, "Script must be a reserved name."
 
         # Load the specific commandline script
         return importlib.import_module("{}.{}".format(args.network, script_name))
@@ -113,9 +111,7 @@ class CompareAction(NetworkScriptAction):
             compare_group = args.compare
 
         if len(compare_group) <= 1:
-            G_LOGGER.error(
-                "Comparison command must have atleast two groups to compare to."
-            )
+            G_LOGGER.error("Comparison command must have atleast two groups to compare to.")
             exit()
 
         results = []
@@ -187,19 +183,13 @@ class ListAction(Action):
         return 0
 
 
-def get_action(
-    action_name: str, networks: List[str], parser: argparse.ArgumentParser
-) -> Action:
-    return {
-        WRAPPER_COMPARE_ACTION: CompareAction,
-        WRAPPER_LIST_ACTION: ListAction,
-        WRAPPER_RUN_ACTION: RunAction,
-    }[action_name](networks, parser)
+def get_action(action_name: str, networks: List[str], parser: argparse.ArgumentParser) -> Action:
+    return {WRAPPER_COMPARE_ACTION: CompareAction, WRAPPER_LIST_ACTION: ListAction, WRAPPER_RUN_ACTION: RunAction,}[
+        action_name
+    ](networks, parser)
 
 
-def get_default_parser(
-    networks: List[str], description: str = "", add_default_help=False
-) -> argparse.ArgumentParser:
+def get_default_parser(networks: List[str], description: str = "", add_default_help=False) -> argparse.ArgumentParser:
     """
     Returns argparser for use by main(). Allows the ability to toggle default help message with a custom help flag
     so that argparser does not throw SystemExit when --help is passed in. Useful for custom --help functionality.

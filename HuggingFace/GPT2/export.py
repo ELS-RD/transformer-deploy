@@ -23,22 +23,22 @@ from itertools import tee
 # tensorrt
 import tensorrt as trt
 
-# polygraphy
-from polygraphy.backend.trt import Profile
-
 # torch
 import torch
+
+# polygraphy
+from polygraphy.backend.trt import Profile
 from torch.nn import Module
+from transformers import GPT2Tokenizer
 
 # # huggingface
 from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from transformers import GPT2Tokenizer
 
 # TRT-HuggingFace
 from HuggingFace.GPT2.GPT2ModelConfig import GPT2ModelTRTConfig
+from HuggingFace.NNDF.models import ModelFileConverter, ONNXModelFile, TorchModelFile, TRTEngineFile
 from HuggingFace.NNDF.networks import NetworkMetadata
-from HuggingFace.NNDF.models import TRTEngineFile, TorchModelFile, ONNXModelFile, ModelFileConverter
 
 
 class GPT2TorchFile(TorchModelFile):
@@ -85,9 +85,7 @@ class GPT2TRTEngine(TRTEngineFile):
         return self.network_metadata.precision.fp16
 
     def get_dynamic_shape_profiles(self):
-        max_sequence_length = GPT2ModelTRTConfig.MAX_SEQUENCE_LENGTH[
-            self.network_metadata.variant
-        ]
+        max_sequence_length = GPT2ModelTRTConfig.MAX_SEQUENCE_LENGTH[self.network_metadata.variant]
         profile = Profile()
         profile.add(
             "input_ids",
@@ -98,7 +96,6 @@ class GPT2TRTEngine(TRTEngineFile):
         return [profile]
 
     def get_network_definition(self, network_definition):
-
         def pairwise(iterable):
             a, b = tee(iterable)
             next(b, None)
@@ -132,9 +129,7 @@ class GPT2Converter(ModelFileConverter):
     def __init__(self):
         super().__init__(GPT2TorchFile, GPT2ONNXFile, GPT2TRTEngine)
 
-    def torch_to_onnx(
-            self, output_fpath: str, model: Module, network_metadata: NetworkMetadata
-    ):
+    def torch_to_onnx(self, output_fpath: str, model: Module, network_metadata: NetworkMetadata):
         """
         Exports a GPT2LMHead model to ONNX.
 
@@ -146,23 +141,11 @@ class GPT2Converter(ModelFileConverter):
             GPT2ONNXFile: ONNX GPT2 decoder object.
         """
         tokenizer = GPT2Tokenizer.from_pretrained(network_metadata.variant)
-        input_ids = torch.tensor(
-            [
-                tokenizer.encode(
-                    "Here is some text to encode Hello World", add_special_tokens=True
-                )
-            ]
-        )
+        input_ids = torch.tensor([tokenizer.encode("Here is some text to encode Hello World", add_special_tokens=True)])
 
-        gpt2_model = GPT2TorchFile.TorchModule(
-            model.transformer, model.lm_head, model.config
-        )
-        inputs = GPT2ModelTRTConfig.get_input_dims(network_metadata)[
-            GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME
-        ]
-        outputs = GPT2ModelTRTConfig.get_output_dims(network_metadata)[
-            GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME
-        ]
+        gpt2_model = GPT2TorchFile.TorchModule(model.transformer, model.lm_head, model.config)
+        inputs = GPT2ModelTRTConfig.get_input_dims(network_metadata)[GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME]
+        outputs = GPT2ModelTRTConfig.get_output_dims(network_metadata)[GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME]
 
         # Exports to ONNX
         torch.onnx._export(
@@ -177,6 +160,6 @@ class GPT2Converter(ModelFileConverter):
                 **outputs.get_torch_dynamic_axis_encoding(),
             },
             training=False,
-            use_external_data_format=True
+            use_external_data_format=True,
         )
         return GPT2ONNXFile(output_fpath, network_metadata)

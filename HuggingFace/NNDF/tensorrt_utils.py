@@ -18,29 +18,33 @@
 
 from typing import List
 
-# polygraphy
-from polygraphy.backend.trt import engine_from_bytes, TrtRunner
-from polygraphy.backend.onnxrt import OnnxrtRunner, SessionFromOnnx, OnnxrtRunner
-from polygraphy.backend.common import bytes_from_path
-from polygraphy.logger import G_LOGGER as PG_LOGGER
-
-# tensorrt
-import tensorrt as trt
+# numpy
+import numpy as np
 
 # ONNX
 import onnx
 import onnx_graphsurgeon as gs
 
-# numpy
-import numpy as np
+# tensorrt
+import tensorrt as trt
+from polygraphy.backend.common import bytes_from_path
+from polygraphy.backend.onnxrt import OnnxrtRunner, SessionFromOnnx
+
+# polygraphy
+from polygraphy.backend.trt import TrtRunner, engine_from_bytes
+from polygraphy.logger import G_LOGGER as PG_LOGGER
+
+from HuggingFace.NNDF.logger import G_LOGGER
+from HuggingFace.NNDF.models import TRTEngineFile
 
 # NNDF
 from HuggingFace.NNDF.networks import NetworkMetadata
-from HuggingFace.NNDF.models import TRTEngineFile
-from HuggingFace.NNDF.logger import G_LOGGER
+
 
 # Helper Functions
-def clamp_weights_onnx(onnx_input_fpath: str, onnx_output_fpath: str, min: float, max: float, ignore_nodes: List = None):
+def clamp_weights_onnx(
+    onnx_input_fpath: str, onnx_output_fpath: str, min: float, max: float, ignore_nodes: List = None
+):
     """
     Clamps given onnx model to targeted upper and lower bounds.
     """
@@ -102,7 +106,7 @@ def move_t5_cast_op(onnx_input_fpath: str, onnx_output_fpath: str):
         if n.o().op == "Pow":
             add_inputs = n.inputs
             outs = []
-            for i in  add_inputs:
+            for i in add_inputs:
                 identity_out = gs.Variable("identity_out" + i.name, dtype=np.float32)
                 new_cast = gs.Node(op="Cast", inputs=[i], outputs=[identity_out], attrs={"to": 1})
                 outs.append(identity_out)
@@ -113,9 +117,11 @@ def move_t5_cast_op(onnx_input_fpath: str, onnx_output_fpath: str):
     model = gs.export_onnx(graph)
     onnx.save(model, onnx_output_fpath, save_as_external_data=True)
 
+
 # Helper Classes
 class TRTNativeRunner:
     """TRTNativeRunner avoids the high overheads with Polygraphy runner providing performance comparable to C++ implementation."""
+
     def __init__(self, trt_engine_file: TRTEngineFile, network_metadata: NetworkMetadata):
         self.trt_engine_file = trt_engine_file
         trt_logger = trt.Logger(trt.Logger.VERBOSE if G_LOGGER.root.level == G_LOGGER.DEBUG else trt.Logger.WARNING)
@@ -142,22 +148,33 @@ class TRTNativeRunner:
         # inspired by demo/BERT/inference.py script
         selected_profile_idx = None
         for idx in range(self.trt_engine.num_optimization_profiles):
-            profile_shape = self.trt_engine.get_profile_shape(profile_index=idx, binding=idx * self._num_bindings_per_profile)
+            profile_shape = self.trt_engine.get_profile_shape(
+                profile_index=idx, binding=idx * self._num_bindings_per_profile
+            )
 
-            if profile_shape[0][0] <= batch_size and profile_shape[2][0] >= batch_size \
-               and profile_shape[0][1] <=  sequence_length and profile_shape[2][1] >= sequence_length:
+            if (
+                profile_shape[0][0] <= batch_size
+                and profile_shape[2][0] >= batch_size
+                and profile_shape[0][1] <= sequence_length
+                and profile_shape[2][1] >= sequence_length
+            ):
                 G_LOGGER.debug("Selected profile: {}".format(profile_shape))
                 selected_profile_idx = idx
                 break
 
         if selected_profile_idx == -1:
-            raise RuntimeError("Could not find any profile that matches batch_size={}, sequence_length={}".format(batch_size, sequence_length))
+            raise RuntimeError(
+                "Could not find any profile that matches batch_size={}, sequence_length={}".format(
+                    batch_size, sequence_length
+                )
+            )
 
         return selected_profile_idx
 
     def __call__(self, *args, **kwargs):
         self.trt_context.active_optimization_profile = self.profile_idx
         return self.forward(*args, **kwargs)
+
 
 class PolygraphyOnnxRunner:
     def __init__(self, onnx_fpath: str, network_metadata: NetworkMetadata):
@@ -168,16 +185,13 @@ class PolygraphyOnnxRunner:
 
     def __call__(self, *args, **kwargs):
         # hook polygraphy verbosity for inference
-        g_logger_verbosity = (
-            G_LOGGER.EXTRA_VERBOSE
-            if G_LOGGER.root.level == G_LOGGER.DEBUG
-            else G_LOGGER.WARNING
-        )
+        g_logger_verbosity = G_LOGGER.EXTRA_VERBOSE if G_LOGGER.root.level == G_LOGGER.DEBUG else G_LOGGER.WARNING
         with PG_LOGGER.verbosity(g_logger_verbosity):
             return self.forward(*args, **kwargs)
 
     def release(self):
         self.trt_context.deactivate()
+
 
 class TRTPolygraphyRunner:
     """
@@ -194,11 +208,7 @@ class TRTPolygraphyRunner:
 
     def __call__(self, *args, **kwargs):
         # hook polygraphy verbosity for inference
-        g_logger_verbosity = (
-            G_LOGGER.EXTRA_VERBOSE
-            if G_LOGGER.root.level == G_LOGGER.DEBUG
-            else G_LOGGER.WARNING
-        )
+        g_logger_verbosity = G_LOGGER.EXTRA_VERBOSE if G_LOGGER.root.level == G_LOGGER.DEBUG else G_LOGGER.WARNING
 
         with PG_LOGGER.verbosity(g_logger_verbosity):
             return self.forward(*args, **kwargs)

@@ -25,35 +25,36 @@ from typing import Dict, List, Tuple
 # Add syspath for custom library
 from HuggingFace.NNDF.interface import OnnxRTCommand
 
+
 if __name__ == "__main__":
     filepath = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.join(filepath, os.pardir)
     sys.path.append(project_root)
 
+# torch
+import torch
+
 # huggingface
-from transformers import T5Tokenizer, T5Config, PretrainedConfig
+from transformers import PretrainedConfig, T5Config, T5Tokenizer
 from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-# torch
-import torch
+from HuggingFace.NNDF.general_utils import NNFolderWorkspace
 
 # TRT-HuggingFace
 from HuggingFace.NNDF.networks import (
     NetworkMetadata,
-    NetworkModels,
     NetworkModel,
+    NetworkModels,
     NetworkResult,
     NetworkRuntime,
     Precision,
     TimingProfile,
 )
-
-from HuggingFace.NNDF.general_utils import NNFolderWorkspace
 from HuggingFace.NNDF.tensorrt_utils import PolygraphyOnnxRunner
 from HuggingFace.T5.frameworks import T5FHuggingFace
-from HuggingFace.T5.T5ModelConfig import T5ModelTRTConfig
 from HuggingFace.T5.measurements import decoder_inference, encoder_inference, full_inference_greedy
+from HuggingFace.T5.T5ModelConfig import T5ModelTRTConfig
 
 
 class OnnxHFRunner(PolygraphyOnnxRunner, GenerationMixin):
@@ -64,6 +65,7 @@ class OnnxHFRunner(PolygraphyOnnxRunner, GenerationMixin):
         # required for greedy search used by generation mixin
         self.config = tfm_config
 
+
 class T5OnnxEncoder(OnnxHFRunner):
     """OnnxRT implemented network interface that is mainly to check correctness."""
 
@@ -71,6 +73,7 @@ class T5OnnxEncoder(OnnxHFRunner):
         # Unoptimized unconditional transfer to numpy for interfacing with polygraphy
         input_ids = input_ids.cpu().numpy().astype("int64")
         return torch.from_numpy(self.trt_context.infer({"input_ids": input_ids})["hidden_states"])
+
 
 class T5OnnxDecoder(OnnxHFRunner):
     def prepare_inputs_for_generation(self, input_ids, **kwargs):
@@ -84,11 +87,12 @@ class T5OnnxDecoder(OnnxHFRunner):
         input_ids = input_ids.cpu().numpy().astype("int64")
         encoder_hidden_states = encoder_hidden_states.cpu().numpy().astype("float32")
 
-        logits = self.trt_context.infer(
-            {"input_ids": input_ids, "encoder_hidden_states": encoder_hidden_states}
-        )["hidden_states"]
+        logits = self.trt_context.infer({"input_ids": input_ids, "encoder_hidden_states": encoder_hidden_states})[
+            "hidden_states"
+        ]
 
         return Seq2SeqLMOutput(logits=torch.from_numpy(logits))
+
 
 class T5ONNXRT(OnnxRTCommand):
     def __init__(self):
@@ -120,7 +124,7 @@ class T5ONNXRT(OnnxRTCommand):
         onnx_fpaths: Dict[str, NetworkModel],
         inference_input: str,
         timing_profile: TimingProfile,
-        batch_size: int=1,
+        batch_size: int = 1,
     ) -> NetworkResult:
 
         tokenizer = T5Tokenizer.from_pretrained(metadata.variant)
@@ -144,13 +148,11 @@ class T5ONNXRT(OnnxRTCommand):
             timing_profile,
             max_length=T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[metadata.variant],
             use_cuda=False,
-            batch_size=batch_size
+            batch_size=batch_size,
         )
 
         # Remove the padding and end tokens.
-        semantic_outputs = tokenizer.decode(
-            decoder_output_greedy[-1, :], skip_special_tokens=True
-        )
+        semantic_outputs = tokenizer.decode(decoder_output_greedy[-1, :], skip_special_tokens=True)
 
         if isinstance(semantic_outputs, list):
             semantic_outputs = " ".join(semantic_outputs).strip()
@@ -173,11 +175,7 @@ class T5ONNXRT(OnnxRTCommand):
                     runtime=full_e2e_median_runtime,
                 ),
             ],
-            models=NetworkModels(
-                torch=None,
-                onnx=list(onnx_fpaths.values()),
-                trt=None
-            ),
+            models=NetworkModels(torch=None, onnx=list(onnx_fpaths.values()), trt=None),
         )
 
     def run_onnxrt(
@@ -189,19 +187,15 @@ class T5ONNXRT(OnnxRTCommand):
         keep_onnx_model: bool,
         keep_torch_model: bool,
         timing_profile: TimingProfile,
-        batch_size: int = 1
+        batch_size: int = 1,
     ) -> List[NetworkResult]:
-        workspace = NNFolderWorkspace(
-            self.frameworks_cmd.config.network_name, metadata, working_directory
-        )
+        workspace = NNFolderWorkspace(self.frameworks_cmd.config.network_name, metadata, working_directory)
 
         results = []
         try:
             # no fpath provided for onnx files, download them
             if len(onnx_fpaths) == 0:
-                onnx_fpaths = self.frameworks_cmd.generate_and_download_framework(
-                    metadata, workspace
-                ).onnx
+                onnx_fpaths = self.frameworks_cmd.generate_and_download_framework(metadata, workspace).onnx
             else:
                 keep_onnx_model = True
                 keep_torch_model = True
@@ -219,19 +213,11 @@ class T5ONNXRT(OnnxRTCommand):
                 use_cache=metadata.other.kv_cache,
                 num_layers=T5ModelTRTConfig.NUMBER_OF_LAYERS[metadata.variant],
             )
-            self.t5_trt_encoder = T5OnnxEncoder(
-                lookup_onnx_table["encoder"].fpath, metadata, tfm_config
-            )
-            self.t5_trt_decoder = T5OnnxDecoder(
-                lookup_onnx_table["decoder"].fpath, metadata, tfm_config
-            )
+            self.t5_trt_encoder = T5OnnxEncoder(lookup_onnx_table["encoder"].fpath, metadata, tfm_config)
+            self.t5_trt_decoder = T5OnnxDecoder(lookup_onnx_table["decoder"].fpath, metadata, tfm_config)
 
             for ninput in network_input:
-                results.append(
-                    self.execute_inference(
-                        metadata, lookup_onnx_table, ninput, timing_profile, batch_size
-                    )
-                )
+                results.append(self.execute_inference(metadata, lookup_onnx_table, ninput, timing_profile, batch_size))
 
         finally:
             self.cleanup(workspace, keep_onnx_model, keep_torch_model)

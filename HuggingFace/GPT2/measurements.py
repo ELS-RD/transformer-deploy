@@ -23,8 +23,8 @@ import torch
 
 # TRT-HuggingFace
 from NNDF.general_utils import measure_python_inference_code
-from NNDF.torch_utils import use_cuda
 from NNDF.tensorrt_utils import TRTNativeRunner
+from NNDF.torch_utils import use_cuda
 
 
 @use_cuda

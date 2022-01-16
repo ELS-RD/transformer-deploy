@@ -20,9 +20,9 @@ with IO abstraction.
 """
 
 import string
+from collections import OrderedDict, namedtuple
+from typing import Dict, Tuple, Union
 
-from typing import Dict, Union, Tuple
-from collections import namedtuple, OrderedDict
 
 # externals
 # None. Should not have any external dependencies.
@@ -36,9 +36,7 @@ NetworkResult = namedtuple(
 )
 
 """CheckpointResult(network_results: List[NetworkResult], accuracy: float)"""
-NetworkCheckpointResult = namedtuple(
-    "NetworkCheckpointResult", ["network_results", "accuracy"]
-)
+NetworkCheckpointResult = namedtuple("NetworkCheckpointResult", ["network_results", "accuracy"])
 
 # Tracks TRT Precision Config
 """Precision(fp16: Bool)"""
@@ -68,6 +66,7 @@ Args:
 NetworkRuntime(name: str, runtime: float)
 """
 NetworkRuntime = namedtuple("NetworkRuntime", ["name", "runtime"])
+
 
 class Dims:
     """Helper class for interfacing dimension constructs with Polygraphy and PyTorch."""
@@ -121,6 +120,7 @@ class Dims:
 
         return dynamic_axes
 
+
 # Config Class
 class NNConfig:
     """Contains info for a given network that we support."""
@@ -128,9 +128,7 @@ class NNConfig:
     NETWORK_SEGMENTS = ["full"]
 
     def __init__(self, network_name, variants=None):
-        assert self._is_valid_filename(
-            network_name
-        ), "Network name: {} is not filename friendly.".format(network_name)
+        assert self._is_valid_filename(network_name), "Network name: {} is not filename friendly.".format(network_name)
 
         self.network_name = network_name
         self.variants = variants
@@ -191,19 +189,17 @@ class NNConfig:
             string: <network>-<variant-name>-<precision>-<others>
         """
 
-        precision_str = "-".join(
-            [k for k, v in metadata.precision._asdict().items() if v]
-        )
+        precision_str = "-".join([k for k, v in metadata.precision._asdict().items() if v])
         result = [self.network_name, metadata.variant]
         if precision_str:
             result.append(precision_str)
 
-        other_result = [
-            "{}~{}".format(k, str(v)) for k, v in metadata.other._asdict().items()
-        ]
+        other_result = ["{}~{}".format(k, str(v)) for k, v in metadata.other._asdict().items()]
         # Remove all boolean values that are False and remove True if exists
         true_length = len("~True")
-        other_result_filtered = [v[:-true_length] if v.endswith("~True") else v for v in other_result if "~False" not in v]
+        other_result_filtered = [
+            v[:-true_length] if v.endswith("~True") else v for v in other_result if "~False" not in v
+        ]
 
         if len(other_result_filtered) != 0:
             result.append("-".join(other_result_filtered))
@@ -211,8 +207,6 @@ class NNConfig:
         final_str = "-".join(result)
         assert self._is_valid_filename(
             final_str
-        ), "Metadata for current network {} is not filename friendly: {}.".format(
-            self.network_name, final_str
-        )
+        ), "Metadata for current network {} is not filename friendly: {}.".format(self.network_name, final_str)
 
         return final_str

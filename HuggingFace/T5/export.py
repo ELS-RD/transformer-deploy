@@ -24,28 +24,24 @@ from itertools import islice
 # tensorrt
 import tensorrt as trt
 
+# torch
+import torch
+from NNDF.logger import G_LOGGER
+from NNDF.models import ModelFileConverter, ONNXModelFile, TorchModelFile, TRTEngineFile
+from NNDF.networks import NetworkMetadata, Precision
+from NNDF.tensorrt_utils import clamp_weights_onnx_to_fp16_bounds, move_t5_cast_op
+
 # polygraphy
 from polygraphy.backend.trt import Profile
 
-# torch
-import torch
+# TRT-HuggingFace
+from T5.T5ModelConfig import T5ModelTRTConfig
 from torch.nn import Module
 
 # huggingface
 from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-# TRT-HuggingFace
-from T5.T5ModelConfig import T5ModelTRTConfig
-from NNDF.tensorrt_utils import clamp_weights_onnx_to_fp16_bounds, move_t5_cast_op
-from NNDF.networks import NetworkMetadata, Precision
-from NNDF.logger import G_LOGGER
-from NNDF.models import (
-    TRTEngineFile,
-    TorchModelFile,
-    ONNXModelFile,
-    ModelFileConverter,
-)
 
 def add_extra_fp32(network_definition):
     """
@@ -54,7 +50,12 @@ def add_extra_fp32(network_definition):
     pow_ops = {}
     for layer_index, layer in enumerate(network_definition[1]):
         if layer.type == trt.LayerType.IDENTITY:
-            all_fp32 = all([layer.output_type_is_set(o) and layer.get_output_type(o) == trt.float32 for o in range(layer.num_outputs)])
+            all_fp32 = all(
+                [
+                    layer.output_type_is_set(o) and layer.get_output_type(o) == trt.float32
+                    for o in range(layer.num_outputs)
+                ]
+            )
             if all_fp32:
                 if layer.get_input(0).dtype == trt.float32:
                     layer.precision = trt.float32
@@ -71,7 +72,7 @@ def add_extra_fp32(network_definition):
         # Iterate till 10 layers after pow op to include all operations included in layer norm.
         START_OFFSET = 4
         END_OFFSET = 12
-        for i in range(index-START_OFFSET, index+END_OFFSET):
+        for i in range(index - START_OFFSET, index + END_OFFSET):
             l = network_definition[1].get_layer(i)
             if l.type == trt.LayerType.REDUCE:
                 l.precision = trt.float32
@@ -103,6 +104,7 @@ def add_extra_fp32(network_definition):
 
     return network_definition
 
+
 # Torch File Encoding #
 class T5DecoderTorchFile(TorchModelFile):
     class TorchModule(Module, GenerationMixin):
@@ -124,11 +126,7 @@ class T5DecoderTorchFile(TorchModelFile):
             }
 
         def forward(self, input_ids, encoder_hidden_states, **kwargs):
-            decoder_outputs = self.decoder(
-                input_ids=input_ids,
-                encoder_hidden_states=encoder_hidden_states,
-                **kwargs
-            )
+            decoder_outputs = self.decoder(input_ids=input_ids, encoder_hidden_states=encoder_hidden_states, **kwargs)
 
             # self.config.d_model ** -0.5 for rescaling output on vocab.
             # as seen in https://huggingface.co/transformers/_modules/transformers/models/t5/modeling_t5.html#T5ForConditionalGeneration
@@ -176,16 +174,14 @@ class T5DecoderONNXFile(ONNXModelFile):
 class T5DecoderTRTEngine(TRTEngineFile):
     DEFAULT_TRT_WORKSPACE_MB = 3072
 
-    def __init__(self, model, network_metadata, batch_size = 1):
-        super().__init__(model, T5DecoderConverter, network_metadata, batch_size = batch_size)
+    def __init__(self, model, network_metadata, batch_size=1):
+        super().__init__(model, T5DecoderConverter, network_metadata, batch_size=batch_size)
 
     def get_network_definition(self, network_definition):
         return add_extra_fp32(network_definition)
 
     def get_dynamic_shape_profiles(self):
-        max_sequence_length = T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[
-            self.network_metadata.variant
-        ]
+        max_sequence_length = T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[self.network_metadata.variant]
         profile = Profile()
         profile.add(
             "input_ids",
@@ -208,16 +204,14 @@ class T5DecoderTRTEngine(TRTEngineFile):
 class T5EncoderTRTEngine(TRTEngineFile):
     DEFAULT_TRT_WORKSPACE_MB = 2048
 
-    def __init__(self, model, network_metadata, batch_size = 1):
-        super().__init__(model, T5EncoderConverter, network_metadata, batch_size = batch_size)
+    def __init__(self, model, network_metadata, batch_size=1):
+        super().__init__(model, T5EncoderConverter, network_metadata, batch_size=batch_size)
 
     def get_network_definition(self, network_definition):
         return add_extra_fp32(network_definition)
 
     def get_dynamic_shape_profiles(self):
-        max_sequence_length = T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[
-            self.network_metadata.variant
-        ]
+        max_sequence_length = T5ModelTRTConfig.MAX_SEQUENCE_LENGTH[self.network_metadata.variant]
 
         return [
             Profile().add(
@@ -231,14 +225,13 @@ class T5EncoderTRTEngine(TRTEngineFile):
     def use_obey_precision_constraints(self):
         return self.network_metadata.precision.fp16
 
+
 # Converters #
 class T5DecoderConverter(ModelFileConverter):
     def __init__(self):
         super().__init__(T5DecoderTorchFile, T5DecoderONNXFile, T5DecoderTRTEngine)
 
-    def torch_to_onnx(
-        self, output_fpath: str, model: Module, network_metadata: NetworkMetadata
-    ):
+    def torch_to_onnx(self, output_fpath: str, model: Module, network_metadata: NetworkMetadata):
         """
         Exports a given huggingface T5 to decoder architecture only.
         Inspired by https://github.com/onnx/models/blob/master/text/machine_comprehension/t5/dependencies/T5-export.py
@@ -256,12 +249,11 @@ class T5DecoderConverter(ModelFileConverter):
         # Create one temporarily
         simplified_encoder = T5EncoderTorchFile.TorchModule(model.encoder)
         # Exports to ONNX
-        decoder_with_lm_head = T5DecoderTorchFile.TorchModule(
-            model.decoder, model.lm_head, model.config
-        )
+        decoder_with_lm_head = T5DecoderTorchFile.TorchModule(model.decoder, model.lm_head, model.config)
 
         # This code allows for huggingface compatible torch class to use onnx exporter
         old_forward = decoder_with_lm_head.forward
+
         def _export_forward(*args, **kwargs):
             result = old_forward(*args, **kwargs)
             return result[0]
@@ -284,7 +276,7 @@ class T5DecoderConverter(ModelFileConverter):
                 **outputs.get_torch_dynamic_axis_encoding(),
             },
             training=False,
-            use_external_data_format=True
+            use_external_data_format=True,
         )
 
         if network_metadata.precision.fp16:
@@ -299,9 +291,7 @@ class T5EncoderConverter(ModelFileConverter):
     def __init__(self):
         super().__init__(T5EncoderTorchFile, T5EncoderONNXFile, T5EncoderTRTEngine)
 
-    def onnx_to_trt(
-        self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata, batch_size: int
-    ):
+    def onnx_to_trt(self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata, batch_size: int):
         """
         Override onnx_to_trt function from base.
         Workaround: T5-base and T5-large are too large and cause FP16 to overflow. Encoder should not use FP16 tactics even in FP16 mode.
@@ -316,9 +306,7 @@ class T5EncoderConverter(ModelFileConverter):
 
         return super().onnx_to_trt(output_fpath, input_fpath, network_metadata, batch_size)
 
-    def torch_to_onnx(
-        self, output_fpath: str, model: Module, network_metadata: NetworkMetadata
-    ):
+    def torch_to_onnx(self, output_fpath: str, model: Module, network_metadata: NetworkMetadata):
         """
         Exports a given huggingface T5 to encoder architecture only.
         Inspired by https://github.com/onnx/models/blob/master/text/machine_comprehension/t5/dependencies/T5-export.py
@@ -349,7 +337,7 @@ class T5EncoderConverter(ModelFileConverter):
                 **outputs.get_torch_dynamic_axis_encoding(),
             },
             training=False,
-            use_external_data_format=True
+            use_external_data_format=True,
         )
 
         if network_metadata.precision.fp16:

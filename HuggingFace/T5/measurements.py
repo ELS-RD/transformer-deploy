@@ -21,22 +21,17 @@ Utils specific to T5 network.
 # torch
 import torch
 
-# numpy
-from transformers.generation_stopping_criteria import (
-    MaxLengthCriteria,
-    StoppingCriteriaList,
-)
-
 # TRT-HuggingFace
 from NNDF.general_utils import measure_python_inference_code
-from NNDF.torch_utils import use_cuda
 from NNDF.tensorrt_utils import TRTNativeRunner
+from NNDF.torch_utils import use_cuda
+
+# numpy
+from transformers.generation_stopping_criteria import MaxLengthCriteria, StoppingCriteriaList
 
 
 @use_cuda
-def decoder_inference(
-    t5_decoder, input_ids, encoder_last_hidden_state, timing_profile, use_cuda=True
-):
+def decoder_inference(t5_decoder, input_ids, encoder_last_hidden_state, timing_profile, use_cuda=True):
     # This implementation is a bit ugly. Moving implementation of the model to check HFRunner would be cleaner.
     if isinstance(t5_decoder, TRTNativeRunner):
         # Function is technically in T5TRTDecoder however due to circular import, TRTNativeRunner in this module scope
@@ -45,9 +40,7 @@ def decoder_inference(
         t5_decoder.set_return_device("cuda" if use_cuda else "cpu")
 
     def decoder_stmt():
-        t5_decoder(
-            input_ids=input_ids, encoder_hidden_states=encoder_last_hidden_state
-        )
+        t5_decoder(input_ids=input_ids, encoder_hidden_states=encoder_last_hidden_state)
 
     decoder_e2e_median_time = measure_python_inference_code(
         decoder_stmt, number=timing_profile.number, iterations=timing_profile.iterations

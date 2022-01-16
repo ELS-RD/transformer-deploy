@@ -15,14 +15,15 @@
 #
 
 import argparse
-
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from itertools import product
 from typing import Dict
 
-# TRT-HuggingFace
-from NNDF.networks import Precision, NetworkMetadata, NNConfig, Dims
 from NNDF.interface import MetadataArgparseInteropMixin
+
+# TRT-HuggingFace
+from NNDF.networks import Dims, NetworkMetadata, NNConfig, Precision
+
 
 # Limitation of namedtuples. You must declare namedtuples in module scope and not in classes.
 # Otherwise pickle doesn't work.
@@ -60,9 +61,7 @@ class T5Metadata(_T5Metadata, MetadataArgparseInteropMixin):
     def add_inference_args(parser: argparse.ArgumentParser) -> None:
         T5Metadata.add_args(parser)
         inference_group = parser.add_argument_group("inference group")
-        inference_group.add_argument(
-            "--fp16", action="store_true", help="Enables fp16 TensorRT tactics."
-        )
+        inference_group.add_argument("--fp16", action="store_true", help="Enables fp16 TensorRT tactics.")
 
     @staticmethod
     def from_inference_args(args: argparse.Namespace):
@@ -92,9 +91,7 @@ class T5ModelTRTConfig(NNConfig):
         kv_caches = [False, True]
 
         variants = []
-        for variant, fp16, kv_cache in product(
-            T5ModelTRTConfig.TARGET_MODELS, precision_fp16, kv_caches
-        ):
+        for variant, fp16, kv_cache in product(T5ModelTRTConfig.TARGET_MODELS, precision_fp16, kv_caches):
             variants.append(
                 NetworkMetadata(
                     variant=variant,
@@ -161,9 +158,7 @@ class T5ModelTRTConfig(NNConfig):
         Returns:
             (Dict[str, Dims]): {"decoder": Dims, "encoder": Dims}
         """
-        decoder_outputs = Dims(
-            OrderedDict({"hidden_states": (Dims.BATCH, Dims.SEQUENCE)})
-        )
+        decoder_outputs = Dims(OrderedDict({"hidden_states": (Dims.BATCH, Dims.SEQUENCE)}))
         encoder_outputs = Dims(
             OrderedDict(
                 {

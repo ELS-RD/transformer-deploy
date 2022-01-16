@@ -19,24 +19,23 @@
 import os
 import shutil
 import timeit
-
-from shutil import rmtree
-from typing import Callable, Union, List
 from collections import defaultdict
-from statistics import mean, median
 from glob import glob
+from shutil import rmtree
+from statistics import mean, median
+from typing import Callable, List, Union
+
+from HuggingFace.NNDF.logger import G_LOGGER
 
 # NNDF
-from HuggingFace.NNDF.networks import NNConfig, NetworkResult, NetworkMetadata
-from HuggingFace.NNDF.logger import G_LOGGER
+from HuggingFace.NNDF.networks import NetworkMetadata, NetworkResult, NNConfig
+
 
 # Used for HuggingFace setting random seed
 RANDOM_SEED = 42
 
 # Networks #
-def register_network_folders(
-    root_dir: str, config_file_str: str = "*Config.py"
-) -> List[str]:
+def register_network_folders(root_dir: str, config_file_str: str = "*Config.py") -> List[str]:
     networks = []
     for network_configs in glob(os.path.join(root_dir, "*", config_file_str)):
         network_name = os.path.split(os.path.split(network_configs)[0])[1]
@@ -64,42 +63,43 @@ def process_results(category: List[str], results: List[NetworkResult], nconfig: 
 
         # Calculate average runtime for each group
         average_group_runtime = {k: mean(v) for k, v in runtime_results.items()}
-        row_entry = [cat, result.accuracy] + [
-            average_group_runtime[n] for n in runtime_result_row_names
-        ]
+        row_entry = [cat, result.accuracy] + [average_group_runtime[n] for n in runtime_result_row_names]
         rows.append(row_entry)
 
     headers = general_stats + [r + " (sec)" for r in runtime_result_row_names]
     return headers, rows
 
-def process_per_result_entries(script_category: List[str], results: List[NetworkResult], max_output_char:int = 30):
+
+def process_per_result_entries(script_category: List[str], results: List[NetworkResult], max_output_char: int = 30):
     """Prints tabulations for each entry returned by the runtime result."""
+
     def _shorten_text(w):
         l = len(w)
         if l > max_output_char:
-            return w[0:max_output_char // 2] + " ... " + w[-max_output_char//2:]
+            return w[0 : max_output_char // 2] + " ... " + w[-max_output_char // 2 :]
         return w
 
     headers = ["script", "network_part", "accuracy", "runtime", "input", "output"]
     row_data_by_input = defaultdict(list)
     for cat, result in zip(script_category, results):
         for nr in result.network_results:
-            for runtime in  nr.median_runtime:
-                row_data_by_input[hash(nr.input)].append([
-                    cat,
-                    runtime.name,
-                    result.accuracy,
-                    runtime.runtime,
-                    _shorten_text(nr.input),
-                    _shorten_text(nr.semantic_output)
-                ])
+            for runtime in nr.median_runtime:
+                row_data_by_input[hash(nr.input)].append(
+                    [
+                        cat,
+                        runtime.name,
+                        result.accuracy,
+                        runtime.runtime,
+                        _shorten_text(nr.input),
+                        _shorten_text(nr.semantic_output),
+                    ]
+                )
 
     return headers, dict(row_data_by_input)
 
+
 # IO #
-def confirm_folder_delete(
-    fpath: str, prompt: str = "Confirm you want to delete entire folder?"
-) -> None:
+def confirm_folder_delete(fpath: str, prompt: str = "Confirm you want to delete entire folder?") -> None:
     """
     Confirms whether or not user wants to delete given folder path.
 
@@ -156,9 +156,7 @@ def measure_python_inference_code(
         iterations (int): Number of measurement cycles.
     """
     G_LOGGER.debug(
-        "Measuring inference call with warmup: {} and number: {} and iterations {}".format(
-            warmup, number, iterations
-        )
+        "Measuring inference call with warmup: {} and number: {} and iterations {}".format(warmup, number, iterations)
     )
     # Warmup
     warmup_mintime = timeit.repeat(stmt, number=number, repeat=warmup)
@@ -166,15 +164,14 @@ def measure_python_inference_code(
 
     return median(timeit.repeat(stmt, number=number, repeat=iterations)) / number
 
+
 class NNFolderWorkspace:
     """
     For keeping track of workspace folder and for cleaning them up.
     Due to potential corruption of ONNX model conversion, the workspace is split up by model variants.
     """
 
-    def __init__(
-        self, network_name: str, metadata: NetworkMetadata, working_directory: str
-    ):
+    def __init__(self, network_name: str, metadata: NetworkMetadata, working_directory: str):
         self.rootdir = working_directory
         self.metadata = metadata
         self.network_name = network_name

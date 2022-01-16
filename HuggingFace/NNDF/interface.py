@@ -19,20 +19,21 @@ Interface classes required for each registered network script.
 """
 
 import argparse
-
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
 
+from HuggingFace.NNDF.logger import G_LOGGER
+
 # NNDF
 from HuggingFace.NNDF.networks import (
-    NetworkResult,
-    NetworkMetadata,
     NetworkCheckpointResult,
-    NNConfig,
+    NetworkMetadata,
     NetworkModel,
+    NetworkResult,
+    NNConfig,
     TimingProfile,
 )
-from HuggingFace.NNDF.logger import G_LOGGER
+
 
 # externals
 # None, there should be no external dependencies for testing purposes.
@@ -61,6 +62,7 @@ class MetadataArgparseInteropMixin:
     def from_inference_args(args):
         pass
 
+
 class NetworkCommand(metaclass=ABCMeta):
     """Base class that each network script's command module should inherit."""
 
@@ -88,9 +90,7 @@ class NetworkCommand(metaclass=ABCMeta):
 
     def add_args(self, parser) -> None:
         general_group = parser.add_argument_group("general")
-        general_group.add_argument(
-            "--verbose", help="Display verbose logs.", action="store_true"
-        )
+        general_group.add_argument("--verbose", help="Display verbose logs.", action="store_true")
         general_group.add_argument(
             "--cleanup",
             help="Cleans up user-specified workspace. Can not be cleaned if external files exist in workspace.",
@@ -102,11 +102,7 @@ class NetworkCommand(metaclass=ABCMeta):
             required=True,
         )
         general_group.add_argument(
-            "--batch-size", "-b",
-            help="Chosen batch size for given network",
-            required=False,
-            type=int,
-            default=1
+            "--batch-size", "-b", help="Chosen batch size for given network", required=False, type=int, default=1
         )
 
         timing_group = parser.add_argument_group("inference measurement")
@@ -138,9 +134,7 @@ class NetworkCommand(metaclass=ABCMeta):
         """
         if metadata not in self.config.variants:
             raise NotImplementedError(
-                "The following network config is not yet supported by our scripts: {}".format(
-                    metadata
-                )
+                "The following network config is not yet supported by our scripts: {}".format(metadata)
             )
 
     def args_to_network_metadata(self, args) -> NetworkMetadata:
@@ -159,7 +153,7 @@ class FrameworkCommand(NetworkCommand):
         keep_onnx_model: bool,
         keep_pytorch_model: bool,
         timing_profile: TimingProfile,
-        batch_size: int
+        batch_size: int,
     ) -> List[NetworkResult]:
         pass
 
@@ -169,6 +163,7 @@ class FrameworkCommand(NetworkCommand):
         # Differ import so that interface file can use used without
         # dependency install for our testing.
         from NNDF.checkpoints import NNSemanticCheckpoint
+
         checkpoint = NNSemanticCheckpoint(
             "checkpoint.toml",
             framework="native",
@@ -203,6 +198,7 @@ class FrameworkCommand(NetworkCommand):
             help="Run inference using CPU for frameworks.",
             action="store_true",
         )
+
 
 class TRTInferenceCommand(NetworkCommand):
     """Base class that is associated with Polygraphy related scripts."""
@@ -240,6 +236,7 @@ class TRTInferenceCommand(NetworkCommand):
         # Differ import so that interface file can use used without
         # dependency install for our testing.
         from NNDF.checkpoints import NNSemanticCheckpoint
+
         checkpoint = NNSemanticCheckpoint(
             "checkpoint.toml",
             framework="native",
@@ -279,6 +276,7 @@ class TRTInferenceCommand(NetworkCommand):
             List[NetworkModel]: List of network model names.
         """
 
+
 class OnnxRTCommand(NetworkCommand):
     """ONNX Runtime command."""
 
@@ -313,6 +311,7 @@ class OnnxRTCommand(NetworkCommand):
         # Differ import so that interface file can use used without
         # dependency install for our testing.
         from NNDF.checkpoints import NNSemanticCheckpoint
+
         checkpoint = NNSemanticCheckpoint(
             "checkpoint.toml",
             framework="native",

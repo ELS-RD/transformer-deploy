@@ -18,6 +18,7 @@ import os
 import sys
 from typing import Dict, List, Tuple
 
+
 # Add syspath for custom library
 if __name__ == "__main__":
     filepath = os.path.dirname(os.path.abspath(__file__))
@@ -32,29 +33,29 @@ import numpy as np
 import torch
 
 # huggingface
-from transformers import GPT2Tokenizer, GPT2Config
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from transformers import GPT2Config, GPT2Tokenizer
 from transformers.configuration_utils import PretrainedConfig
 from transformers.generation_utils import GenerationMixin
+from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+
+from HuggingFace.GPT2.export import GPT2ONNXFile, GPT2TRTEngine
+from HuggingFace.GPT2.frameworks import GPT2HuggingFace
+from HuggingFace.GPT2.GPT2ModelConfig import GPT2ModelTRTConfig
+from HuggingFace.GPT2.measurements import full_inference_greedy, gpt2_inference
+from HuggingFace.NNDF.general_utils import NNFolderWorkspace
 
 # TRT-HuggingFace
 from HuggingFace.NNDF.interface import TRTInferenceCommand
 from HuggingFace.NNDF.networks import (
     NetworkMetadata,
-    NetworkModels,
     NetworkModel,
+    NetworkModels,
     NetworkResult,
     NetworkRuntime,
     Precision,
     TimingProfile,
 )
-
 from HuggingFace.NNDF.tensorrt_utils import TRTNativeRunner, TRTPolygraphyRunner
-from HuggingFace.GPT2.frameworks import GPT2HuggingFace
-from HuggingFace.NNDF.general_utils import NNFolderWorkspace
-from HuggingFace.GPT2.GPT2ModelConfig import GPT2ModelTRTConfig
-from HuggingFace.GPT2.measurements import gpt2_inference, full_inference_greedy
-from HuggingFace.GPT2.export import GPT2ONNXFile, GPT2TRTEngine
 
 
 class TRTHFRunner(TRTNativeRunner, GenerationMixin):
@@ -87,11 +88,7 @@ class TRTHFRunner(TRTNativeRunner, GenerationMixin):
         self.return_device = return_device
 
     def __init__(
-        self,
-        trt_engine_file: str,
-        network_metadata: NetworkMetadata,
-        hf_config: PretrainedConfig,
-        batch_size: int = 1
+        self, trt_engine_file: str, network_metadata: NetworkMetadata, hf_config: PretrainedConfig, batch_size: int = 1
     ):
         super().__init__(trt_engine_file, network_metadata)
         self.config = hf_config
@@ -101,15 +98,13 @@ class TRTHFRunner(TRTNativeRunner, GenerationMixin):
 
 class GPT2TRTDecoder(TRTHFRunner):
     def __init__(
-        self,
-        trt_engine_file: str,
-        network_metadata: NetworkMetadata,
-        hf_config: PretrainedConfig,
-        batch_size: int = 1
+        self, trt_engine_file: str, network_metadata: NetworkMetadata, hf_config: PretrainedConfig, batch_size: int = 1
     ):
         super().__init__(trt_engine_file, network_metadata, hf_config, batch_size)
         self.max_sequence_length = GPT2ModelTRTConfig.MAX_SEQUENCE_LENGTH[network_metadata.variant]
-        assert len(trt_engine_file.get_dynamic_shape_profiles()) == 1, "GPT2 should only have one dynamic shapes profile."
+        assert (
+            len(trt_engine_file.get_dynamic_shape_profiles()) == 1
+        ), "GPT2 should only have one dynamic shapes profile."
 
         # We only have one profile to select so we can just grab the profile at the start of the class
         self.profile_idx = self.get_optimization_profile(batch_size=batch_size, sequence_length=1)
@@ -117,7 +112,9 @@ class GPT2TRTDecoder(TRTHFRunner):
             "input_ids": torch.zeros(self.batch_size, self.max_sequence_length, dtype=torch.int32).cuda(),
         }
         self.outputs = {
-            "logits": torch.zeros(self.batch_size, self.max_sequence_length, GPT2ModelTRTConfig.VOCAB_SIZE, dtype=torch.float32).cuda()
+            "logits": torch.zeros(
+                self.batch_size, self.max_sequence_length, GPT2ModelTRTConfig.VOCAB_SIZE, dtype=torch.float32
+            ).cuda()
         }
         self.bindings = self._allocate_memory(self.inputs, self.outputs)
 
@@ -128,16 +125,17 @@ class GPT2TRTDecoder(TRTHFRunner):
         }
 
     def forward(self, input_ids, **kwargs):
-        self.inputs["input_ids"][:, :input_ids.shape[1]] = input_ids
+        self.inputs["input_ids"][:, : input_ids.shape[1]] = input_ids
         self.trt_context.set_binding_shape(0, input_ids.shape)
         self.trt_context.execute_v2(bindings=self.bindings)
-        return CausalLMOutputWithCrossAttentions(logits=self.outputs["logits"][:, :input_ids.shape[1], :].to(self.return_device))
+        return CausalLMOutputWithCrossAttentions(
+            logits=self.outputs["logits"][:, : input_ids.shape[1], :].to(self.return_device)
+        )
+
 
 class GPT2Polygraphy(TRTInferenceCommand):
     def __init__(self):
-        super().__init__(
-            GPT2ModelTRTConfig, "Runs polygraphy results for GPT2 model.", GPT2HuggingFace
-        )
+        super().__init__(GPT2ModelTRTConfig, "Runs polygraphy results for GPT2 model.", GPT2HuggingFace)
         self.gpt2_trt = None
 
     def cleanup(
@@ -172,16 +170,15 @@ class GPT2Polygraphy(TRTInferenceCommand):
         input_ids = tokenizer(inference_input, return_tensors="pt").input_ids
 
         # get single decoder iteration inference timing profile
-        _, decoder_e2e_median_time = gpt2_inference(
-            self.gpt2_trt, input_ids, timing_profile,
-            use_cuda=False
-        )
+        _, decoder_e2e_median_time = gpt2_inference(self.gpt2_trt, input_ids, timing_profile, use_cuda=False)
 
         # get complete decoder inference result and its timing profile
         sample_output, full_e2e_median_runtime = full_inference_greedy(
-            self.gpt2_trt, input_ids, timing_profile,
+            self.gpt2_trt,
+            input_ids,
+            timing_profile,
             max_length=GPT2ModelTRTConfig.MAX_SEQUENCE_LENGTH[metadata.variant],
-            use_cuda=False
+            use_cuda=False,
         )
 
         semantic_outputs = []
@@ -229,17 +226,13 @@ class GPT2Polygraphy(TRTInferenceCommand):
         timing_profile: TimingProfile,
         batch_size: int = 1,
     ) -> List[NetworkResult]:
-        workspace = NNFolderWorkspace(
-            self.frameworks_cmd.config.network_name, metadata, working_directory
-        )
+        workspace = NNFolderWorkspace(self.frameworks_cmd.config.network_name, metadata, working_directory)
 
         results = []
         try:
             # no fpath provided for onnx files, download them
             if len(onnx_fpaths) == 0:
-                onnx_fpaths = self.frameworks_cmd.generate_and_download_framework(
-                    metadata, workspace
-                ).onnx
+                onnx_fpaths = self.frameworks_cmd.generate_and_download_framework(metadata, workspace).onnx
             else:
                 keep_onnx_model = True
                 keep_torch_model = True
@@ -251,9 +244,7 @@ class GPT2Polygraphy(TRTInferenceCommand):
 
             hash_onnx_fpath = {v.name: v for v in onnx_fpaths}
 
-            gpt2_onnx_fpath = hash_onnx_fpath[
-                GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME
-            ].fpath
+            gpt2_onnx_fpath = hash_onnx_fpath[GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME].fpath
 
             self.gpt2_engine = GPT2ONNXFile(gpt2_onnx_fpath, metadata).as_trt_engine(gpt2_onnx_fpath + ".engine")
             tfm_config = GPT2Config(
@@ -262,11 +253,7 @@ class GPT2Polygraphy(TRTInferenceCommand):
             self.gpt2_trt = GPT2TRTDecoder(self.gpt2_engine, metadata, tfm_config)
 
             for ninput in network_input:
-                results.append(
-                    self.execute_inference(
-                        metadata, hash_onnx_fpath, ninput, timing_profile
-                    )
-                )
+                results.append(self.execute_inference(metadata, hash_onnx_fpath, ninput, timing_profile))
 
         finally:
             self.cleanup(workspace, keep_trt_engine, keep_onnx_model, keep_torch_model)
@@ -282,9 +269,7 @@ class GPT2Polygraphy(TRTInferenceCommand):
             default=None,
             help="Path to GPT2 ONNX model. If None is supplied, scripts will generate them from HuggingFace.",
         )
-        polygraphy_group.add_argument(
-            "--fp16", action="store_true", help="Enables fp16 TensorRT tactics."
-        )
+        polygraphy_group.add_argument("--fp16", action="store_true", help="Enables fp16 TensorRT tactics.")
         polygraphy_group.add_argument(
             "--save-trt-engine",
             action="store_true",
@@ -302,7 +287,7 @@ class GPT2Polygraphy(TRTInferenceCommand):
                 name=GPT2ModelTRTConfig.NETWORK_DECODER_SEGMENT_NAME,
                 fpath=args.onnx_fpath,
             )
-            network_models = (onnx_decoder)
+            network_models = onnx_decoder
 
         return network_models
 

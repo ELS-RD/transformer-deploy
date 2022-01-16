@@ -14,18 +14,14 @@
 # limitations under the License.
 #
 
+import argparse
 import os
 import sys
-import argparse
-
 from typing import List
 
 # huggingface
-from transformers import (
-    GPT2LMHeadModel,
-    GPT2Tokenizer,
-    GPT2Config,
-)
+from transformers import GPT2Config, GPT2LMHeadModel, GPT2Tokenizer
+
 
 # Add syspath for custom library
 if __name__ == "__main__":
@@ -33,36 +29,33 @@ if __name__ == "__main__":
     project_root = os.path.join(filepath, os.pardir)
     sys.path.append(project_root)
 
-# helpers
-from HuggingFace.NNDF.interface import FrameworkCommand
-from HuggingFace.NNDF.general_utils import confirm_folder_delete, NNFolderWorkspace
-from HuggingFace.NNDF.networks import (
-    NetworkResult,
-    NetworkMetadata,
-    NetworkRuntime,
-    Precision,
-    NetworkModel,
-    NetworkModels,
-    TimingProfile,
-)
 from HuggingFace.GPT2.export import GPT2TorchFile
 from HuggingFace.GPT2.GPT2ModelConfig import GPT2ModelTRTConfig
-from HuggingFace.GPT2.measurements import gpt2_inference, full_inference_greedy
+from HuggingFace.GPT2.measurements import full_inference_greedy, gpt2_inference
+from HuggingFace.NNDF.general_utils import NNFolderWorkspace, confirm_folder_delete
+
+# helpers
+from HuggingFace.NNDF.interface import FrameworkCommand
+from HuggingFace.NNDF.networks import (
+    NetworkMetadata,
+    NetworkModel,
+    NetworkModels,
+    NetworkResult,
+    NetworkRuntime,
+    Precision,
+    TimingProfile,
+)
 
 
 class GPT2HuggingFace(FrameworkCommand):
     def __init__(self):
-        super().__init__(
-            GPT2ModelTRTConfig, description="Runs framework results for GPT2 model."
-        )
+        super().__init__(GPT2ModelTRTConfig, description="Runs framework results for GPT2 model.")
 
         # Default inference input used during inference stage
         self.onnx_gpt2 = None
         self.torch_gpt2_dir = None
 
-    def generate_and_download_framework(
-        self, metadata: NetworkMetadata, workspace: NNFolderWorkspace
-    ) -> NetworkModels:
+    def generate_and_download_framework(self, metadata: NetworkMetadata, workspace: NNFolderWorkspace) -> NetworkModels:
 
         cache_variant = False
         if metadata.other.kv_cache:
@@ -85,15 +78,11 @@ class GPT2HuggingFace(FrameworkCommand):
             model.save_pretrained(pytorch_model_dir)
             print("Pytorch Model saved to {}".format(pytorch_model_dir))
         else:
-            print(
-                "Frameworks file already exists, skipping generation and loading from file instead."
-            )
+            print("Frameworks file already exists, skipping generation and loading from file instead.")
             model = GPT2LMHeadModel(tfm_config).from_pretrained(pytorch_model_dir)
 
         root_onnx_model_name = "{}.onnx".format(metadata_serialized)
-        root_onnx_model_fpath = os.path.join(
-            os.getcwd(), workspace_dir, root_onnx_model_name
-        )
+        root_onnx_model_fpath = os.path.join(os.getcwd(), workspace_dir, root_onnx_model_name)
         onnx_model_fpath = root_onnx_model_fpath
 
         gpt2 = GPT2TorchFile(model, metadata)
@@ -156,7 +145,7 @@ class GPT2HuggingFace(FrameworkCommand):
         inference_input: str,
         timing_profile: TimingProfile,
         use_cpu: bool,
-        batch_size: int = 1
+        batch_size: int = 1,
     ) -> NetworkResult:
 
         # Execute some tests
@@ -171,15 +160,11 @@ class GPT2HuggingFace(FrameworkCommand):
         gpt2_torch_fpath = network_fpaths.torch[0].fpath
         config = GPT2Config(use_cache=metadata.other.kv_cache)
         gpt2_model = GPT2LMHeadModel(config).from_pretrained(gpt2_torch_fpath)
-        gpt2_torch = GPT2TorchFile.TorchModule(
-            gpt2_model.transformer, gpt2_model.lm_head, gpt2_model.config
-        )
-        greedy_output = gpt2_torch.generate(input_ids) #greedy search
+        gpt2_torch = GPT2TorchFile.TorchModule(gpt2_model.transformer, gpt2_model.lm_head, gpt2_model.config)
+        greedy_output = gpt2_torch.generate(input_ids)  # greedy search
 
         # get single decoder iteration inference timing profile
-        _, decoder_e2e_median_time = gpt2_inference(
-            gpt2_torch, input_ids, timing_profile, use_cuda=(not use_cpu)
-        )
+        _, decoder_e2e_median_time = gpt2_inference(gpt2_torch, input_ids, timing_profile, use_cuda=(not use_cpu))
 
         # get complete decoder inference result and its timing profile
         sample_output, full_e2e_median_runtime = full_inference_greedy(
@@ -188,13 +173,11 @@ class GPT2HuggingFace(FrameworkCommand):
             timing_profile,
             max_length=GPT2ModelTRTConfig.MAX_SEQUENCE_LENGTH[metadata.variant],
             use_cuda=(not use_cpu),
-            batch_size=batch_size
+            batch_size=batch_size,
         )
 
         # Remove the padding and end tokens.
-        semantic_outputs = tokenizer.decode(
-            sample_output[-1, :], skip_special_tokens=True
-        )
+        semantic_outputs = tokenizer.decode(sample_output[-1, :], skip_special_tokens=True)
 
         if isinstance(semantic_outputs, list):
             semantic_outputs = " ".join(semantic_outputs).strip()
@@ -225,23 +208,17 @@ class GPT2HuggingFace(FrameworkCommand):
         keep_pytorch_model: bool,
         timing_profile: TimingProfile,
         use_cpu: bool = False,
-        batch_size: int = 1
+        batch_size: int = 1,
     ) -> List[NetworkResult]:
         """
         Main entry point of our function which compiles and generates our model data.
         """
         results = []
-        workspace = NNFolderWorkspace(
-            self.config.network_name, metadata, working_directory
-        )
+        workspace = NNFolderWorkspace(self.config.network_name, metadata, working_directory)
         try:
             network_fpaths = self.generate_and_download_framework(metadata, workspace)
             for ninput in network_input:
-                results.append(
-                    self.execute_inference(
-                        metadata, network_fpaths, ninput, timing_profile, use_cpu
-                    )
-                )
+                results.append(self.execute_inference(metadata, network_fpaths, ninput, timing_profile, use_cpu))
         finally:
             self.cleanup(workspace, keep_onnx_model, keep_pytorch_model)
 

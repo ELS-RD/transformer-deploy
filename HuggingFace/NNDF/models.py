@@ -20,26 +20,21 @@ File for containing model file abstraction. Useful for generating models.
 
 import os
 from abc import ABCMeta, abstractmethod
-from typing import Union
 from shutil import copytree, rmtree
+from typing import Union
 
 # polygraphy
-from polygraphy.backend.trt import (
-    network_from_onnx_path,
-    engine_from_network,
-    save_engine,
-)
-
-from polygraphy.backend.trt import CreateConfig
+from polygraphy.backend.trt import CreateConfig, engine_from_network, network_from_onnx_path, save_engine
 from polygraphy.logger import G_LOGGER as PG_LOGGER
 
 # torch
 from torch import load, save
 from torch.nn import Module
 
+from HuggingFace.NNDF.logger import G_LOGGER
+
 # TRT-HuggingFace
 from HuggingFace.NNDF.networks import NetworkMetadata
-from HuggingFace.NNDF.logger import G_LOGGER
 
 
 class ModelFileConverter:
@@ -50,9 +45,7 @@ class ModelFileConverter:
         self.torch_class = torch_class
         self.trt_engine_class = trt_engine_class
 
-    def torch_to_onnx(
-        self, output_fpath: str, model: Module, network_metadata: NetworkMetadata
-    ):
+    def torch_to_onnx(self, output_fpath: str, model: Module, network_metadata: NetworkMetadata):
         """
         Converts a torch.Model into an ONNX model on disk specified at output_fpath.
 
@@ -64,13 +57,9 @@ class ModelFileConverter:
         Returns:
             ONNXModelFile: Newly generated ONNXModelFile
         """
-        raise NotImplementedError(
-            "Current model does not support exporting to ONNX model."
-        )
+        raise NotImplementedError("Current model does not support exporting to ONNX model.")
 
-    def onnx_to_torch(
-        self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata
-    ):
+    def onnx_to_torch(self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata):
         """
         Converts ONNX file into torch.Model which is written to disk.
 
@@ -82,13 +71,9 @@ class ModelFileConverter:
         Returns:
             TorchModelFile: Newly generated TorchModelFile
         """
-        raise NotImplementedError(
-            "Current model does not support exporting to torch model."
-        )
+        raise NotImplementedError("Current model does not support exporting to torch model.")
 
-    def onnx_to_trt(
-        self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata, batch_size: int = 1
-    ):
+    def onnx_to_trt(self, output_fpath: str, input_fpath: str, network_metadata: NetworkMetadata, batch_size: int = 1):
         """
         Converts ONNX file to TRT engine.
         Since TensorRT already supplies converter functions and scripts,
@@ -107,20 +92,14 @@ class ModelFileConverter:
             fp16=network_metadata.precision.fp16,
             max_workspace_size=result.DEFAULT_TRT_WORKSPACE_MB * 1024 * 1024,
             profiles=result.get_dynamic_shape_profiles(),
-            obey_precision_constraints=result.use_obey_precision_constraints()
+            obey_precision_constraints=result.use_obey_precision_constraints(),
         )
 
-        g_logger_verbosity = (
-            PG_LOGGER.EXTRA_VERBOSE
-            if G_LOGGER.level == G_LOGGER.DEBUG
-            else PG_LOGGER.WARNING
-        )
+        g_logger_verbosity = PG_LOGGER.EXTRA_VERBOSE if G_LOGGER.level == G_LOGGER.DEBUG else PG_LOGGER.WARNING
         with PG_LOGGER.verbosity(g_logger_verbosity):
             network_definition = result.get_network_definition(network_from_onnx_path(input_fpath))
 
-            trt_engine = engine_from_network(
-                network_definition, config=self.trt_inference_config
-            )
+            trt_engine = engine_from_network(network_definition, config=self.trt_inference_config)
             save_engine(trt_engine, output_fpath)
 
         return result
@@ -172,9 +151,7 @@ class NNModelFile(metaclass=ABCMeta):
         Returns:
             TorchModelFile: Newly generated TorchModelFile
         """
-        raise NotImplementedError(
-            "Current model does not support exporting to pytorch model."
-        )
+        raise NotImplementedError("Current model does not support exporting to pytorch model.")
 
     def as_onnx_model(
         self,
@@ -195,9 +172,7 @@ class NNModelFile(metaclass=ABCMeta):
         Returns:
             ONNXModelFile: Newly generated ONNXModelFile
         """
-        raise NotImplementedError(
-            "Current model does not support exporting to onnx model."
-        )
+        raise NotImplementedError("Current model does not support exporting to onnx model.")
 
     def as_trt_engine(
         self,
@@ -218,9 +193,7 @@ class NNModelFile(metaclass=ABCMeta):
         Returns:
             TRTEngineFile: Newly generated ONNXModelFile
         """
-        raise NotImplementedError(
-            "Current model does not support exporting to trt engine."
-        )
+        raise NotImplementedError("Current model does not support exporting to trt engine.")
 
     @abstractmethod
     def cleanup(self) -> None:
@@ -290,9 +263,7 @@ class TorchModelFile(NNModelFile):
         if not force_overwrite and os.path.exists(output_fpath):
             return converter.onnx_class(output_fpath, self.network_metadata)
 
-        return converter.torch_to_onnx(
-            output_fpath, self.load_model(), self.network_metadata
-        )
+        return converter.torch_to_onnx(output_fpath, self.load_model(), self.network_metadata)
 
     def as_torch_model(
         self,
@@ -449,7 +420,7 @@ class TRTEngineFile(NNModelFile):
         model: str,
         default_converter: ModelFileConverter = None,
         network_metadata: NetworkMetadata = None,
-        batch_size: int = 1
+        batch_size: int = 1,
     ):
         super().__init__(default_converter, network_metadata)
         self.fpath = model

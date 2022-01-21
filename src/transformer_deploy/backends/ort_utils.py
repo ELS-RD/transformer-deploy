@@ -72,13 +72,14 @@ def optimize_onnx(
     :param architecture: model architecture to optimize. One of [bert, bart, gpt2]
     """
     assert architecture in ["bert", "bart", "gpt2"], f"unsupported architecture: {architecture}"
+    opt_level = 1 if architecture == "bert" else 0
     optimization_options = FusionOptions(model_type=architecture)
     optimization_options.enable_gelu_approximation = False  # additional optimization
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
         model_type=architecture,
         use_gpu=use_cuda,
-        opt_level=1,
+        opt_level=opt_level,
         num_heads=num_attention_heads,  # automatic detection with 0 may not work with opset 13 or distilbert models
         hidden_size=hidden_size,  # automatic detection with 0
         optimization_options=optimization_options,

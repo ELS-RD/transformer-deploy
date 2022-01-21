@@ -22,9 +22,9 @@ Utils specific to GPT2 network.
 import torch
 
 # TRT-HuggingFace
-from NNDF.general_utils import measure_python_inference_code
-from NNDF.tensorrt_utils import TRTNativeRunner
-from NNDF.torch_utils import use_cuda
+from HuggingFace.NNDF.general_utils import measure_python_inference_code
+from HuggingFace.NNDF.tensorrt_utils import TRTNativeRunner
+from HuggingFace.NNDF.torch_utils import use_cuda
 
 
 @use_cuda

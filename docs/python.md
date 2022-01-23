@@ -49,15 +49,13 @@ engine = build_engine(
 Now the engine is ready, we can prepare the inference:
 
 ```python
-import pycuda.autoinit
-from pycuda._driver import Stream
+import torch
 from tensorrt.tensorrt import IExecutionContext
 
 from transformer_deploy.backends.trt_utils import get_binding_idxs
 
-stream: Stream = pycuda.driver.Stream()
 context: IExecutionContext = engine.create_execution_context()
-context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
+context.set_optimization_profile_async(profile_index=profile_index, stream_handle=torch.cuda.current_stream().cuda_stream)
 input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
 ```
 
@@ -75,7 +73,6 @@ tensorrt_output = infer_tensorrt(
     host_inputs=input_np,
     input_binding_idxs=input_binding_idxs,
     output_binding_idxs=output_binding_idxs,
-    stream=stream,
 )
 print(tensorrt_output)
 ```

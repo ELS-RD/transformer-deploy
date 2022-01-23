@@ -26,7 +26,6 @@ from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from numpy import ndarray
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 from transformer_deploy.backends.ort_utils import cpu_quantization, create_model_for_provider, optimize_onnx
@@ -49,7 +48,10 @@ from transformer_deploy.utils.args import parse_args
 
 
 def check_accuracy(
-    engine_name: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float
+    engine_name: str,
+    pytorch_output: List[torch.Tensor],
+    engine_output: List[Union[np.ndarray, torch.Tensor]],
+    tolerance: float,
 ) -> None:
     """
     Compare engine predictions with a reference. Assert that the difference is under a threshold.
@@ -72,7 +74,7 @@ def check_accuracy(
 
 def launch_inference(
     infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
-) -> Tuple[List[np.ndarray], List[float]]:
+) -> Tuple[List[Union[np.ndarray, torch.Tensor]], List[float]]:
     """
     Perform inference and measure latency
     :param infer: a lambda which will perform the inference
@@ -182,6 +184,7 @@ def main(commands: argparse.Namespace):
                 )
                 timings[engine_name] = time_buffer
         elif commands.device == "cpu":
+            # TODO use the right model
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
             pytorch_int8_output, time_buffer = launch_inference(
@@ -206,8 +209,8 @@ def main(commands: argparse.Namespace):
             from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
         except ImportError:
             raise ImportError(
-                "It seems that pycuda and TensorRT are not yet installed. "
-                "They are required when you declare TensorRT backend."
+                "It seems that TensorRT is not yet installed. "
+                "It is required when you declare TensorRT backend."
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
@@ -227,18 +230,18 @@ def main(commands: argparse.Namespace):
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
-        tensorrt_model: Callable[[Dict[str, ndarray]], ndarray] = load_engine(
+        tensorrt_model: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = load_engine(
             runtime=runtime, engine_file_path=tensorrt_path
         )
 
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=commands.nb_measures
+            infer=tensorrt_model, inputs=inputs_pytorch, nb_measures=commands.nb_measures
         )
         check_accuracy(
             engine_name=engine_name,
             pytorch_output=pytorch_output,
-            engine_output=tensorrt_output,
+            engine_output=tensorrt_output[0],  # TRT output are wrapped in List
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer

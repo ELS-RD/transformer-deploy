@@ -37,7 +37,7 @@ def infer_classification_pytorch(
     """
 
     def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model(**inputs).logits.detach().cpu().numpy()  # noqa: F821
+        model_output = model(**inputs).logits  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
@@ -56,7 +56,7 @@ def infer_feature_extraction_pytorch(
     """
 
     def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model(**inputs).detach().cpu().numpy()  # noqa: F821
+        model_output = model(**inputs).detach()  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output

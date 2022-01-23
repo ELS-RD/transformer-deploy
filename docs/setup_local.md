@@ -37,11 +37,6 @@ Optional, to run this library from Docker (so you don't have to install all othe
 
 You may need to login with a free Nvidia account to download some dependencies.
 
-!!! tip
-
-    To be able to leverage your CUDA installation by the Pycuda dependency, don't forget to add to CUDA path to your 
-    $PATH env variable. Otherwise, you will have issues, like Pycuda failing to compile.
-
 Then, it's the usual git clone:
 
 ```shell

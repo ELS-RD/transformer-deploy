@@ -20,19 +20,26 @@ from transformer_deploy.backends.pytorch_utils import get_model_size
 from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs
 
 
-def generate_fake_outputs(shape: Tuple[int, int], nb: int, factor: float) -> List[np.ndarray]:
+def generate_fake_outputs(shape: Tuple[int, int], nb: int, factor: float, tensor_type: str) -> List[np.ndarray]:
     results = list()
     for _ in range(nb):
-        tensor = np.arange(start=shape[0] * shape[1]).reshape(shape) * factor
+        if tensor_type == "np":
+            tensor = np.arange(start=shape[0] * shape[1]).reshape(shape) * factor
+        elif tensor_type == "torch":
+            tensor = torch.arange(end=shape[0] * shape[1], device="cpu").reshape(shape) * factor
+        else:
+            raise Exception(f"unknown: {tensor_type}")
         results.append(tensor)
     return results
 
 
 def test_gap():
     shape = (1, 4)
-    t1 = generate_fake_outputs(shape=shape, nb=1, factor=0.1)
-    t2 = generate_fake_outputs(shape=shape, nb=1, factor=0.2)
-    assert np.isclose(a=compare_outputs(pytorch_output=t1, engine_output=t2), b=0.15, atol=1e-3)
+    pairs = [("np", "np"), ("np", "torch"), ("torch", "np"), ("torch", "torch")]
+    for t1_type, t2_type in pairs:
+        t1 = generate_fake_outputs(shape=shape, nb=1, factor=0.1, tensor_type=t1_type)
+        t2 = generate_fake_outputs(shape=shape, nb=1, factor=0.2, tensor_type=t2_type)
+        assert np.isclose(a=compare_outputs(pytorch_output=t1, engine_output=t2), b=0.15, atol=1e-3)
 
 
 def test_generate_input():

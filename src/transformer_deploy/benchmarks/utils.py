@@ -20,7 +20,7 @@ import logging
 import time
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -107,5 +107,11 @@ def generate_multiple_inputs(
     return all_inputs_pytorch, all_inputs_onnx
 
 
-def compare_outputs(pytorch_output: List[np.ndarray], engine_output: List[np.ndarray]) -> float:
-    return np.mean(np.abs(np.asarray(pytorch_output) - np.asarray(engine_output)))
+def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Union[np.ndarray, torch.Tensor]]) -> float:
+    if isinstance(pytorch_output[0], torch.Tensor):
+        pytorch_output = [t.detach().cpu().numpy() for t in pytorch_output]
+    pt_output = np.asarray(pytorch_output)
+    if isinstance(engine_output[0], torch.Tensor):
+        engine_output = [t.detach().cpu().numpy() for t in engine_output]
+    eng_output = np.asarray(engine_output)
+    return np.mean(np.abs(pt_output - eng_output))

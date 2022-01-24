@@ -108,7 +108,7 @@ def build_engine(
                     config.set_flag(trt.BuilderFlag.FP16)
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
-                config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+                config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
@@ -128,7 +128,7 @@ def build_engine(
                 return engine
 
 
-def setup_binding_shapes(
+def get_output_tensors(
     context: trt.IExecutionContext,
     host_inputs: List[torch.Tensor],
     input_binding_idxs: List[int],
@@ -140,7 +140,7 @@ def setup_binding_shapes(
     :param host_inputs: input tensor
     :param input_binding_idxs: indexes of each input vector (should be the same than during building)
     :param output_binding_idxs: indexes of each output vector (should be the same than during building)
-    :return: tensors where output will be stored and GPU memory address of output tensor
+    :return: tensors where output will be stored
     """
     # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
@@ -148,6 +148,7 @@ def setup_binding_shapes(
     assert context.all_binding_shapes_specified
     device_outputs: List[torch.Tensor] = []
     for binding_index in output_binding_idxs:
+        # TensorRT computes output shape based on input shape provided above
         output_shape = context.get_binding_shape(binding_index)
         # allocate buffers to hold output results
         output = torch.empty(tuple(output_shape), device="cuda")
@@ -169,24 +170,24 @@ def infer_tensorrt(
     :param output_binding_idxs: output tensor indexes
     :return: output tensor
     """
-    input_list: List[torch.Tensor] = list()
+    input_tensors: List[torch.Tensor] = list()
     for tensor in host_inputs.values():
         assert isinstance(tensor, torch.Tensor), f"unexpected tensor type: {tensor.dtype}"
-        # warning: small change in output if int64 is used instead of int32
+        # warning: small changes in output if int64 is used instead of int32
         if tensor.dtype in [torch.int64, torch.long]:
             tensor = tensor.type(torch.int32)
         tensor = tensor.to("cuda")
-        input_list.append(tensor)
+        input_tensors.append(tensor)
     # calculate input shape, bind it, allocate GPU memory for the output
-    device_outputs: List[torch.Tensor] = setup_binding_shapes(
-        context, input_list, input_binding_idxs, output_binding_idxs
+    output_tensors: List[torch.Tensor] = get_output_tensors(
+        context, input_tensors, input_binding_idxs, output_binding_idxs
     )
-    bindings = [int(i.data_ptr()) for i in input_list + device_outputs]
+    bindings = [int(i.data_ptr()) for i in input_tensors + output_tensors]
     assert context.execute_async_v2(
         bindings, torch.cuda.current_stream().cuda_stream
     ), "failure during execution of inference"
     torch.cuda.current_stream().synchronize()  # sync all CUDA ops
-    return device_outputs
+    return output_tensors
 
 
 def load_engine(

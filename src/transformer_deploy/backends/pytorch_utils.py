@@ -107,6 +107,8 @@ def convert_to_onnx(
             )
 
         TensorQuantizer.use_fb_fake_quant = True
+    if hasattr(model_pytorch.config, "use_cache"):
+        setattr(model_pytorch.config, "use_cache", False)
 
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
@@ -130,3 +132,5 @@ def convert_to_onnx(
         )
     if quantization:
         TensorQuantizer.use_fb_fake_quant = False
+    if hasattr(model_pytorch.config, "use_cache"):
+        setattr(model_pytorch.config, "use_cache", True)

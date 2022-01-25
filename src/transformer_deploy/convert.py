@@ -28,7 +28,12 @@ import numpy as np
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from transformer_deploy.backends.ort_utils import cpu_quantization, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.ort_utils import (
+    cpu_quantization,
+    create_model_for_provider,
+    inference_onnx_binding,
+    optimize_onnx,
+)
 from transformer_deploy.backends.pytorch_utils import (
     convert_to_onnx,
     get_model_size,
@@ -54,7 +59,9 @@ def check_accuracy(
     tolerance: float,
 ) -> None:
     """
-    Compare engine predictions with a reference. Assert that the difference is under a threshold.
+    Compare engine predictions with a reference.
+    Assert that the difference is under a threshold.
+
     :param engine_name: string used in error message, if any
     :param pytorch_output: reference output used for the comparaison
     :param engine_output: output from the engine
@@ -76,7 +83,8 @@ def launch_inference(
     infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
 ) -> Tuple[List[Union[np.ndarray, torch.Tensor]], List[float]]:
     """
-    Perform inference and measure latency
+    Perform inference and measure latency.
+
     :param infer: a lambda which will perform the inference
     :param inputs: tensor compatible with the lambda (Torch tensor for Pytorch, or numpy otherwise)
     :param nb_measures: number of measures to perform for the latency measure
@@ -154,14 +162,19 @@ def main(commands: argparse.Namespace):
     )
 
     timings = {}
-    pytorch_infer = (
-        infer_feature_extraction_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
-        if commands.sentence_transformers
-        else infer_classification_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
-    )
+
+    def get_pytorch_infer(model: PreTrainedModel, cuda: bool, sentence_transformer: bool):
+        return (
+            infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
+            if sentence_transformer
+            else infer_classification_pytorch(model=model, run_on_cuda=cuda)
+        )
+
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=pytorch_infer,
+            infer=get_pytorch_infer(
+                model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
+            ),
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
@@ -172,7 +185,9 @@ def main(commands: argparse.Namespace):
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=pytorch_infer,
+                    infer=get_pytorch_infer(
+                        model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
+                    ),
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
@@ -184,11 +199,12 @@ def main(commands: argparse.Namespace):
                 )
                 timings[engine_name] = time_buffer
         elif commands.device == "cpu":
-            # TODO use the right model
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
             pytorch_int8_output, time_buffer = launch_inference(
-                infer=pytorch_infer,
+                infer=get_pytorch_infer(
+                    model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
+                ),
                 inputs=inputs_pytorch,
                 nb_measures=commands.nb_measures,
             )
@@ -284,11 +300,12 @@ def main(commands: argparse.Namespace):
                 nb_instances=commands.nb_instances,
             )
 
-            def infer_ort(inputs: Dict[str, np.ndarray]) -> np.ndarray:
-                return ort_model.run(None, inputs)
+            def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+                results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
+                return results["output"]
 
             ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=inputs_onnx, nb_measures=commands.nb_measures
+                infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )
             check_accuracy(
                 engine_name=benchmark_name,

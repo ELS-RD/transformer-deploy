@@ -94,7 +94,8 @@ def optimize_onnx(
 
 def cpu_quantization(input_model_path: str, output_model_path: str) -> None:
     """
-    ONNX CPU only dynamic quantization
+    ONNX CPU only dynamic quantization.
+
     :param input_model_path: ONNX graph (float) to quantize
     :param output_model_path: where to save quantized model
     """
@@ -169,7 +170,7 @@ def inference_onnx_binding(
     binding: IOBinding = model_onnx.io_binding()
     for input_onnx in model_onnx.get_inputs():
         tensor: torch.Tensor = inputs[input_onnx.name]
-        if tensor.dtype in [torch.int64, torch.long]:
+        if tensor.dtype in [torch.int64, torch.long]:  # TODO REMOVE CONDITION
             # int32 mandatory as input of bindings, int64 not supported
             tensor = tensor.type(dtype=torch.int32).to(device)
         binding.bind_input(
@@ -193,6 +194,5 @@ def inference_onnx_binding(
             shape=tuple(shape),
             buffer_ptr=tensor.data_ptr(),
         )
-
     model_onnx.run_with_iobinding(binding)
     return outputs

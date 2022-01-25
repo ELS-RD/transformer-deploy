@@ -122,8 +122,7 @@ def convert_to_onnx(
         dynamic_axis["output"][1] = "sequence"
     # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
     for k, v in inputs_pytorch.items():
-        if v.dtype in [torch.int64, torch.long]:  # TODO REMOVE CONDITION
-            inputs_pytorch[k] = v.type(torch.int32)
+        inputs_pytorch[k] = v.type(torch.int32)
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize
@@ -154,7 +153,7 @@ def convert_to_onnx(
         assert len(output.shape) == 2, "unexpected output tensor shape (!=2)"
         nb_dim = output.shape[1]
         onnx_model = onnx.load(output_path)
-        assert len(onnx_model.graph.output) == 1, f"unexpected number of output tensors (!=1)"
-        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, f"unexpected ouput tensor shape (!=2)"
+        assert len(onnx_model.graph.output) == 1, "unexpected number of output tensors (!=1)"
+        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, "unexpected ouput tensor shape (!=2)"
         onnx_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value = nb_dim
         onnx.save(onnx_model, output_path)

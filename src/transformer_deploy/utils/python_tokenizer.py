@@ -33,7 +33,6 @@ from transformers import AutoTokenizer, PreTrainedTokenizer, TensorType
 
 
 class TritonPythonModel:
-    is_tensorrt: bool
     tokenizer: PreTrainedTokenizer
 
     def initialize(self, args: Dict[str, str]) -> None:
@@ -43,8 +42,6 @@ class TritonPythonModel:
         """
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
         path: str = os.path.join(args["model_repository"], args["model_version"])
-        model_name: str = args["model_name"]
-        self.is_tensorrt = "tensorrt" in model_name
         self.tokenizer = AutoTokenizer.from_pretrained(path)
 
     def execute(self, requests) -> "List[List[pb_utils.Tensor]]":
@@ -59,9 +56,8 @@ class TritonPythonModel:
             # binary data typed back to string
             query = [t.decode("UTF-8") for t in pb_utils.get_input_tensor_by_name(request, "TEXT").as_numpy().tolist()]
             tokens: Dict[str, np.ndarray] = self.tokenizer(text=query, return_tensors=TensorType.NUMPY)
-            if self.is_tensorrt:
-                # tensorrt uses int32 as input type, ort uses int64
-                tokens = {k: v.astype(np.int32) for k, v in tokens.items()}
+            # tensorrt uses int32 as input type, ort uses int64
+            tokens = {k: v.astype(np.int32) for k, v in tokens.items()}
             # communicate the tokenization results to Triton server
             outputs = list()
             for input_name in self.tokenizer.model_input_names:

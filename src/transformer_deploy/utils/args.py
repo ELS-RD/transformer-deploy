@@ -31,7 +31,12 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     )
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
     parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
-    parser.add_argument("--sentence-transformers", action="store_true", help="use sentence-transformers to load model")
+    parser.add_argument(
+        "--task",
+        default="classification",
+        choices=["classification", "embedding", "text-generation"],
+        help="task to manage. embeddings is for sentence-transformers models",
+    )
     parser.add_argument(
         "--auth-token",
         default=None,

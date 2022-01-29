@@ -140,7 +140,7 @@ def gess_output_shape(inputs: Dict[str, torch.Tensor], model_onnx: InferenceSess
     axis: Dict[str, int] = dict()
     for input_onnx in model_onnx.get_inputs():
         tensor = inputs[input_onnx.name]
-        axis |= {axis_name: shape for shape, axis_name in zip(tensor.shape, input_onnx.shape)}
+        axis.update({axis_name: shape for shape, axis_name in zip(tensor.shape, input_onnx.shape)})
     shapes = dict()
     for output_onnx in model_onnx.get_outputs():
         output_shape = list()

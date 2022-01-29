@@ -134,10 +134,12 @@ def main(commands: argparse.Namespace):
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     include_token_ids = "token_type_ids" in input_names
-    if commands.sentence_transformers:
+    if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
-    else:
+    elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
+    else:
+        raise Exception(f"unknown task: {commands.task}")
     model_pytorch.eval()
     if run_on_cuda:
         model_pytorch.cuda()
@@ -163,18 +165,15 @@ def main(commands: argparse.Namespace):
 
     timings = {}
 
-    def get_pytorch_infer(model: PreTrainedModel, cuda: bool, sentence_transformer: bool):
-        return (
-            infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
-            if sentence_transformer
-            else infer_classification_pytorch(model=model, run_on_cuda=cuda)
-        )
+    def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
+        if task == "classification":
+            return infer_classification_pytorch(model=model, run_on_cuda=cuda)
+        if task == "embedding":
+            return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
 
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=get_pytorch_infer(
-                model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
-            ),
+            infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
@@ -185,9 +184,7 @@ def main(commands: argparse.Namespace):
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=get_pytorch_infer(
-                        model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
-                    ),
+                    infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
@@ -202,9 +199,7 @@ def main(commands: argparse.Namespace):
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
             pytorch_int8_output, time_buffer = launch_inference(
-                infer=get_pytorch_infer(
-                    model=model_pytorch, cuda=run_on_cuda, sentence_transformer=commands.sentence_transformers
-                ),
+                infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                 inputs=inputs_pytorch,
                 nb_measures=commands.nb_measures,
             )

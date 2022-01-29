@@ -1,5 +1,0 @@
-*.pyc
-__pycache__/
-notebooks/models
-notebooks/*.onnx
-notebooks/*.plan

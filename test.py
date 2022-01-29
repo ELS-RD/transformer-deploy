@@ -21,7 +21,7 @@ import numpy as np
 import onnxruntime
 import torch
 from onnxruntime import InferenceSession, IOBinding, OrtValue, SessionOptions
-from packaging.version import Version, parse
+from packaging.version import parse
 from torch.onnx import export
 from transformers import AutoTokenizer, GPT2LMHeadModel, PreTrainedModel, TensorType, TFPreTrainedModel
 from transformers.models.gpt2 import GPT2OnnxConfig
@@ -67,7 +67,8 @@ feature = "causal-lm"
 seq_len = 256
 atol = 0.2
 
-# causal-lm-with-past, 256 tokens, no opt: 0.01640296936035156 , opt: 0.07701282262802124 (no atol error but opt strange messages)
+# causal-lm-with-past, 256 tokens, no opt: 0.01640296936035156 , opt: 0.07701282262802124
+# (no atol error but opt strange messages)
 # with cache: no opt: 0.41653642654418943
 # causal-lm, 256 tokens, no opt: 0.00821619749069214, opt: 0.005052394866943359 (atol error 0.3, gap 0.38)
 # opt (CUDA) FP32: 0.00902557373046875 (no atol error  0.3, gap 0.11)

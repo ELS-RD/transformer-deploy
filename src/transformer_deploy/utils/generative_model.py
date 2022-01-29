@@ -118,7 +118,10 @@ class TritonPythonModel:
         return responses
 
 
-# docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 32g -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3
+# docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 32g \
+# -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3
 # pip install transformers torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 # tritonserver --model-repository=/models
-# /usr/src/tensorrt/bin/trtexec --onnx="/models/transformer_onnx_model/1/test-gpt2.onnx" --minShapes=input_ids:1x1 --optShapes=input_ids:1x128 --maxShapes=input_ids:1x384 --workspace=12000 --best --saveEngine="/models/transformer_onnx_model/1/model.plan"
+# /usr/src/tensorrt/bin/trtexec --onnx="/models/transformer_onnx_model/1/test-gpt2.onnx" \
+# --minShapes=input_ids:1x1 --optShapes=input_ids:1x128 --maxShapes=input_ids:1x384 --workspace=12000 \
+# --best --saveEngine="/models/transformer_onnx_model/1/model.plan"

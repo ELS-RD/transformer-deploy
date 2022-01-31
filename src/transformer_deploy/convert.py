@@ -133,7 +133,6 @@ def main(commands: argparse.Namespace):
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
-    include_token_ids = "token_type_ids" in input_names
     if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
     elif commands.task == "classification":
@@ -149,7 +148,7 @@ def main(commands: argparse.Namespace):
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
-        include_token_ids=include_token_ids,
+        include_token_ids="token_type_ids" in input_names,
         device=commands.device,
         nb_inputs_to_gen=commands.warmup,
     )
@@ -263,7 +262,7 @@ def main(commands: argparse.Namespace):
             batch_size=0,
             nb_output=pytorch_output[0].shape[1],
             nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
+            input_names=input_names,
             workind_directory=commands.output,
             device=commands.device,
         )
@@ -317,7 +316,7 @@ def main(commands: argparse.Namespace):
             batch_size=0,
             nb_output=pytorch_output[0].shape[1],
             nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
+            input_names=input_names,
             workind_directory=commands.output,
             device=commands.device,
         )

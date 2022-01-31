@@ -85,6 +85,7 @@ nav:
         - PTQ and QAT, who are they?: quantization_ptq.md
         - End to end demo: quantization.ipynb
     - "From optimization to deployment: end to end demo": demo.md
+    - "GPT-2 optimizations": gpt-2.ipynb
     - AWS benchmarks: benchmarks.md
     - FAQ: faq.md
     - API: reference/

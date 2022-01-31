@@ -35,7 +35,7 @@ def conf(working_directory: tempfile.TemporaryDirectory):
         batch_size=0,
         nb_output=2,
         nb_instance=1,
-        include_token_type=False,
+        input_names=["input_ids", "attention_mask"],
         workind_directory=working_directory.name,
         device="cuda",
     )
@@ -50,18 +50,16 @@ platform: "onnxruntime_onnx"
 default_model_filename: "model.bin"
 
 input [
-    {
-        name: "input_ids"
-        data_type: TYPE_INT64
-        dims: [-1, -1]
-    },
-    
-    {
-        name: "attention_mask"
-        data_type: TYPE_INT64
-        dims: [-1, -1]
-    }
-
+{
+    name: "input_ids"
+    data_type: TYPE_INT32
+    dims: [-1, -1]
+},
+{
+    name: "attention_mask"
+    data_type: TYPE_INT32
+    dims: [-1, -1]
+}
 ]
 
 output {
@@ -87,26 +85,24 @@ max_batch_size: 0
 backend: "python"
 
 input [
-    {
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
+{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}
 ]
 
 output [
-    {
-        name: "input_ids"
-        data_type: TYPE_INT64
-        dims: [-1, -1]
-    },
-    
-    {
-        name: "attention_mask"
-        data_type: TYPE_INT64
-        dims: [-1, -1]
-    }
-
+{
+    name: "input_ids"
+    data_type: TYPE_INT32
+    dims: [-1, -1]
+},
+{
+    name: "attention_mask"
+    data_type: TYPE_INT32
+    dims: [-1, -1]
+}
 ]
 
 instance_group [
@@ -126,11 +122,11 @@ max_batch_size: 0
 platform: "ensemble"
 
 input [
-    {
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
+{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}
 ]
 
 output {
@@ -149,30 +145,28 @@ ensemble_scheduling {
             value: "TEXT"
         }
         output_map [
-            {
-                key: "input_ids"
-                value: "input_ids"
-            },
-            
-            {
-                key: "attention_mask"
-                value: "attention_mask"
-            }
+{
+    key: "input_ids"
+    value: "input_ids"
+},
+{
+    key: "attention_mask"
+    value: "attention_mask"
+}
         ]
         },
         {
             model_name: "test_onnx_model"
             model_version: -1
             input_map [
-                {
-                    key: "input_ids"
-                    value: "input_ids"
-                },
-                
-                {
-                    key: "attention_mask"
-                    value: "attention_mask"
-                }
+{
+    key: "input_ids"
+    value: "input_ids"
+},
+{
+    key: "attention_mask"
+    value: "attention_mask"
+}
             ]
         output_map {
                 key: "output"

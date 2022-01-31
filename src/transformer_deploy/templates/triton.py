@@ -21,6 +21,7 @@ import os
 import shutil
 from enum import Enum
 from pathlib import Path
+from typing import List
 
 from transformers import PreTrainedTokenizer
 
@@ -45,7 +46,7 @@ class Configuration:
         batch_size: int,
         nb_output: int,
         nb_instance: int,
-        include_token_type: bool,
+        input_names: List[str],
         device: str,
     ):
         """
@@ -56,7 +57,7 @@ class Configuration:
         :param batch_size: dynamic batch size to use (0 to disable)
         :param nb_output: number of tensor outputs
         :param nb_instance: number of parallel instances to use. Mainly useful to optimize CPU inference.
-        :param include_token_type: does the model expect to receive among tensor input one for token type?
+        :param input_names: input names expected by the model
         :param device: where perform is done. One of [cpu, cuda]
         """
         self.model_name = model_name
@@ -68,13 +69,11 @@ class Configuration:
         self.nb_model_output = nb_output
         assert nb_instance > 0, f"nb_instance=={nb_instance}: nb model instances should be positive"
         self.nb_instance = nb_instance
-        self.include_token_type = include_token_type
+        self.input_names = input_names
         self.workind_directory = workind_directory
         if model_type == ModelType.ONNX:
-            self.input_type = "TYPE_INT64"
             self.inference_platform = "onnxruntime_onnx"
         elif model_type == ModelType.TensorRT:
-            self.input_type = "TYPE_INT32"
             self.inference_platform = "tensorrt_plan"
         else:
             raise Exception(f"unknown model type: {model_type}")
@@ -85,26 +84,17 @@ class Configuration:
         Generate input tensor configuration
         :return: input tensor configuration string
         """
-        token_type = ""
-        if self.include_token_type:
-            token_type = f"""    {{
-        name: "token_type_ids"
-        data_type: {self.input_type}
-        dims: [-1, -1]
-    }},
-"""
-        return f"""{{
-        name: "input_ids"
-        data_type: {self.input_type}
-        dims: [-1, -1]
-    }},
-    {token_type}
-    {{
-        name: "attention_mask"
-        data_type: {self.input_type}
-        dims: [-1, -1]
-    }}
-"""
+        result: List[str] = list()
+        for input_name in self.input_names:
+            text = f"""
+{{
+    name: "{input_name}"
+    data_type: TYPE_INT32
+    dims: [-1, -1]
+}}
+""".strip()
+            result.append(text)
+        return ",\n".join(result)
 
     def __instance_group(self):
         """
@@ -132,7 +122,7 @@ platform: "{self.inference_platform}"
 default_model_filename: "model.bin"
 
 input [
-    {self.__get_tokens()}
+{self.__get_tokens()}
 ]
 
 output {{
@@ -155,15 +145,15 @@ max_batch_size: {self.batch_size}
 backend: "python"
 
 input [
-    {{
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }}
+{{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
 ]
 
 output [
-    {self.__get_tokens()}
+{self.__get_tokens()}
 ]
 
 {self.__instance_group()}
@@ -174,33 +164,29 @@ output [
         Generate inference step configuration.
         :return: inference step configuration
         """
-        input_token_type_ids = ""
-        if self.include_token_type:
-            input_token_type_ids = """
-            {
-                key: "token_type_ids"
-                value: "token_type_ids"
-            },
-        """.strip()
-        output_token_type_ids = ""
-        if self.include_token_type:
-            output_token_type_ids = """
-            {
-                key: "token_type_ids"
-                value: "token_type_ids"
-            },
-        """.strip()
+        output_map_blocks = list()
+        for input_name in self.input_names:
+            output_map_text = f"""
+{{
+    key: "{input_name}"
+    value: "{input_name}"
+}}
+""".strip()
+            output_map_blocks.append(output_map_text)
+
+        mapping_keys = ",\n".join(output_map_blocks)
+
         return f"""
 name: "{self.inference_folder_name}"
 max_batch_size: {self.batch_size}
 platform: "ensemble"
 
 input [
-    {{
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }}
+{{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
 ]
 
 output {{
@@ -219,30 +205,14 @@ ensemble_scheduling {{
             value: "TEXT"
         }}
         output_map [
-            {{
-                key: "input_ids"
-                value: "input_ids"
-            }},
-            {input_token_type_ids}
-            {{
-                key: "attention_mask"
-                value: "attention_mask"
-            }}
+{mapping_keys}
         ]
         }},
         {{
             model_name: "{self.model_folder_name}"
             model_version: -1
             input_map [
-                {{
-                    key: "input_ids"
-                    value: "input_ids"
-                }},
-                {output_token_type_ids}
-                {{
-                    key: "attention_mask"
-                    value: "attention_mask"
-                }}
+{mapping_keys}
             ]
         output_map {{
                 key: "output"

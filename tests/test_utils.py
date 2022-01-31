@@ -24,9 +24,9 @@ def generate_fake_outputs(shape: Tuple[int, int], nb: int, factor: float, tensor
     results = list()
     for _ in range(nb):
         if tensor_type == "np":
-            tensor = np.arange(start=shape[0] * shape[1]).reshape(shape) * factor
+            tensor = np.arange(start=0, stop=shape[0] * shape[1]).reshape(shape) * factor
         elif tensor_type == "torch":
-            tensor = torch.arange(end=shape[0] * shape[1], device="cpu").reshape(shape) * factor
+            tensor = torch.arange(start=0, end=shape[0] * shape[1], device="cpu").reshape(shape) * factor
         else:
             raise Exception(f"unknown: {tensor_type}")
         results.append(tensor)

@@ -26,7 +26,14 @@ from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
+from transformers import (
+    AutoConfig,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    PretrainedConfig,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+)
 
 from transformer_deploy.backends.ort_utils import (
     cpu_quantization,
@@ -140,6 +147,7 @@ def main(commands: argparse.Namespace):
         assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
+    model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
     if commands.task == "embedding":
@@ -275,7 +283,7 @@ def main(commands: argparse.Namespace):
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
         triton_conf.create_configs(
-            tokenizer=tokenizer, model_path=tensorrt_path, config=model_pytorch.config, engine_type=EngineType.TensorRT
+            tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
         )
 
     if "onnx" in commands.backend:
@@ -323,7 +331,7 @@ def main(commands: argparse.Namespace):
         triton_conf.create_configs(
             tokenizer=tokenizer,
             model_path=onnx_optim_model_path,
-            config=model_pytorch.config,
+            config=model_config,
             engine_type=EngineType.ONNX,
         )
 

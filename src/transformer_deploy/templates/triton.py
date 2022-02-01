@@ -19,11 +19,12 @@ Generate Nvidia Triton server configuration files.
 import inspect
 import os
 import shutil
+from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
-from transformers import PreTrainedTokenizer
+from transformers import PretrainedConfig, PreTrainedTokenizer
 
 from transformer_deploy.utils import python_tokenizer
 
@@ -37,55 +38,47 @@ class ModelType(Enum):
     TensorRT = 2
 
 
-class Configuration:
+class ConfigurationAbs(ABC):
+
+    model_type: Optional[ModelType]
+
     def __init__(
         self,
-        workind_directory: str,
-        model_name: str,
-        model_type: ModelType,
-        batch_size: int,
-        nb_output: int,
+        working_directory: str,
+        model_name_base: str,
+        dim_output: List[int],
         nb_instance: int,
-        input_names: List[str],
+        tensor_input_names: List[str],
         device: str,
     ):
         """
         Configuration file setup.
-        :param workind_directory: path to the working directory
-        :param model_name: model name to use (used to call TensorRT API)
-        :param model_type: type of model (ONNX or TensorRT)
-        :param batch_size: dynamic batch size to use (0 to disable)
-        :param nb_output: number of tensor outputs
+        :param working_directory: path to the working directory
+        :param model_name_base: model name to use (used to call TensorRT API)
+        :param dim_output: number of tensor outputs
         :param nb_instance: number of parallel instances to use. Mainly useful to optimize CPU inference.
-        :param input_names: input names expected by the model
+        :param tensor_input_names: input names expected by the model
         :param device: where perform is done. One of [cpu, cuda]
         """
-        self.model_name = model_name
-        self.model_name += "_onnx" if model_type == ModelType.ONNX else "_tensorrt"
-        self.model_folder_name = f"{self.model_name}_model"
-        self.tokenizer_folder_name = f"{self.model_name}_tokenize"
-        self.inference_folder_name = f"{self.model_name}_inference"
-        self.batch_size = batch_size
-        self.nb_model_output = nb_output
+        self.model_name_base = model_name_base
+        self.dim_output = dim_output
         assert nb_instance > 0, f"nb_instance=={nb_instance}: nb model instances should be positive"
         self.nb_instance = nb_instance
-        self.input_names = input_names
-        self.workind_directory = workind_directory
-        if model_type == ModelType.ONNX:
-            self.inference_platform = "onnxruntime_onnx"
-        elif model_type == ModelType.TensorRT:
-            self.inference_platform = "tensorrt_plan"
-        else:
-            raise Exception(f"unknown model type: {model_type}")
+        self.tensor_input_names = tensor_input_names
+        self.working_dir: Path = Path(working_directory)
         self.device_kind = "KIND_GPU" if device == "cuda" else "KIND_CPU"
 
-    def __get_tokens(self):
+    @property
+    def python_folder_name(self) -> str:
+        raise Exception("to implement")
+
+    def _get_tokens(self) -> str:
         """
         Generate input tensor configuration
         :return: input tensor configuration string
         """
         result: List[str] = list()
-        for input_name in self.input_names:
+        for input_name in self.tensor_input_names:
             text = f"""
 {{
     name: "{input_name}"
@@ -96,7 +89,29 @@ class Configuration:
             result.append(text)
         return ",\n".join(result)
 
-    def __instance_group(self):
+    @property
+    def model_name(self) -> str:
+        assert self.model_type is not None
+        return self.model_name_base + ("_onnx" if self.model_type == ModelType.ONNX else "_tensorrt")
+
+    @property
+    def model_folder_name(self) -> str:
+        return f"{self.model_name}_model"
+
+    @property
+    def inference_folder_name(self) -> str:
+        return f"{self.model_name}_inference"
+
+    @property
+    def inference_platform(self) -> str:
+        if self.model_type == ModelType.ONNX:
+            return "onnxruntime_onnx"
+        elif self.model_type == ModelType.TensorRT:
+            return "tensorrt_plan"
+        else:
+            raise Exception(f"unknown model type: {self.model_type}")
+
+    def _instance_group(self) -> str:
         """
         Generate instance configuration.
         :return: instance configuration
@@ -110,6 +125,19 @@ instance_group [
 ]
 """.strip()
 
+    @staticmethod
+    def _get_header(name: str, platform: Optional[str] = None, backend: Optional[str] = None):
+        assert platform is not None or backend is not None
+        text = f"""
+name: "{name}"
+max_batch_size: 0
+""".strip()
+        if platform is not None:
+            text += f'\nplatform: "{platform}"'
+        if backend is not None:
+            text += f'\nbackend: "{backend}"'
+        return text
+
     def get_model_conf(self) -> str:
         """
         Generate model configuration.
@@ -117,135 +145,39 @@ instance_group [
         """
         return f"""
 name: "{self.model_folder_name}"
-max_batch_size: {self.batch_size}
+max_batch_size: 0
 platform: "{self.inference_platform}"
 default_model_filename: "model.bin"
 
 input [
-{self.__get_tokens()}
+{self._get_tokens()}
 ]
 
 output {{
     name: "output"
     data_type: TYPE_FP32
-    dims: [-1, {self.nb_model_output}]
+    dims: {str(self.dim_output)}
 }}
 
-{self.__instance_group()}
+{self._instance_group()}
 """.strip()
 
-    def get_tokenize_conf(self):
-        """
-        Generate tokenization step configuration.
-        :return: tokenization step configuration
-        """
-        return f"""
-name: "{self.tokenizer_folder_name}"
-max_batch_size: {self.batch_size}
-backend: "python"
-
-input [
-{{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-}}
-]
-
-output [
-{self.__get_tokens()}
-]
-
-{self.__instance_group()}
-""".strip()
-
-    def get_inference_conf(self):
-        """
-        Generate inference step configuration.
-        :return: inference step configuration
-        """
-        output_map_blocks = list()
-        for input_name in self.input_names:
-            output_map_text = f"""
-{{
-    key: "{input_name}"
-    value: "{input_name}"
-}}
-""".strip()
-            output_map_blocks.append(output_map_text)
-
-        mapping_keys = ",\n".join(output_map_blocks)
-
-        return f"""
-name: "{self.inference_folder_name}"
-max_batch_size: {self.batch_size}
-platform: "ensemble"
-
-input [
-{{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-}}
-]
-
-output {{
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [-1, {self.nb_model_output}]
-}}
-
-ensemble_scheduling {{
-    step [
-        {{
-            model_name: "{self.tokenizer_folder_name}"
-            model_version: -1
-            input_map {{
-            key: "TEXT"
-            value: "TEXT"
-        }}
-        output_map [
-{mapping_keys}
-        ]
-        }},
-        {{
-            model_name: "{self.model_folder_name}"
-            model_version: -1
-            input_map [
-{mapping_keys}
-            ]
-        output_map {{
-                key: "output"
-                value: "output"
-            }}
-        }}
-    ]
-}}
-""".strip()
-
-    def create_folders(self, tokenizer: PreTrainedTokenizer, model_path: str) -> None:
+    def create_configs(
+        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, model_type: ModelType
+    ) -> None:
         """
         Generate configuration folder layout.
         :param tokenizer: tokenizer to use
+        :param config: model config to use
         :param model_path: ouput path
+        :param model_type: type of model (ONNX or TensorRT)
         """
-        wd_path = Path(self.workind_directory)
-        wd_path.mkdir(parents=True, exist_ok=True)
-        for folder_name, conf_func in [
-            (self.model_folder_name, self.get_model_conf),
-            (self.tokenizer_folder_name, self.get_tokenize_conf),
-            (self.inference_folder_name, self.get_inference_conf),
-        ]:
-            current_folder = wd_path.joinpath(folder_name)
-            current_folder.mkdir(exist_ok=True)
-            conf = conf_func()
-            current_folder.joinpath("config.pbtxt").write_text(conf)
-            version_folder = current_folder.joinpath("1")
-            version_folder.mkdir(exist_ok=True)
-
-        tokenizer_model_folder_path = wd_path.joinpath(self.tokenizer_folder_name).joinpath("1")
-        tokenizer.save_pretrained(str(tokenizer_model_folder_path.absolute()))
-        source_code: str = inspect.getsource(python_tokenizer)
-        Path(tokenizer_model_folder_path).joinpath("model.py").write_text(source_code)
-        model_folder_path = wd_path.joinpath(self.model_folder_name).joinpath("1")
+        self.model_type = model_type
+        target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
+        target.mkdir(parents=True, exist_ok=True)
+        target.joinpath("model.py").write_text(inspect.getsource(python_tokenizer))
+        tokenizer.save_pretrained(str(target.absolute()))
+        config.save_pretrained(str(target.absolute()))
+        model_folder_path = self.working_dir.joinpath(self.model_folder_name).joinpath("1")
+        model_folder_path.mkdir(parents=True, exist_ok=True)
         shutil.copy(model_path, os.path.join(model_folder_path, "model.bin"))

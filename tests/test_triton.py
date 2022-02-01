@@ -17,9 +17,9 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from transformers import AutoTokenizer, PreTrainedTokenizer
+from transformers import AutoConfig, AutoTokenizer, PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton import Configuration, ModelType
+from transformer_deploy.templates.triton_encoder import Configuration, ModelType
 
 
 @pytest.fixture
@@ -30,15 +30,14 @@ def working_directory() -> tempfile.TemporaryDirectory:
 @pytest.fixture
 def conf(working_directory: tempfile.TemporaryDirectory):
     conf = Configuration(
-        model_name="test",
-        model_type=ModelType.ONNX,
-        batch_size=0,
-        nb_output=2,
+        model_name_base="test",
+        dim_output=[-1, 2],
         nb_instance=1,
-        input_names=["input_ids", "attention_mask"],
-        workind_directory=working_directory.name,
+        tensor_input_names=["input_ids", "attention_mask"],
+        working_directory=working_directory.name,
         device="cuda",
     )
+    conf.model_type = ModelType.ONNX  # should be provided later...
     return conf
 
 
@@ -183,8 +182,9 @@ def test_create_folders(conf: Configuration, working_directory: tempfile.Tempora
     fake_model_path = os.path.join(working_directory.name, "fake_model")
     open(file=fake_model_path, mode="a").close()
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
-    conf.create_folders(model_path=fake_model_path, tokenizer=tokenizer)
-    for folder_name in [conf.model_folder_name, conf.tokenizer_folder_name, conf.inference_folder_name]:
-        path = Path(conf.workind_directory).joinpath(folder_name)
+    config: PretrainedConfig = AutoConfig.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
+    conf.create_configs(model_path=fake_model_path, tokenizer=tokenizer, config=config, model_type=ModelType.ONNX)
+    for folder_name in [conf.model_folder_name, conf.python_folder_name, conf.inference_folder_name]:
+        path = Path(conf.working_dir).joinpath(folder_name)
         assert path.joinpath("config.pbtxt").exists()
         assert path.joinpath("1").exists()

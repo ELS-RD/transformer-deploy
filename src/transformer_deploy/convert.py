@@ -103,6 +103,14 @@ def launch_inference(
     return outputs, time_buffer
 
 
+def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
+    triton_output_shape = list(output.shape)
+    triton_output_shape[0] = -1  # dynamic batch size
+    if task == "text-generation":
+        triton_output_shape[1] = -1  # dynamic sequence size
+    return triton_output_shape
+
+
 def main(commands: argparse.Namespace):
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
@@ -169,12 +177,21 @@ def main(commands: argparse.Namespace):
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
+        raise Exception(f"unknown task: {task}")
 
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
             infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
+        )
+        triton_conf = Configuration(
+            model_name_base=commands.name,
+            dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),
+            nb_instance=commands.nb_instances,
+            tensor_input_names=input_names,
+            workind_directory=commands.output,
+            device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
         if run_on_cuda:
@@ -209,7 +226,7 @@ def main(commands: argparse.Namespace):
                 tolerance=commands.atol,
             )
             timings[engine_name] = time_buffer
-    del model_pytorch
+    model_pytorch.cpu()
 
     if "tensorrt" in commands.backend:
         try:
@@ -256,17 +273,9 @@ def main(commands: argparse.Namespace):
         )
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
-        conf = Configuration(
-            model_name=commands.name,
-            model_type=ModelType.TensorRT,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            input_names=input_names,
-            workind_directory=commands.output,
-            device=commands.device,
+        triton_conf.create_configs(
+            tokenizer=tokenizer, model_path=tensorrt_path, config=model_pytorch.config, model_type=ModelType.TensorRT
         )
-        conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
     if "onnx" in commands.backend:
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
@@ -310,17 +319,12 @@ def main(commands: argparse.Namespace):
             timings[benchmark_name] = time_buffer
             del ort_model
 
-        conf = Configuration(
-            model_name=commands.name,
+        triton_conf.create_configs(
+            tokenizer=tokenizer,
+            model_path=onnx_optim_model_path,
+            config=model_pytorch.config,
             model_type=ModelType.ONNX,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            input_names=input_names,
-            workind_directory=commands.output,
-            device=commands.device,
         )
-        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 
     if run_on_cuda:
         from torch.cuda import get_device_name

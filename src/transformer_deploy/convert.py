@@ -48,7 +48,8 @@ from transformer_deploy.benchmarks.utils import (
     setup_logging,
     track_infer_time,
 )
-from transformer_deploy.templates.triton import Configuration, ModelType
+from transformer_deploy.templates.triton import EngineType
+from transformer_deploy.templates.triton_encoder import ConfigurationEnc
 from transformer_deploy.utils.args import parse_args
 
 
@@ -185,12 +186,12 @@ def main(commands: argparse.Namespace):
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
-        triton_conf = Configuration(
+        triton_conf = ConfigurationEnc(
             model_name_base=commands.name,
             dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),
             nb_instance=commands.nb_instances,
             tensor_input_names=input_names,
-            workind_directory=commands.output,
+            working_directory=commands.output,
             device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
@@ -274,7 +275,7 @@ def main(commands: argparse.Namespace):
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
         triton_conf.create_configs(
-            tokenizer=tokenizer, model_path=tensorrt_path, config=model_pytorch.config, model_type=ModelType.TensorRT
+            tokenizer=tokenizer, model_path=tensorrt_path, config=model_pytorch.config, engine_type=EngineType.TensorRT
         )
 
     if "onnx" in commands.backend:
@@ -323,7 +324,7 @@ def main(commands: argparse.Namespace):
             tokenizer=tokenizer,
             model_path=onnx_optim_model_path,
             config=model_pytorch.config,
-            model_type=ModelType.ONNX,
+            engine_type=EngineType.ONNX,
         )
 
     if run_on_cuda:

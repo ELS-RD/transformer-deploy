@@ -20,15 +20,15 @@ from pathlib import Path
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton import ConfigurationAbs, ModelType
+from transformer_deploy.templates.triton import Configuration, EngineType
 
 
-class Configuration(ConfigurationAbs):
+class ConfigurationDec(Configuration):
     @property
     def python_folder_name(self) -> str:
         return f"{self.model_name}_generate"
 
-    def get_genration_conf(self) -> str:
+    def get_generation_conf(self) -> str:
         """
         Generate sequence configuration.
         :return: Generate sequence configuration
@@ -52,12 +52,7 @@ output [
     }}
 ]
 
-instance_group [
-    {{
-      count: 1
-      kind: KIND_GPU
-    }}
-]
+{self._instance_group()}
 
 parameters: {{
   key: "FORCE_CPU_ONLY_INPUT_TENSORS"
@@ -68,14 +63,14 @@ parameters: {{
 """.strip()
 
     def create_configs(
-        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, model_type: ModelType
+        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
     ) -> None:
-        super().create_configs(tokenizer=tokenizer, config=config, model_path=model_path, model_type=model_type)
+        super().create_configs(tokenizer=tokenizer, config=config, model_path=model_path, engine_type=engine_type)
 
         wd_path = Path(self.working_dir)
         for path, conf_content in [
             (wd_path.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_model_conf()),
-            (wd_path.joinpath(self.python_folder_name).joinpath("config.pbtxt"), self.get_genration_conf()),
+            (wd_path.joinpath(self.python_folder_name).joinpath("config.pbtxt"), self.get_generation_conf()),
         ]:  # type: Path, str
             path.parent.mkdir(parents=True, exist_ok=True)
             path.parent.joinpath("1").mkdir(exist_ok=True)

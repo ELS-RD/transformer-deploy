@@ -29,7 +29,7 @@ from transformers import PretrainedConfig, PreTrainedTokenizer
 from transformer_deploy.utils import python_tokenizer
 
 
-class ModelType(Enum):
+class EngineType(Enum):
     """
     Type of model to use
     """
@@ -38,9 +38,9 @@ class ModelType(Enum):
     TensorRT = 2
 
 
-class ConfigurationAbs(ABC):
+class Configuration(ABC):
 
-    model_type: Optional[ModelType]
+    engine_type: Optional[EngineType]
 
     def __init__(
         self,
@@ -91,8 +91,8 @@ class ConfigurationAbs(ABC):
 
     @property
     def model_name(self) -> str:
-        assert self.model_type is not None
-        return self.model_name_base + ("_onnx" if self.model_type == ModelType.ONNX else "_tensorrt")
+        assert self.engine_type is not None
+        return self.model_name_base + ("_onnx" if self.engine_type == EngineType.ONNX else "_tensorrt")
 
     @property
     def model_folder_name(self) -> str:
@@ -104,12 +104,12 @@ class ConfigurationAbs(ABC):
 
     @property
     def inference_platform(self) -> str:
-        if self.model_type == ModelType.ONNX:
+        if self.engine_type == EngineType.ONNX:
             return "onnxruntime_onnx"
-        elif self.model_type == ModelType.TensorRT:
+        elif self.engine_type == EngineType.TensorRT:
             return "tensorrt_plan"
         else:
-            raise Exception(f"unknown model type: {self.model_type}")
+            raise Exception(f"unknown model type: {self.engine_type}")
 
     def _instance_group(self) -> str:
         """
@@ -163,16 +163,16 @@ output {{
 """.strip()
 
     def create_configs(
-        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, model_type: ModelType
+        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
     ) -> None:
         """
-        Generate configuration folder layout.
+        Create Triton configuration folder layout, generate configuration files, generate/move artefacts, etc.
         :param tokenizer: tokenizer to use
-        :param config: model config to use
-        :param model_path: ouput path
-        :param model_type: type of model (ONNX or TensorRT)
+        :param config: tranformer model config to use
+        :param model_path: main folder where to save configurations and artefacts
+        :param engine_type: type of inference engine (ONNX or TensorRT)
         """
-        self.model_type = model_type
+        self.engine_type = engine_type
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)
         target.joinpath("model.py").write_text(inspect.getsource(python_tokenizer))

@@ -20,10 +20,10 @@ from pathlib import Path
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton import ConfigurationAbs, ModelType
+from transformer_deploy.templates.triton import Configuration, EngineType
 
 
-class Configuration(ConfigurationAbs):
+class ConfigurationEnc(Configuration):
     @property
     def python_folder_name(self) -> str:
         return f"{self.model_name}_tokenize"
@@ -114,9 +114,9 @@ ensemble_scheduling {{
 """.strip()
 
     def create_configs(
-        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, model_type: ModelType
+        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
     ) -> None:
-        super().create_configs(tokenizer=tokenizer, config=config, model_path=model_path, model_type=model_type)
+        super().create_configs(tokenizer=tokenizer, config=config, model_path=model_path, engine_type=engine_type)
 
         for path, conf_content in [
             (self.working_dir.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_model_conf()),

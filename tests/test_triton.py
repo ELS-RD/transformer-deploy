@@ -19,7 +19,8 @@ from pathlib import Path
 import pytest
 from transformers import AutoConfig, AutoTokenizer, PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton_encoder import Configuration, ModelType
+from transformer_deploy.templates.triton_decoder import ConfigurationDec
+from transformer_deploy.templates.triton_encoder import ConfigurationEnc, EngineType
 
 
 @pytest.fixture
@@ -28,8 +29,8 @@ def working_directory() -> tempfile.TemporaryDirectory:
 
 
 @pytest.fixture
-def conf(working_directory: tempfile.TemporaryDirectory):
-    conf = Configuration(
+def conf_encoder(working_directory: tempfile.TemporaryDirectory):
+    conf = ConfigurationEnc(
         model_name_base="test",
         dim_output=[-1, 2],
         nb_instance=1,
@@ -37,11 +38,25 @@ def conf(working_directory: tempfile.TemporaryDirectory):
         working_directory=working_directory.name,
         device="cuda",
     )
-    conf.model_type = ModelType.ONNX  # should be provided later...
+    conf.engine_type = EngineType.ONNX  # should be provided later...
     return conf
 
 
-def test_model_conf(conf: Configuration):
+@pytest.fixture
+def conf_decoder(working_directory: tempfile.TemporaryDirectory):
+    conf = ConfigurationDec(
+        model_name_base="test",
+        dim_output=[-1, 2],
+        nb_instance=1,
+        tensor_input_names=["input_ids", "attention_mask"],
+        working_directory=working_directory.name,
+        device="cuda",
+    )
+    conf.engine_type = EngineType.ONNX  # should be provided later...
+    return conf
+
+
+def test_model_conf(conf_encoder, conf_decoder):
     expected = """
 name: "test_onnx_model"
 max_batch_size: 0
@@ -74,10 +89,11 @@ instance_group [
     }
 ]
 """  # noqa: W293
-    assert expected.strip() == conf.get_model_conf()
+    assert expected.strip() == conf_encoder.get_model_conf()
+    assert expected.strip() == conf_decoder.get_model_conf()
 
 
-def test_tokenizer_conf(conf: Configuration):
+def test_tokenizer_conf(conf_encoder):
     expected = """
 name: "test_onnx_tokenize"
 max_batch_size: 0
@@ -111,10 +127,10 @@ instance_group [
     }
 ]
 """  # noqa: W293
-    assert expected.strip() == conf.get_tokenize_conf()
+    assert expected.strip() == conf_encoder.get_tokenize_conf()
 
 
-def test_inference_conf(conf: Configuration):
+def test_inference_conf(conf_encoder):
     expected = """
 name: "test_onnx_inference"
 max_batch_size: 0
@@ -175,16 +191,62 @@ ensemble_scheduling {
     ]
 }
 """  # noqa: W293
-    assert expected.strip() == conf.get_inference_conf()
+    assert expected.strip() == conf_encoder.get_inference_conf()
 
 
-def test_create_folders(conf: Configuration, working_directory: tempfile.TemporaryDirectory):
+def test_generate_conf(conf_decoder):
+    expected = """
+name: "test_onnx_generate"
+max_batch_size: 0
+backend: "python"
+
+input [
+    {
+        name: "TEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+
+output [
+    {
+        name: "output"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+
+instance_group [
+    {
+      count: 1
+      kind: KIND_GPU
+    }
+]
+
+parameters: {
+  key: "FORCE_CPU_ONLY_INPUT_TENSORS"
+  value: {
+    string_value:"no"
+  }
+}
+"""  # noqa: W293
+    print(conf_decoder.get_generation_conf())
+    assert expected.strip() == conf_decoder.get_generation_conf()
+
+
+def test_create_folders(conf_encoder, working_directory: tempfile.TemporaryDirectory):
     fake_model_path = os.path.join(working_directory.name, "fake_model")
     open(file=fake_model_path, mode="a").close()
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
     config: PretrainedConfig = AutoConfig.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
-    conf.create_configs(model_path=fake_model_path, tokenizer=tokenizer, config=config, model_type=ModelType.ONNX)
-    for folder_name in [conf.model_folder_name, conf.python_folder_name, conf.inference_folder_name]:
-        path = Path(conf.working_dir).joinpath(folder_name)
+    conf_encoder.create_configs(
+        model_path=fake_model_path, tokenizer=tokenizer, config=config, engine_type=EngineType.ONNX
+    )
+    for folder_name in [
+        conf_encoder.model_folder_name,
+        conf_encoder.python_folder_name,
+        conf_encoder.inference_folder_name,
+    ]:
+        path = Path(conf_encoder.working_dir).joinpath(folder_name)
         assert path.joinpath("config.pbtxt").exists()
         assert path.joinpath("1").exists()

@@ -169,3 +169,27 @@ def test_sentence_transformers_cpu():
     ]
     args = parse_args(commands=commands)
     main(commands=args)
+
+
+@pytest.mark.gpu
+def test_gpt2_gpu():
+    commands = [
+        "--model",
+        "distilgpt2",
+        "--task",
+        "text-generation",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)

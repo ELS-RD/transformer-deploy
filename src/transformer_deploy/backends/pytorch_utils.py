@@ -20,7 +20,6 @@ from typing import Callable, Dict
 from typing import OrderedDict as Od
 from typing import Tuple
 
-import numpy as np
 import onnx
 import torch
 from torch.onnx import TrainingMode
@@ -31,7 +30,7 @@ from transformer_deploy.backends.st_utils import STransformerWrapper
 
 def infer_classification_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
-) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for classification task
     :param model: Pytorch model (transformers)
@@ -39,8 +38,8 @@ def infer_classification_pytorch(
     :return: a function to perform inference
     """
 
-    def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model(**inputs).logits  # noqa: F821
+    def infer(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        model_output = model(**inputs).logits.detach()  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
@@ -50,7 +49,7 @@ def infer_classification_pytorch(
 
 def infer_feature_extraction_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
-) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for feature extraction task
     :param model: Pytorch model (sentence-transformers)
@@ -58,7 +57,7 @@ def infer_feature_extraction_pytorch(
     :return: a function to perform inference
     """
 
-    def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
+    def infer(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
         model_output = model(**inputs).detach()  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()

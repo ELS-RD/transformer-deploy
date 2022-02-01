@@ -53,7 +53,7 @@ def test_generate_input():
 
 def test_multiple_generate_input():
     multiple_inputs_pytorch, multiple_inputs_onnx = generate_multiple_inputs(
-        seq_len=16, batch_size=4, include_token_ids=False, nb_inputs_to_gen=4, device="cpu"
+        seq_len=16, batch_size=4, input_names=["input_ids", "attention_mask"], nb_inputs_to_gen=4, device="cpu"
     )
     assert len(multiple_inputs_pytorch) == 4
     assert len(multiple_inputs_onnx) == 4

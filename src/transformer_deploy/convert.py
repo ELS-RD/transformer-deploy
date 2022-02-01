@@ -28,6 +28,7 @@ import numpy as np
 import torch
 from transformers import (
     AutoConfig,
+    AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     PretrainedConfig,
@@ -154,6 +155,9 @@ def main(commands: argparse.Namespace):
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
     elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
+    elif commands.task == "text-generation":
+        model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
+        input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
     model_pytorch.eval()
@@ -165,7 +169,7 @@ def main(commands: argparse.Namespace):
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
-        include_token_ids="token_type_ids" in input_names,
+        input_names=input_names,
         device=commands.device,
         nb_inputs_to_gen=commands.warmup,
     )
@@ -176,13 +180,13 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
-        var_output_seq=False,
+        var_output_seq=commands.task == "text-generation",
     )
 
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
-        if task == "classification":
+        if task in ["classification", "text-generation"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)

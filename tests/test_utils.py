@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -20,7 +20,9 @@ from transformer_deploy.backends.pytorch_utils import get_model_size
 from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs
 
 
-def generate_fake_outputs(shape: Tuple[int, int], nb: int, factor: float, tensor_type: str) -> List[np.ndarray]:
+def generate_fake_outputs(
+    shape: Tuple[int, int], nb: int, factor: float, tensor_type: str
+) -> List[Union[np.ndarray, torch.Tensor]]:
     results = list()
     for _ in range(nb):
         if tensor_type == "np":
@@ -43,11 +45,15 @@ def test_gap():
 
 
 def test_generate_input():
-    inputs_pytorch, inputs_onnx = generate_input(seq_len=16, batch_size=4, include_token_ids=False, device="cpu")
+    inputs_pytorch, inputs_onnx = generate_input(
+        seq_len=16, batch_size=4, input_names=["input_ids", "attention_mask"], device="cpu"
+    )
     assert set(inputs_pytorch.keys()) == {"input_ids", "attention_mask"}
     assert inputs_pytorch["input_ids"].shape == torch.Size([4, 16])
     assert inputs_onnx["input_ids"].shape == (4, 16)
-    inputs_pytorch, inputs_onnx = generate_input(seq_len=1, batch_size=1, include_token_ids=True, device="cpu")
+    inputs_pytorch, inputs_onnx = generate_input(
+        seq_len=1, batch_size=1, input_names=["input_ids", "attention_mask"], device="cpu"
+    )
     assert set(inputs_pytorch.keys()) == {"input_ids", "attention_mask", "token_type_ids"}
 
 

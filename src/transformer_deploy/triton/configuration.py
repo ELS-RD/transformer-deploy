@@ -16,7 +16,7 @@
 Generate Nvidia Triton server configuration files.
 """
 
-import inspect
+
 import os
 import shutil
 from abc import ABC
@@ -25,8 +25,6 @@ from pathlib import Path
 from typing import List, Optional
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
-
-from transformer_deploy.utils import python_tokenizer
 
 
 class EngineType(Enum):
@@ -41,6 +39,7 @@ class EngineType(Enum):
 class Configuration(ABC):
 
     engine_type: Optional[EngineType]
+    python_code: Optional[str]
 
     def __init__(
         self,
@@ -175,7 +174,7 @@ output {{
         self.engine_type = engine_type
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)
-        target.joinpath("model.py").write_text(inspect.getsource(python_tokenizer))
+        target.joinpath("model.py").write_text(self.python_code)
         tokenizer.save_pretrained(str(target.absolute()))
         config.save_pretrained(str(target.absolute()))
         model_folder_path = self.working_dir.joinpath(self.model_folder_name).joinpath("1")

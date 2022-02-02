@@ -19,8 +19,9 @@ from pathlib import Path
 import pytest
 from transformers import AutoConfig, AutoTokenizer, PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton_decoder import ConfigurationDec
-from transformer_deploy.templates.triton_encoder import ConfigurationEnc, EngineType
+from transformer_deploy.triton.configuration import EngineType
+from transformer_deploy.triton.configuration_decoder import ConfigurationDec
+from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 
 
 @pytest.fixture
@@ -250,3 +251,6 @@ def test_create_folders(conf_encoder, working_directory: tempfile.TemporaryDirec
         path = Path(conf_encoder.working_dir).joinpath(folder_name)
         assert path.joinpath("config.pbtxt").exists()
         assert path.joinpath("1").exists()
+
+
+# TODO test content

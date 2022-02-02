@@ -36,6 +36,11 @@ except ImportError:
 from transformers import AutoConfig, AutoTokenizer, BatchEncoding, PretrainedConfig, PreTrainedTokenizer, TensorType
 
 
+# IMPORTANT
+# Some paramters are hard coded below like the sequence length to generate.
+# If you want to provide some of those parameters at run time, the easiest way to proceed
+# is to send to Triton server JSON (as a string), and just parse it in this module.
+# Build
 class GPTModelWrapper(Module, GenerationMixin):
     def __init__(
         self, config: PretrainedConfig, device: torch.device, inference: Callable[[torch.Tensor], torch.Tensor]
@@ -122,6 +127,3 @@ class TritonPythonModel:
 # -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3
 # pip install transformers torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 # tritonserver --model-repository=/models
-# /usr/src/tensorrt/bin/trtexec --onnx="/models/transformer_onnx_model/1/test-gpt2.onnx" \
-# --minShapes=input_ids:1x1 --optShapes=input_ids:1x128 --maxShapes=input_ids:1x384 --workspace=12000 \
-# --best --saveEngine="/models/transformer_onnx_model/1/model.plan"

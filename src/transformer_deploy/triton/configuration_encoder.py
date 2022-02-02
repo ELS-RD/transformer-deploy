@@ -15,15 +15,20 @@
 """
 Generate Nvidia Triton server configuration files for encoder based models (Bert, Roberta, Electra, etc.).
 """
-
+import inspect
 from pathlib import Path
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton import Configuration, EngineType
+from transformer_deploy.triton.configuration import Configuration, EngineType
+from transformer_deploy.utils import python_tokenizer
 
 
 class ConfigurationEnc(Configuration):
+    @property
+    def python_code(self):
+        return inspect.getsource(python_tokenizer)
+
     @property
     def python_folder_name(self) -> str:
         return f"{self.model_name}_tokenize"

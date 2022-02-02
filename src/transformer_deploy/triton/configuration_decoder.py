@@ -15,15 +15,20 @@
 """
 Generate Nvidia Triton server configuration files for decoder based model (GPT-2).
 """
-
+import inspect
 from pathlib import Path
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
-from transformer_deploy.templates.triton import Configuration, EngineType
+from transformer_deploy.triton.configuration import Configuration, EngineType
+from transformer_deploy.utils import generative_model
 
 
 class ConfigurationDec(Configuration):
+    @property
+    def python_code(self):
+        return inspect.getsource(generative_model)
+
     @property
     def python_folder_name(self) -> str:
         return f"{self.model_name}_generate"

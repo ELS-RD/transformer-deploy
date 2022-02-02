@@ -22,7 +22,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Type, Union
 
 import numpy as np
 import torch
@@ -56,8 +56,9 @@ from transformer_deploy.benchmarks.utils import (
     setup_logging,
     track_infer_time,
 )
-from transformer_deploy.templates.triton import EngineType
-from transformer_deploy.templates.triton_encoder import ConfigurationEnc
+from transformer_deploy.triton.configuration import Configuration, EngineType
+from transformer_deploy.triton.configuration_decoder import ConfigurationDec
+from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.utils.args import parse_args
 
 
@@ -198,7 +199,8 @@ def main(commands: argparse.Namespace):
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
-        triton_conf = ConfigurationEnc(
+        conf_class: Type[Configuration] = ConfigurationDec if commands.task == "text-generation" else ConfigurationEnc
+        triton_conf = conf_class(
             model_name_base=commands.name,
             dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),
             nb_instance=commands.nb_instances,

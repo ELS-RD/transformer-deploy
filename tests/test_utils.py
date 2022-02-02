@@ -52,7 +52,7 @@ def test_generate_input():
     assert inputs_pytorch["input_ids"].shape == torch.Size([4, 16])
     assert inputs_onnx["input_ids"].shape == (4, 16)
     inputs_pytorch, inputs_onnx = generate_input(
-        seq_len=1, batch_size=1, input_names=["input_ids", "attention_mask"], device="cpu"
+        seq_len=1, batch_size=1, input_names=["input_ids", "attention_mask", "token_type_ids"], device="cpu"
     )
     assert set(inputs_pytorch.keys()) == {"input_ids", "attention_mask", "token_type_ids"}
 

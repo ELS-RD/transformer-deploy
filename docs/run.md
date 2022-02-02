@@ -56,7 +56,7 @@ Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runt
 
 * Query the inference server:
 
-First you need to convert your strings to a binary file following the format of `demo/query_body.bin`.  
+First you need to convert your strings to a binary file following the format of `demo/infinity/query_body.bin`.  
 The `Json` part is straightforward, the second part a bit less.  
 Please follow the code below for the recipe for a single string.  
 If you have several strings, just concatenate the results.
@@ -78,10 +78,10 @@ print(struct.pack("<I", len(text_b))+text_b)  # <I means little-endian unsigned 
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)
 curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
-  --data-binary "@demo/query_body.bin" \
+  --data-binary "@demo/infinity/query_body.bin" \
   --header "Inference-Header-Content-Length: 161"
 ```
 
-> check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
+> check [`demo`](./demo/infinity) folder to discover more performant ways to query the server from Python or elsewhere.
 
 --8<-- "resources/abbreviations.md"

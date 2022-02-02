@@ -74,7 +74,7 @@ class TritonPythonModel:
         self.device = "cpu" if args["model_instance_kind"] == "CPU" else "cuda"
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
         model_config = AutoConfig.from_pretrained(current_path)
-        target_model = args["model_name"].replace("_tokenize", "_model")
+        target_model = args["model_name"].replace("_generate", "_model")
 
         def inference_triton(input_ids: torch.Tensor) -> torch.Tensor:
             input_ids = input_ids.type(dtype=torch.int32)

@@ -116,14 +116,8 @@ class TritonPythonModel:
             input_ids = tokens.input_ids.type(dtype=torch.int32)
             if self.device == "cuda":
                 input_ids = input_ids.to("cuda")
-            output_seq: torch.Tensor = self.model.generate(input_ids, max_length=256)
+            output_seq: torch.Tensor = self.model.generate(input_ids, max_length=32)
             decoded_texts: List[str] = [self.tokenizer.decode(seq, skip_special_tokens=True) for seq in output_seq]
             tensor_output = [pb_utils.Tensor("output", np.array(t, dtype=object)) for t in decoded_texts]
             responses.append(pb_utils.InferenceResponse(tensor_output))
         return responses
-
-
-# docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 32g \
-# -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3
-# pip install transformers torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-# tritonserver --model-repository=/models

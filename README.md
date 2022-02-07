@@ -18,7 +18,7 @@ We have tested many solutions, and below is what we found:
 
 [`Pytorch`](https://pytorch.org/) + [`FastAPI`](https://fastapi.tiangolo.com/) = 🐢  
 Most tutorials on `Transformer` deployment in production are built over Pytorch and FastAPI.
-Both are great tools but not very performant in inference.  
+Both are great tools but not very performant in inference (actual measures below).  
 
 [`Microsoft ONNX Runtime`](https://github.com/microsoft/onnxruntime/) + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ️🏃💨  
 Then, if you spend some time, you can build something over ONNX Runtime and Triton inference server.
@@ -45,13 +45,18 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 > read [🤗 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="120">
 
-## Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.
-
-## Want to check by yourself in 3mn?
+## Want to check by yourself in 3 minutes?
 
 To have a raw idea of what kind of acceleration you will get on your own model, you can try the `docker` only run below.
-For GPU run, you need to have installed on your machine Nvidia drivers and [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker).  
-Both are very easy to install (much easier that CUDA, cuDNN, ... you know 😉).
+For GPU run, you need to have installed on your machine Nvidia drivers and [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker).
+
+**3 tasks are covered** below: 
+
+* classification, 
+* feature extraction (text to dense embeddings) 
+* text generation (GPT-2 style).  
+
+Moreover, we have added a GPU quantization notebook to open directly on `Docker` to play with.
 
 ### Classification/reranking (encoder model)
 
@@ -71,7 +76,6 @@ docker run -it --rm --gpus all \
     --seq-len 16 128 128"
 
 # output:  
-#
 # ...
 # Inference done on NVIDIA GeForce RTX 3090
 # latencies:
@@ -246,6 +250,30 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions
 Ok, the output is not very interesting (💩 in -> 💩 out) but you get the idea.  
 Source code of the generative model is in `./triton_models/transformer_tensorrt_generate/1/model.py`.  
 You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).
+
+#### Python code
+
+You may be interested in running optimized text generation on Python directly, without using any inference server:  
+
+```shell
+docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
+```
+
+### Model quantization on GPU
+
+Quantization is a generic method to get X2 speedup on top of other inference optimization.  
+GPU quantization on transformers is almost never used because it requires to modify model source code.  
+
+We have implemented in this library a mechanism which update Hugging Face transformers library to support quantization.  
+It makes it easy to use.
+
+To play with it, open this notebook:
+
+```shell
+docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
+```
 
 <!--why-end-->
 

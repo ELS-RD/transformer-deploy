@@ -41,4 +41,4 @@ docker_build_push:
 
 .PHONY: documentation
 documentation:
-	mkdocs serve
+	PYTHONWARNINGS=ignore::UserWarning:mkdocstrings.handlers.python	mkdocs serve

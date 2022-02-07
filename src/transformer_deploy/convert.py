@@ -349,6 +349,7 @@ def main(commands: argparse.Namespace):
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
+    print(f"Each infence engine output is within {commands.atol} tolerance compared to Pytorch output")
 
 
 def entrypoint():

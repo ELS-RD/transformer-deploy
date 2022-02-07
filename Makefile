@@ -24,16 +24,16 @@ test:
 test_ci:
 	pytest -m "not gpu" || exit 1
 
-.PHONY: build_docker
-build_docker:
+.PHONY: docker_build
+docker_build:
 	DOCKER_BUILDKIT=1 docker build \
 	--rm \
 	-t ghcr.io/els-rd/transformer-deploy:latest \
 	-t ghcr.io/els-rd/transformer-deploy:$(VERSION) \
 	-f Dockerfile .
 
-.PHONY: build_push_docker
-build_push_docker:
+.PHONY: docker_build_push
+docker_build_push:
 	! docker manifest inspect ghcr.io/els-rd/transformer-deploy:$(shell cat VERSION) > /dev/null || exit 1
 	${MAKE} build_docker || exit 1
 	docker push ghcr.io/els-rd/transformer-deploy:latest || exit 1

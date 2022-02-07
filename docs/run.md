@@ -44,7 +44,7 @@ convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend onnx --seq-len
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
   bash -c "pip install transformers sentencepiece && tritonserver --model-repository=/models"
 ```
 

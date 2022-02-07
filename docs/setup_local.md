@@ -48,14 +48,18 @@ cd transformer-deploy
 
 ```shell
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
-# if you want to perform GPU quantization (recommended)
+# if you want to perform GPU quantization (recommended):
 pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\&subdirectory=tools/pytorch-quantization/
+# if you want to accelerate dense embeddings extraction:
+pip install sentence-transformers
 ```
 
 * for CPU **only** support:
 
 ```shell
 pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
+# if you want to accelerate dence embeddings extraction:
+pip install sentence-transformers
 ```
 
 To build your own version of the Docker image:

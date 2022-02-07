@@ -58,7 +58,7 @@ and Pytorch the simplest approach (at least it's the most well known tool).
 ```shell
 # add -v $PWD/src:/opt/tritonserver/src to apply source code modification to the container
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.3.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \
@@ -96,7 +96,7 @@ Launch `Nvidia Triton inference server`:
 ```shell
 # add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 

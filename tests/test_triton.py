@@ -11,8 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-import os
+import inspect
 import tempfile
 from pathlib import Path
 
@@ -22,6 +21,7 @@ from transformers import AutoConfig, AutoTokenizer, PretrainedConfig, PreTrained
 from transformer_deploy.triton.configuration import EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
+from transformer_deploy.utils import generative_model, python_tokenizer
 
 
 @pytest.fixture
@@ -235,22 +235,39 @@ parameters: {
     assert expected.strip() == conf_decoder.get_generation_conf()
 
 
-def test_create_folders(conf_encoder, working_directory: tempfile.TemporaryDirectory):
-    fake_model_path = os.path.join(working_directory.name, "fake_model")
-    open(file=fake_model_path, mode="a").close()
+def test_create_folders(conf_encoder, conf_decoder, working_directory: tempfile.TemporaryDirectory):
+    fake_model_path = Path(working_directory.name).joinpath("fake_model.bin")
+    fake_model_path.write_bytes(b"abc")
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
     config: PretrainedConfig = AutoConfig.from_pretrained("philschmid/MiniLM-L6-H384-uncased-sst2")
-    conf_encoder.create_configs(
-        model_path=fake_model_path, tokenizer=tokenizer, config=config, engine_type=EngineType.ONNX
-    )
-    for folder_name in [
-        conf_encoder.model_folder_name,
-        conf_encoder.python_folder_name,
-        conf_encoder.inference_folder_name,
+
+    for conf, paths, python_code in [
+        (
+            conf_encoder,
+            [
+                conf_encoder.model_folder_name,
+                conf_encoder.python_folder_name,
+                conf_encoder.inference_folder_name,
+            ],
+            python_tokenizer,
+        ),
+        (
+            conf_decoder,
+            [
+                conf_decoder.model_folder_name,
+                conf_decoder.python_folder_name,
+                conf_decoder.inference_folder_name,
+            ],
+            generative_model,
+        ),
     ]:
-        path = Path(conf_encoder.working_dir).joinpath(folder_name)
-        assert path.joinpath("config.pbtxt").exists()
-        assert path.joinpath("1").exists()
+        conf.create_configs(tokenizer=tokenizer, config=config, model_path=fake_model_path, engine_type=EngineType.ONNX)
+        for folder_name in paths:
+            path = Path(conf.working_dir).joinpath(folder_name)
+            assert path.joinpath("config.pbtxt").exists()
+            assert path.joinpath("config.pbtxt").read_text() != ""
+            assert path.joinpath("1").exists()
 
-
-# TODO test content
+        model_path = Path(conf.working_dir).joinpath(conf.python_folder_name).joinpath("1").joinpath("model.py")
+        assert model_path.exists()
+        assert model_path.read_text() == inspect.getsource(python_code)

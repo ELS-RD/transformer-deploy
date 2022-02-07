@@ -38,3 +38,7 @@ docker_build_push:
 	${MAKE} build_docker || exit 1
 	docker push ghcr.io/els-rd/transformer-deploy:latest || exit 1
 	docker push ghcr.io/els-rd/transformer-deploy:$(VERSION) || exit 1
+
+.PHONY: documentation
+documentation:
+	mkdocs serve

@@ -41,15 +41,11 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 * supported model: any model than can be exported to ONNX (-> most of them)
 * supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)
 
-<!--why-end-->
-
 > Want to understand how it works under the hood?  
 > read [🤗 Hugging Face Transformer inference UNDER 1 millisecond latency 📖](https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&sk=cd880e05c501c7880f2b9454830b8915)  
 > <img src="resources/rabbit.jpg" width="120">
 
 ## Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.
-
-<!--start-start-->
 
 ## Want to check by yourself in 3mn?
 
@@ -125,11 +121,11 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 Model output is at the end of the Json (`data` field).
 [More information about how to query the server from `Python`, and other languages](https://els-rd.github.io/transformer-deploy/run/).
 
-To get very low latency without any inference server: [doc here](https://els-rd.github.io/transformer-deploy/python/)
+To get very low latency inference in your Python code (no inference server): [click here](https://els-rd.github.io/transformer-deploy/python/)
 
-### Feature extraction (sentence-transformers model)
+### Feature extraction / dense embeddings
 
-Feature extraction is the task to convert text to dense embeddings.  
+Feature extraction in NLP is the task to convert text to dense embeddings.  
 It has gain some traction as a robust way to improve search engine relevancy (increase recall).  
 This project supports models from [sentence-transformers](https://github.com/UKPLab/sentence-transformers).
 
@@ -251,4 +247,6 @@ Ok, the output is not very interesting (💩 in -> 💩 out) but you get the ide
 Source code of the generative model is in `./triton_models/transformer_tensorrt_generate/1/model.py`.  
 You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).
 
-<!--start-end-->
+<!--why-end-->
+
+## Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.

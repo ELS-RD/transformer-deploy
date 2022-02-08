@@ -11,15 +11,15 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
-        <title>AWS benchmarks - transformer-deploy by Lefebvre Dalloz</title>
+        <title>Benchmarks run on AWS GPU instances - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.d6be258b.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AWS benchmarks
+              Benchmarks run on AWS GPU instances
             
           </span>
         </div>
@@ -220,7 +220,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
-        Why transformer-deploy?
+        Getting started
       </a>
     </li>
   
@@ -265,7 +265,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../compare/" class="md-nav__link">
-        Which tool to choose?
+        Which tool to choose for your inference?
       </a>
     </li>
   
@@ -295,7 +295,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../optimizations/" class="md-nav__link">
-        What is done during inference optimization?
+        Understanding model optimization
       </a>
     </li>
   
@@ -310,7 +310,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../python/" class="md-nav__link">
-        Use TensorRT in Python script
+        Direct use TensorRT in Python script (no server)
       </a>
     </li>
   
@@ -350,7 +350,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_intro/" class="md-nav__link">
+      <a href="../quantization/quantization_intro/" class="md-nav__link">
         Why using quantization?
       </a>
     </li>
@@ -364,8 +364,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_theory/" class="md-nav__link">
-        What is the theory?
+      <a href="../quantization/quantization_theory/" class="md-nav__link">
+        Quantization theory
       </a>
     </li>
   
@@ -378,8 +378,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_ast/" class="md-nav__link">
-        How is it implemented?
+      <a href="../quantization/quantization_ast/" class="md-nav__link">
+        How is it implemented in this library?
       </a>
     </li>
   
@@ -392,8 +392,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_ptq/" class="md-nav__link">
-        PTQ and QAT, who are they?
+      <a href="../quantization/quantization_ptq/" class="md-nav__link">
+        PTQ and QAT, what are they?
       </a>
     </li>
   
@@ -406,7 +406,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization/" class="md-nav__link">
+      <a href="../quantization/quantization/" class="md-nav__link">
         End to end demo
       </a>
     </li>
@@ -441,6 +441,21 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../gpt2/" class="md-nav__link">
+        Accelerate text generation with GPT-2
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -453,12 +468,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          AWS benchmarks
+          Benchmarks run on AWS GPU instances
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        AWS benchmarks
+        Benchmarks run on AWS GPU instances
       </a>
       
         
@@ -531,18 +546,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13" type="checkbox" id="__nav_13" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12">
+        <label class="md-nav__link" for="__nav_13">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_12">
+        <label class="md-nav__title" for="__nav_13">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -571,18 +586,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_2" type="checkbox" id="__nav_13_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_2">
+        <label class="md-nav__link" for="__nav_13_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_2">
+        <label class="md-nav__title" for="__nav_13_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -744,18 +759,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_3" type="checkbox" id="__nav_13_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_3">
+        <label class="md-nav__link" for="__nav_13_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_3">
+        <label class="md-nav__title" for="__nav_13_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -833,18 +848,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_4" type="checkbox" id="__nav_13_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_4">
+        <label class="md-nav__link" for="__nav_13_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_4">
+        <label class="md-nav__title" for="__nav_13_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -880,20 +895,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_5" type="checkbox" id="__nav_13_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_5">
-          Templates
+        <label class="md-nav__link" for="__nav_13_5">
+          Triton
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_5">
+      <nav class="md-nav" aria-label="Triton" data-md-level="2">
+        <label class="md-nav__title" for="__nav_13_5">
           <span class="md-nav__icon md-icon"></span>
-          Templates
+          Triton
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -903,8 +918,36 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/templates/triton/" class="md-nav__link">
-        Triton
+      <a href="../reference/triton/configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/triton/configuration_decoder/" class="md-nav__link">
+        Configuration decoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/triton/configuration_encoder/" class="md-nav__link">
+        Configuration encoder
       </a>
     </li>
   
@@ -927,18 +970,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_6" type="checkbox" id="__nav_13_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_6">
+        <label class="md-nav__link" for="__nav_13_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_6">
+        <label class="md-nav__title" for="__nav_13_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -952,6 +995,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item">
       <a href="../reference/utils/args/" class="md-nav__link">
         Args
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/utils/generative_model/" class="md-nav__link">
+        Generative model
       </a>
     </li>
   
@@ -1041,29 +1098,29 @@ Other improvements not shown here include <abbr title="Graphics Processing Unit"
 
 command:
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len <span class="m">16</span> <span class="m">16</span> <span class="m">16</span> --batch-size <span class="m">1</span> <span class="m">1</span> <span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len <span class="m">16</span> <span class="m">16</span> <span class="m">16</span> --batch-size <span class="m">1</span> <span class="m">1</span> <span class="m">1</span>
 </code></pre></div>
 
 ### GPU Nvidia T4
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>Inference done on Tesla T4
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a>latencies:
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a>[TensorRT (FP16)] mean=0.65ms, sd=0.11ms, min=0.57ms, max=0.96ms, median=0.59ms, 95p=0.93ms, 99p=0.94ms
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a>[ONNX Runtime (vanilla)] mean=1.31ms, sd=0.05ms, min=1.27ms, max=1.48ms, median=1.30ms, 95p=1.44ms, 99p=1.45ms
-<a id="__codelineno-1-5" name="__codelineno-1-5"></a>[ONNX Runtime (optimized)] mean=0.71ms, sd=0.01ms, min=0.69ms, max=0.74ms, median=0.70ms, 95p=0.73ms, 99p=0.74ms
-<a id="__codelineno-1-6" name="__codelineno-1-6"></a>[Pytorch (FP32)] mean=5.01ms, sd=0.06ms, min=4.94ms, max=6.72ms, median=5.01ms, 95p=5.07ms, 99p=5.13ms
-<a id="__codelineno-1-7" name="__codelineno-1-7"></a>[Pytorch (FP16)] mean=5.44ms, sd=0.07ms, min=5.36ms, max=6.80ms, median=5.43ms, 95p=5.49ms, 99p=5.55ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Inference done on Tesla T4
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>latencies:
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>[TensorRT (FP16)] mean=0.65ms, sd=0.11ms, min=0.57ms, max=0.96ms, median=0.59ms, 95p=0.93ms, 99p=0.94ms
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>[ONNX Runtime (vanilla)] mean=1.31ms, sd=0.05ms, min=1.27ms, max=1.48ms, median=1.30ms, 95p=1.44ms, 99p=1.45ms
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>[ONNX Runtime (optimized)] mean=0.71ms, sd=0.01ms, min=0.69ms, max=0.74ms, median=0.70ms, 95p=0.73ms, 99p=0.74ms
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>[Pytorch (FP32)] mean=5.01ms, sd=0.06ms, min=4.94ms, max=6.72ms, median=5.01ms, 95p=5.07ms, 99p=5.13ms
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>[Pytorch (FP16)] mean=5.44ms, sd=0.07ms, min=5.36ms, max=6.80ms, median=5.43ms, 95p=5.49ms, 99p=5.55ms
 </code></pre></div>
 
 ### GPU Nvidia RTX 3090
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>Inference done on NVIDIA GeForce RTX 3090
-<a id="__codelineno-2-2" name="__codelineno-2-2"></a>latencies:
-<a id="__codelineno-2-3" name="__codelineno-2-3"></a>[TensorRT (FP16)] mean=0.45ms, sd=0.05ms, min=0.41ms, max=0.78ms, median=0.45ms, 95p=0.55ms, 99p=0.73ms
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a>[ONNX Runtime (vanilla)] mean=1.32ms, sd=0.11ms, min=1.24ms, max=2.36ms, median=1.30ms, 95p=1.50ms, 99p=1.74ms
-<a id="__codelineno-2-5" name="__codelineno-2-5"></a>[ONNX Runtime (optimized)] mean=0.84ms, sd=0.11ms, min=0.76ms, max=2.03ms, median=0.81ms, 95p=1.10ms, 99p=1.25ms
-<a id="__codelineno-2-6" name="__codelineno-2-6"></a>[Pytorch (FP32)] mean=4.68ms, sd=0.28ms, min=4.38ms, max=7.83ms, median=4.65ms, 95p=4.97ms, 99p=6.16ms
-<a id="__codelineno-2-7" name="__codelineno-2-7"></a>[Pytorch (FP16)] mean=5.25ms, sd=0.60ms, min=4.83ms, max=8.54ms, median=5.03ms, 95p=6.54ms, 99p=7.77ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Inference done on NVIDIA GeForce RTX 3090
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>latencies:
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>[TensorRT (FP16)] mean=0.45ms, sd=0.05ms, min=0.41ms, max=0.78ms, median=0.45ms, 95p=0.55ms, 99p=0.73ms
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>[ONNX Runtime (vanilla)] mean=1.32ms, sd=0.11ms, min=1.24ms, max=2.36ms, median=1.30ms, 95p=1.50ms, 99p=1.74ms
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[ONNX Runtime (optimized)] mean=0.84ms, sd=0.11ms, min=0.76ms, max=2.03ms, median=0.81ms, 95p=1.10ms, 99p=1.25ms
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>[Pytorch (FP32)] mean=4.68ms, sd=0.28ms, min=4.38ms, max=7.83ms, median=4.65ms, 95p=4.97ms, 99p=6.16ms
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>[Pytorch (FP16)] mean=5.25ms, sd=0.60ms, min=4.83ms, max=8.54ms, median=5.03ms, 95p=6.54ms, 99p=7.77ms
 </code></pre></div>
 
 </details>
@@ -1072,29 +1129,29 @@ command:
 
 command:
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
 </code></pre></div>
 
 ### GPU Nvidia T4
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>Inference done on Tesla T4
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a>latencies:
-<a id="__codelineno-4-3" name="__codelineno-4-3"></a>[TensorRT (FP16)] mean=16.38ms, sd=0.30ms, min=15.45ms, max=17.42ms, median=16.42ms, 95p=16.83ms, 99p=17.09ms
-<a id="__codelineno-4-4" name="__codelineno-4-4"></a>[ONNX Runtime (vanilla)] mean=65.12ms, sd=1.53ms, min=61.74ms, max=68.51ms, median=65.21ms, 95p=67.46ms, 99p=67.90ms
-<a id="__codelineno-4-5" name="__codelineno-4-5"></a>[ONNX Runtime (optimized)] mean=26.75ms, sd=0.30ms, min=25.96ms, max=27.71ms, median=26.73ms, 95p=27.23ms, 99p=27.52ms
-<a id="__codelineno-4-6" name="__codelineno-4-6"></a>[Pytorch (FP32)] mean=82.22ms, sd=1.02ms, min=78.83ms, max=85.02ms, median=82.28ms, 95p=83.80ms, 99p=84.43ms
-<a id="__codelineno-4-7" name="__codelineno-4-7"></a>[Pytorch (FP16)] mean=46.29ms, sd=0.41ms, min=45.23ms, max=47.56ms, median=46.30ms, 95p=46.98ms, 99p=47.37ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Inference done on Tesla T4
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>latencies:
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[TensorRT (FP16)] mean=16.38ms, sd=0.30ms, min=15.45ms, max=17.42ms, median=16.42ms, 95p=16.83ms, 99p=17.09ms
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>[ONNX Runtime (vanilla)] mean=65.12ms, sd=1.53ms, min=61.74ms, max=68.51ms, median=65.21ms, 95p=67.46ms, 99p=67.90ms
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>[ONNX Runtime (optimized)] mean=26.75ms, sd=0.30ms, min=25.96ms, max=27.71ms, median=26.73ms, 95p=27.23ms, 99p=27.52ms
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[Pytorch (FP32)] mean=82.22ms, sd=1.02ms, min=78.83ms, max=85.02ms, median=82.28ms, 95p=83.80ms, 99p=84.43ms
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>[Pytorch (FP16)] mean=46.29ms, sd=0.41ms, min=45.23ms, max=47.56ms, median=46.30ms, 95p=46.98ms, 99p=47.37ms
 </code></pre></div>
 
 ### GPU Nvidia RTX 3090
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>Inference done on NVIDIA GeForce RTX 3090
-<a id="__codelineno-5-2" name="__codelineno-5-2"></a>latencies:
-<a id="__codelineno-5-3" name="__codelineno-5-3"></a>[TensorRT (FP16)] mean=5.44ms, sd=0.45ms, min=5.03ms, max=8.91ms, median=5.20ms, 95p=6.11ms, 99p=7.39ms
-<a id="__codelineno-5-4" name="__codelineno-5-4"></a>[ONNX Runtime (vanilla)] mean=16.87ms, sd=2.15ms, min=15.38ms, max=26.03ms, median=15.82ms, 95p=22.63ms, 99p=24.20ms
-<a id="__codelineno-5-5" name="__codelineno-5-5"></a>[ONNX Runtime (optimized)] mean=8.07ms, sd=0.58ms, min=7.59ms, max=13.63ms, median=7.93ms, 95p=8.71ms, 99p=11.45ms
-<a id="__codelineno-5-6" name="__codelineno-5-6"></a>[Pytorch (FP32)] mean=17.09ms, sd=0.21ms, min=16.87ms, max=18.99ms, median=17.04ms, 95p=17.49ms, 99p=18.08ms
-<a id="__codelineno-5-7" name="__codelineno-5-7"></a>[Pytorch (FP16)] mean=14.77ms, sd=1.83ms, min=13.50ms, max=20.97ms, median=13.87ms, 95p=19.15ms, 99p=20.01ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Inference done on NVIDIA GeForce RTX 3090
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>latencies:
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>[TensorRT (FP16)] mean=5.44ms, sd=0.45ms, min=5.03ms, max=8.91ms, median=5.20ms, 95p=6.11ms, 99p=7.39ms
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>[ONNX Runtime (vanilla)] mean=16.87ms, sd=2.15ms, min=15.38ms, max=26.03ms, median=15.82ms, 95p=22.63ms, 99p=24.20ms
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>[ONNX Runtime (optimized)] mean=8.07ms, sd=0.58ms, min=7.59ms, max=13.63ms, median=7.93ms, 95p=8.71ms, 99p=11.45ms
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>[Pytorch (FP32)] mean=17.09ms, sd=0.21ms, min=16.87ms, max=18.99ms, median=17.04ms, 95p=17.49ms, 99p=18.08ms
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>[Pytorch (FP16)] mean=14.77ms, sd=1.83ms, min=13.50ms, max=20.97ms, median=13.87ms, 95p=19.15ms, 99p=20.01ms
 </code></pre></div>
 
 </details>
@@ -1104,29 +1161,29 @@ command:
 
 command:
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>convert_model -m cardiffnlp/twitter-roberta-base-sentiment --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
 </code></pre></div>
 
 ### GPU Nvidia T4
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a>Inference done on Tesla T4
-<a id="__codelineno-7-2" name="__codelineno-7-2"></a>latencies:
-<a id="__codelineno-7-3" name="__codelineno-7-3"></a>[TensorRT (FP16)] mean=80.57ms, sd=1.00ms, min=76.23ms, max=83.16ms, median=80.53ms, 95p=82.14ms, 99p=82.53ms
-<a id="__codelineno-7-4" name="__codelineno-7-4"></a>[ONNX Runtime (vanilla)] mean=353.81ms, sd=14.79ms, min=335.54ms, max=390.86ms, median=348.41ms, 95p=382.09ms, 99p=386.84ms
-<a id="__codelineno-7-5" name="__codelineno-7-5"></a>[ONNX Runtime (optimized)] mean=97.94ms, sd=1.66ms, min=93.83ms, max=102.11ms, median=97.84ms, 95p=100.73ms, 99p=101.57ms
-<a id="__codelineno-7-6" name="__codelineno-7-6"></a>[Pytorch (FP32)] mean=398.49ms, sd=25.76ms, min=369.81ms, max=454.55ms, median=387.17ms, 95p=445.52ms, 99p=450.81ms
-<a id="__codelineno-7-7" name="__codelineno-7-7"></a>[Pytorch (FP16)] mean=134.18ms, sd=1.16ms, min=131.60ms, max=138.48ms, median=133.80ms, 95p=136.57ms, 99p=137.39ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Inference done on Tesla T4
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>latencies:
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>[TensorRT (FP16)] mean=80.57ms, sd=1.00ms, min=76.23ms, max=83.16ms, median=80.53ms, 95p=82.14ms, 99p=82.53ms
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>[ONNX Runtime (vanilla)] mean=353.81ms, sd=14.79ms, min=335.54ms, max=390.86ms, median=348.41ms, 95p=382.09ms, 99p=386.84ms
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>[ONNX Runtime (optimized)] mean=97.94ms, sd=1.66ms, min=93.83ms, max=102.11ms, median=97.84ms, 95p=100.73ms, 99p=101.57ms
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>[Pytorch (FP32)] mean=398.49ms, sd=25.76ms, min=369.81ms, max=454.55ms, median=387.17ms, 95p=445.52ms, 99p=450.81ms
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>[Pytorch (FP16)] mean=134.18ms, sd=1.16ms, min=131.60ms, max=138.48ms, median=133.80ms, 95p=136.57ms, 99p=137.39ms
 </code></pre></div>
 
 ### GPU Nvidia RTX 3090
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a>Inference done on NVIDIA GeForce RTX 3090
-<a id="__codelineno-8-2" name="__codelineno-8-2"></a>latencies:
-<a id="__codelineno-8-3" name="__codelineno-8-3"></a>[TensorRT (FP16)] mean=27.52ms, sd=1.61ms, min=24.49ms, max=33.78ms, median=28.01ms, 95p=30.33ms, 99p=31.22ms
-<a id="__codelineno-8-4" name="__codelineno-8-4"></a>[ONNX Runtime (vanilla)] mean=65.95ms, sd=6.18ms, min=60.84ms, max=99.75ms, median=62.97ms, 95p=81.02ms, 99p=89.10ms
-<a id="__codelineno-8-5" name="__codelineno-8-5"></a>[ONNX Runtime (optimized)] mean=32.73ms, sd=4.80ms, min=28.84ms, max=48.84ms, median=30.15ms, 95p=43.03ms, 99p=44.78ms
-<a id="__codelineno-8-6" name="__codelineno-8-6"></a>[Pytorch (FP32)] mean=69.18ms, sd=4.79ms, min=65.97ms, max=97.74ms, median=67.16ms, 95p=77.88ms, 99p=92.43ms
-<a id="__codelineno-8-7" name="__codelineno-8-7"></a>[Pytorch (FP16)] mean=48.78ms, sd=2.02ms, min=47.02ms, max=61.37ms, median=47.67ms, 95p=52.34ms, 99p=55.56ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Inference done on NVIDIA GeForce RTX 3090
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>latencies:
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>[TensorRT (FP16)] mean=27.52ms, sd=1.61ms, min=24.49ms, max=33.78ms, median=28.01ms, 95p=30.33ms, 99p=31.22ms
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>[ONNX Runtime (vanilla)] mean=65.95ms, sd=6.18ms, min=60.84ms, max=99.75ms, median=62.97ms, 95p=81.02ms, 99p=89.10ms
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>[ONNX Runtime (optimized)] mean=32.73ms, sd=4.80ms, min=28.84ms, max=48.84ms, median=30.15ms, 95p=43.03ms, 99p=44.78ms
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>[Pytorch (FP32)] mean=69.18ms, sd=4.79ms, min=65.97ms, max=97.74ms, median=67.16ms, 95p=77.88ms, 99p=92.43ms
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>[Pytorch (FP16)] mean=48.78ms, sd=2.02ms, min=47.02ms, max=61.37ms, median=47.67ms, 95p=52.34ms, 99p=55.56ms
 </code></pre></div>
 
 </details>
@@ -1136,29 +1193,29 @@ command:
 
 command:
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a>convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>convert_model -m roberta-large-mnli --backend tensorrt onnx pytorch --seq-len <span class="m">384</span> <span class="m">384</span> <span class="m">384</span> --batch-size <span class="m">16</span> <span class="m">16</span> <span class="m">16</span>
 </code></pre></div>
 
 ### GPU Nvidia T4
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1"></a>Inference done on Tesla T4
-<a id="__codelineno-10-2" name="__codelineno-10-2"></a>latencies:
-<a id="__codelineno-10-3" name="__codelineno-10-3"></a>[TensorRT (FP16)] mean=240.39ms, sd=11.01ms, min=217.59ms, max=259.57ms, median=242.68ms, 95p=255.03ms, 99p=257.04ms
-<a id="__codelineno-10-4" name="__codelineno-10-4"></a>[ONNX Runtime (vanilla)] mean=1176.73ms, sd=63.51ms, min=1020.00ms, max=1225.03ms, median=1210.08ms, 95p=1217.54ms, 99p=1220.25ms
-<a id="__codelineno-10-5" name="__codelineno-10-5"></a>[ONNX Runtime (optimized)] mean=295.03ms, sd=19.69ms, min=255.74ms, max=314.78ms, median=307.07ms, 95p=311.20ms, 99p=312.47ms
-<a id="__codelineno-10-6" name="__codelineno-10-6"></a>[Pytorch (FP32)] mean=1220.41ms, sd=75.93ms, min=1119.93ms, max=1342.10ms, median=1216.23ms, 95p=1329.08ms, 99p=1336.47ms
-<a id="__codelineno-10-7" name="__codelineno-10-7"></a>[Pytorch (FP16)] mean=438.26ms, sd=13.71ms, min=398.29ms, max=459.97ms, median=442.36ms, 95p=453.96ms, 99p=457.57ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Inference done on Tesla T4
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>latencies:
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>[TensorRT (FP16)] mean=240.39ms, sd=11.01ms, min=217.59ms, max=259.57ms, median=242.68ms, 95p=255.03ms, 99p=257.04ms
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>[ONNX Runtime (vanilla)] mean=1176.73ms, sd=63.51ms, min=1020.00ms, max=1225.03ms, median=1210.08ms, 95p=1217.54ms, 99p=1220.25ms
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>[ONNX Runtime (optimized)] mean=295.03ms, sd=19.69ms, min=255.74ms, max=314.78ms, median=307.07ms, 95p=311.20ms, 99p=312.47ms
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>[Pytorch (FP32)] mean=1220.41ms, sd=75.93ms, min=1119.93ms, max=1342.10ms, median=1216.23ms, 95p=1329.08ms, 99p=1336.47ms
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>[Pytorch (FP16)] mean=438.26ms, sd=13.71ms, min=398.29ms, max=459.97ms, median=442.36ms, 95p=453.96ms, 99p=457.57ms
 </code></pre></div>
 
 ### GPU Nvidia RTX 3090
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a>Inference done on NVIDIA GeForce RTX 3090
-<a id="__codelineno-11-2" name="__codelineno-11-2"></a>latencies:
-<a id="__codelineno-11-3" name="__codelineno-11-3"></a>[TensorRT (FP16)] mean=79.54ms, sd=5.99ms, min=74.47ms, max=113.25ms, median=76.87ms, 95p=88.02ms, 99p=104.48ms
-<a id="__codelineno-11-4" name="__codelineno-11-4"></a>[ONNX Runtime (vanilla)] mean=202.88ms, sd=16.21ms, min=187.91ms, max=277.85ms, median=194.80ms, 95p=239.58ms, 99p=261.44ms
-<a id="__codelineno-11-5" name="__codelineno-11-5"></a>[ONNX Runtime (optimized)] mean=97.04ms, sd=5.55ms, min=90.83ms, max=121.88ms, median=94.04ms, 95p=104.81ms, 99p=107.75ms
-<a id="__codelineno-11-6" name="__codelineno-11-6"></a>[Pytorch (FP32)] mean=202.80ms, sd=11.16ms, min=194.47ms, max=284.70ms, median=198.46ms, 95p=221.72ms, 99p=257.31ms
-<a id="__codelineno-11-7" name="__codelineno-11-7"></a>[Pytorch (FP16)] mean=142.63ms, sd=6.35ms, min=136.24ms, max=189.95ms, median=139.90ms, 95p=154.10ms, 99p=160.16ms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Inference done on NVIDIA GeForce RTX 3090
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>latencies:
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>[TensorRT (FP16)] mean=79.54ms, sd=5.99ms, min=74.47ms, max=113.25ms, median=76.87ms, 95p=88.02ms, 99p=104.48ms
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>[ONNX Runtime (vanilla)] mean=202.88ms, sd=16.21ms, min=187.91ms, max=277.85ms, median=194.80ms, 95p=239.58ms, 99p=261.44ms
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>[ONNX Runtime (optimized)] mean=97.04ms, sd=5.55ms, min=90.83ms, max=121.88ms, median=94.04ms, 95p=104.81ms, 99p=107.75ms
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>[Pytorch (FP32)] mean=202.80ms, sd=11.16ms, min=194.47ms, max=284.70ms, median=198.46ms, 95p=221.72ms, 99p=257.31ms
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>[Pytorch (FP16)] mean=142.63ms, sd=6.35ms, min=136.24ms, max=189.95ms, median=139.90ms, 95p=154.10ms, 99p=160.16ms
 </code></pre></div>
 
 </details>
@@ -1175,7 +1232,7 @@ command:
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../demo/" class="md-footer__link md-footer__link--prev" aria-label="Previous: From optimization to deployment: end to end demo" rel="prev">
+        <a href="../gpt2/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Accelerate text generation with GPT-2" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1184,7 +1241,7 @@ command:
               <span class="md-footer__direction">
                 Previous
               </span>
-              From optimization to deployment: end to end demo
+              Accelerate text generation with GPT-2
             </div>
           </div>
         </a>
@@ -1248,10 +1305,10 @@ command:
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.092fa1f6.min.js"}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>

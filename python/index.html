@@ -11,15 +11,15 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
-        <title>Use TensorRT in Python script - transformer-deploy by Lefebvre Dalloz</title>
+        <title>Direct use TensorRT in Python script (no server) - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.d6be258b.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Use TensorRT in Python script
+              Direct use TensorRT in Python script (no server)
             
           </span>
         </div>
@@ -220,7 +220,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href=".." class="md-nav__link">
-        Why transformer-deploy?
+        Getting started
       </a>
     </li>
   
@@ -265,7 +265,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../compare/" class="md-nav__link">
-        Which tool to choose?
+        Which tool to choose for your inference?
       </a>
     </li>
   
@@ -295,7 +295,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../optimizations/" class="md-nav__link">
-        What is done during inference optimization?
+        Understanding model optimization
       </a>
     </li>
   
@@ -319,12 +319,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Use TensorRT in Python script
+          Direct use TensorRT in Python script (no server)
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Use TensorRT in Python script
+        Direct use TensorRT in Python script (no server)
       </a>
       
         
@@ -412,7 +412,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_intro/" class="md-nav__link">
+      <a href="../quantization/quantization_intro/" class="md-nav__link">
         Why using quantization?
       </a>
     </li>
@@ -426,8 +426,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_theory/" class="md-nav__link">
-        What is the theory?
+      <a href="../quantization/quantization_theory/" class="md-nav__link">
+        Quantization theory
       </a>
     </li>
   
@@ -440,8 +440,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_ast/" class="md-nav__link">
-        How is it implemented?
+      <a href="../quantization/quantization_ast/" class="md-nav__link">
+        How is it implemented in this library?
       </a>
     </li>
   
@@ -454,8 +454,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization_ptq/" class="md-nav__link">
-        PTQ and QAT, who are they?
+      <a href="../quantization/quantization_ptq/" class="md-nav__link">
+        PTQ and QAT, what are they?
       </a>
     </li>
   
@@ -468,7 +468,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../quantization/" class="md-nav__link">
+      <a href="../quantization/quantization/" class="md-nav__link">
         End to end demo
       </a>
     </li>
@@ -505,8 +505,23 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
+      <a href="../gpt2/" class="md-nav__link">
+        Accelerate text generation with GPT-2
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../benchmarks/" class="md-nav__link">
-        AWS benchmarks
+        Benchmarks run on AWS GPU instances
       </a>
     </li>
   
@@ -538,18 +553,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13" type="checkbox" id="__nav_13" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12">
+        <label class="md-nav__link" for="__nav_13">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_12">
+        <label class="md-nav__title" for="__nav_13">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -578,18 +593,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_2" type="checkbox" id="__nav_13_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_2">
+        <label class="md-nav__link" for="__nav_13_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_2">
+        <label class="md-nav__title" for="__nav_13_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -751,18 +766,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_3" type="checkbox" id="__nav_13_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_3">
+        <label class="md-nav__link" for="__nav_13_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_3">
+        <label class="md-nav__title" for="__nav_13_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -840,18 +855,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_4" type="checkbox" id="__nav_13_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_4">
+        <label class="md-nav__link" for="__nav_13_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_4">
+        <label class="md-nav__title" for="__nav_13_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -887,20 +902,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_5" type="checkbox" id="__nav_13_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_5">
-          Templates
+        <label class="md-nav__link" for="__nav_13_5">
+          Triton
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_5">
+      <nav class="md-nav" aria-label="Triton" data-md-level="2">
+        <label class="md-nav__title" for="__nav_13_5">
           <span class="md-nav__icon md-icon"></span>
-          Templates
+          Triton
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -910,8 +925,36 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/templates/triton/" class="md-nav__link">
-        Triton
+      <a href="../reference/triton/configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/triton/configuration_decoder/" class="md-nav__link">
+        Configuration decoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/triton/configuration_encoder/" class="md-nav__link">
+        Configuration encoder
       </a>
     </li>
   
@@ -934,18 +977,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_6" type="checkbox" id="__nav_13_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_6">
+        <label class="md-nav__link" for="__nav_13_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_6">
+        <label class="md-nav__title" for="__nav_13_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -959,6 +1002,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item">
       <a href="../reference/utils/args/" class="md-nav__link">
         Args
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/utils/generative_model/" class="md-nav__link">
+        Generative model
       </a>
     </li>
   
@@ -1062,55 +1119,52 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 <h2 id="build-engine">Build engine<a class="headerlink" href="#build-engine" title="Permanent link">#</a></h2>
 <p>We assume that you have already prepared your <abbr title="Open Neural Network EXchange">ONNX</abbr> file.<br />
 Now we need to convert to TensorRT:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">tensorrt</span> <span class="k">as</span> <span class="nn">trt</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">tensorrt.tensorrt</span> <span class="kn">import</span> <span class="n">Logger</span><span class="p">,</span> <span class="n">Runtime</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">build_engine</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="n">trt_logger</span><span class="p">:</span> <span class="n">Logger</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">Logger</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">Logger</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="n">runtime</span><span class="p">:</span> <span class="n">Runtime</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">Runtime</span><span class="p">(</span><span class="n">trt_logger</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="n">profile_index</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="n">max_seq_len</span> <span class="o">=</span> <span class="mi">256</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">build_engine</span><span class="p">(</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="n">runtime</span><span class="o">=</span><span class="n">runtime</span><span class="p">,</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="n">onnx_file_path</span><span class="o">=</span><span class="s2">&quot;model_qat.onnx&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="n">logger</span><span class="o">=</span><span class="n">trt_logger</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">min_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">optimal_shape</span><span class="o">=</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">max_shape</span><span class="o">=</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">workspace_size</span><span class="o">=</span><span class="mi">10000</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">fp16</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">int8</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">tensorrt</span> <span class="k">as</span> <span class="nn">trt</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">tensorrt.tensorrt</span> <span class="kn">import</span> <span class="n">Logger</span><span class="p">,</span> <span class="n">Runtime</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">build_engine</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">trt_logger</span><span class="p">:</span> <span class="n">Logger</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">Logger</span><span class="p">(</span><span class="n">trt</span><span class="o">.</span><span class="n">Logger</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">runtime</span><span class="p">:</span> <span class="n">Runtime</span> <span class="o">=</span> <span class="n">trt</span><span class="o">.</span><span class="n">Runtime</span><span class="p">(</span><span class="n">trt_logger</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">profile_index</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">max_seq_len</span> <span class="o">=</span> <span class="mi">256</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">build_engine</span><span class="p">(</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">runtime</span><span class="o">=</span><span class="n">runtime</span><span class="p">,</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">onnx_file_path</span><span class="o">=</span><span class="s2">&quot;model_qat.onnx&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">logger</span><span class="o">=</span><span class="n">trt_logger</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">min_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">optimal_shape</span><span class="o">=</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="n">max_shape</span><span class="o">=</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">workspace_size</span><span class="o">=</span><span class="mi">10000</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">fp16</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">int8</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="prepare-inference">Prepare inference<a class="headerlink" href="#prepare-inference" title="Permanent link">#</a></h2>
 <p>Now the engine is ready, we can prepare the inference:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">pycuda.autoinit</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">pycuda._driver</span> <span class="kn">import</span> <span class="n">Stream</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">tensorrt.tensorrt</span> <span class="kn">import</span> <span class="n">IExecutionContext</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">get_binding_idxs</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="n">stream</span><span class="p">:</span> <span class="n">Stream</span> <span class="o">=</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">Stream</span><span class="p">()</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="n">context</span><span class="p">:</span> <span class="n">IExecutionContext</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">create_execution_context</span><span class="p">()</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="n">context</span><span class="o">.</span><span class="n">set_optimization_profile_async</span><span class="p">(</span><span class="n">profile_index</span><span class="o">=</span><span class="n">profile_index</span><span class="p">,</span> <span class="n">stream_handle</span><span class="o">=</span><span class="n">stream</span><span class="o">.</span><span class="n">handle</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span> <span class="o">=</span> <span class="n">get_binding_idxs</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">)</span>  <span class="c1"># type: List[int], List[int]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">tensorrt.tensorrt</span> <span class="kn">import</span> <span class="n">IExecutionContext</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">get_binding_idxs</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">context</span><span class="p">:</span> <span class="n">IExecutionContext</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">create_execution_context</span><span class="p">()</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">context</span><span class="o">.</span><span class="n">set_optimization_profile_async</span><span class="p">(</span><span class="n">profile_index</span><span class="o">=</span><span class="n">profile_index</span><span class="p">,</span> <span class="n">stream_handle</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_stream</span><span class="p">()</span><span class="o">.</span><span class="n">cuda_stream</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">input_binding_idxs</span><span class="p">,</span> <span class="n">output_binding_idxs</span> <span class="o">=</span> <span class="n">get_binding_idxs</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">profile_index</span><span class="p">)</span>  <span class="c1"># type: List[int], List[int]</span>
 </code></pre></div>
 <h2 id="inference">Inference<a class="headerlink" href="#inference" title="Permanent link">#</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">infer_tensorrt</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="n">input_np</span> <span class="o">=</span> <span class="o">...</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="n">tensorrt_output</span> <span class="o">=</span> <span class="n">infer_tensorrt</span><span class="p">(</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6"></a>    <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7"></a>    <span class="n">host_inputs</span><span class="o">=</span><span class="n">input_np</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8"></a>    <span class="n">input_binding_idxs</span><span class="o">=</span><span class="n">input_binding_idxs</span><span class="p">,</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9"></a>    <span class="n">output_binding_idxs</span><span class="o">=</span><span class="n">output_binding_idxs</span><span class="p">,</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10"></a>    <span class="n">stream</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11"></a><span class="p">)</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12"></a><span class="nb">print</span><span class="p">(</span><span class="n">tensorrt_output</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">transformer_deploy.backends.trt_utils</span> <span class="kn">import</span> <span class="n">infer_tensorrt</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">input_np</span> <span class="o">=</span> <span class="o">...</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">tensorrt_output</span> <span class="o">=</span> <span class="n">infer_tensorrt</span><span class="p">(</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">host_inputs</span><span class="o">=</span><span class="n">input_np</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">input_binding_idxs</span><span class="o">=</span><span class="n">input_binding_idxs</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">output_binding_idxs</span><span class="o">=</span><span class="n">output_binding_idxs</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nb">print</span><span class="p">(</span><span class="n">tensorrt_output</span><span class="p">)</span>
 </code></pre></div>
 <p>... and you are done! 🎉</p>
 <div class="admonition tip">
@@ -1135,7 +1189,7 @@ Now we need to convert to TensorRT:</p>
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../optimizations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: What is done during inference optimization?" rel="prev">
+        <a href="../optimizations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Understanding model optimization" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1144,14 +1198,14 @@ Now we need to convert to TensorRT:</p>
               <span class="md-footer__direction">
                 Previous
               </span>
-              What is done during inference optimization?
+              Understanding model optimization
             </div>
           </div>
         </a>
       
       
         
-        <a href="../quantization_intro/" class="md-footer__link md-footer__link--next" aria-label="Next: Why using quantization?" rel="next">
+        <a href="../quantization/quantization_intro/" class="md-footer__link md-footer__link--next" aria-label="Next: Why using quantization?" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
@@ -1208,10 +1262,10 @@ Now we need to convert to TensorRT:</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.092fa1f6.min.js"}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>

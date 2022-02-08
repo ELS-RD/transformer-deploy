@@ -10,19 +10,19 @@
       
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
-        <title>What is the theory? - transformer-deploy by Lefebvre Dalloz</title>
+        <title>Why using quantization? - transformer-deploy by Lefebvre Dalloz</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.d6be258b.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.e6a45f82.min.css">
         
           
           
@@ -40,9 +40,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#some-theory" class="md-skip">
+        <a href="#nvidia-gpu-int-8-quantization" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href="../.." title="transformer-deploy by Lefebvre Dalloz" class="md-header__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              What is the theory?
+              Why using quantization?
             
           </span>
         </div>
@@ -188,7 +188,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
+    <a href="../.." title="transformer-deploy by Lefebvre Dalloz" class="md-nav__button md-logo" aria-label="transformer-deploy by Lefebvre Dalloz" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16a3 3 0 0 1-3-3c0-1.12.61-2.1 1.5-2.61l9.71-5.62-5.53 9.58c-.5.98-1.51 1.65-2.68 1.65m0-13c1.81 0 3.5.5 4.97 1.32l-2.1 1.21C14 5.19 13 5 12 5a8 8 0 0 0-8 8c0 2.21.89 4.21 2.34 5.65h.01c.39.39.39 1.02 0 1.41-.39.39-1.03.39-1.42.01A9.969 9.969 0 0 1 2 13 10 10 0 0 1 12 3m10 10c0 2.76-1.12 5.26-2.93 7.07-.39.38-1.02.38-1.41-.01a.996.996 0 0 1 0-1.41A7.95 7.95 0 0 0 20 13c0-1-.19-2-.54-2.9L20.67 8C21.5 9.5 22 11.18 22 13z"/></svg>
@@ -219,8 +219,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
-        Why transformer-deploy?
+      <a href="../.." class="md-nav__link">
+        Getting started
       </a>
     </li>
   
@@ -234,7 +234,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../setup_local/" class="md-nav__link">
+      <a href="../../setup_local/" class="md-nav__link">
         Installation (local or Docker only)
       </a>
     </li>
@@ -249,7 +249,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../run/" class="md-nav__link">
+      <a href="../../run/" class="md-nav__link">
         Run (1 command)
       </a>
     </li>
@@ -264,8 +264,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../compare/" class="md-nav__link">
-        Which tool to choose?
+      <a href="../../compare/" class="md-nav__link">
+        Which tool to choose for your inference?
       </a>
     </li>
   
@@ -279,7 +279,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../onnx_convert/" class="md-nav__link">
+      <a href="../../onnx_convert/" class="md-nav__link">
         How ONNX conversion works?
       </a>
     </li>
@@ -294,8 +294,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../optimizations/" class="md-nav__link">
-        What is done during inference optimization?
+      <a href="../../optimizations/" class="md-nav__link">
+        Understanding model optimization
       </a>
     </li>
   
@@ -309,8 +309,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../python/" class="md-nav__link">
-        Use TensorRT in Python script
+      <a href="../../python/" class="md-nav__link">
+        Direct use TensorRT in Python script (no server)
       </a>
     </li>
   
@@ -350,20 +350,6 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../quantization_intro/" class="md-nav__link">
-        Why using quantization?
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -376,12 +362,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          What is the theory?
+          Why using quantization?
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        What is the theory?
+        Why using quantization?
       </a>
       
         
@@ -400,15 +386,15 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#a-very-short-intro-to-int-8-quantization" class="md-nav__link">
-    A (very) short intro to INT-8 quantization
+  <a href="#what-is-it-about" class="md-nav__link">
+    What is it about?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-does-it-matter" class="md-nav__link">
-    Why does it matter?
+  <a href="#benchmark" class="md-nav__link">
+    Benchmark
   </a>
   
 </li>
@@ -428,8 +414,22 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
+      <a href="../quantization_theory/" class="md-nav__link">
+        Quantization theory
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../quantization_ast/" class="md-nav__link">
-        How is it implemented?
+        How is it implemented in this library?
       </a>
     </li>
   
@@ -443,7 +443,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="../quantization_ptq/" class="md-nav__link">
-        PTQ and QAT, who are they?
+        PTQ and QAT, what are they?
       </a>
     </li>
   
@@ -478,7 +478,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../demo/" class="md-nav__link">
+      <a href="../../demo/" class="md-nav__link">
         From optimization to deployment: end to end demo
       </a>
     </li>
@@ -493,8 +493,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../benchmarks/" class="md-nav__link">
-        AWS benchmarks
+      <a href="../../gpt2/" class="md-nav__link">
+        Accelerate text generation with GPT-2
       </a>
     </li>
   
@@ -508,7 +508,22 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
+      <a href="../../benchmarks/" class="md-nav__link">
+        Benchmarks run on AWS GPU instances
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -526,18 +541,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13" type="checkbox" id="__nav_13" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12">
+        <label class="md-nav__link" for="__nav_13">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_12">
+        <label class="md-nav__title" for="__nav_13">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -549,7 +564,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/convert/" class="md-nav__link">
+      <a href="../../reference/convert/" class="md-nav__link">
         Convert
       </a>
     </li>
@@ -566,18 +581,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_2" type="checkbox" id="__nav_13_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_2">
+        <label class="md-nav__link" for="__nav_13_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_2">
+        <label class="md-nav__title" for="__nav_13_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -589,7 +604,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQAlbert/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQAlbert/" class="md-nav__link">
         QDQAlbert
       </a>
     </li>
@@ -603,7 +618,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQBert/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQBert/" class="md-nav__link">
         QDQBert
       </a>
     </li>
@@ -617,7 +632,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQDeberta/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQDeberta/" class="md-nav__link">
         QDQDeberta
       </a>
     </li>
@@ -631,7 +646,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQDistilbert/" class="md-nav__link">
         QDQDistilbert
       </a>
     </li>
@@ -645,7 +660,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQElectra/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQElectra/" class="md-nav__link">
         QDQElectra
       </a>
     </li>
@@ -659,7 +674,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/QDQRoberta/" class="md-nav__link">
+      <a href="../../reference/QDQModels/QDQRoberta/" class="md-nav__link">
         QDQRoberta
       </a>
     </li>
@@ -673,7 +688,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
+      <a href="../../reference/QDQModels/ast_operator_patch/" class="md-nav__link">
         Ast operator patch
       </a>
     </li>
@@ -687,7 +702,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/ast_utils/" class="md-nav__link">
+      <a href="../../reference/QDQModels/ast_utils/" class="md-nav__link">
         Ast utils
       </a>
     </li>
@@ -701,7 +716,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/calibration_utils/" class="md-nav__link">
+      <a href="../../reference/QDQModels/calibration_utils/" class="md-nav__link">
         Calibration utils
       </a>
     </li>
@@ -715,7 +730,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/QDQModels/patch/" class="md-nav__link">
+      <a href="../../reference/QDQModels/patch/" class="md-nav__link">
         Patch
       </a>
     </li>
@@ -739,18 +754,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_3" type="checkbox" id="__nav_13_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_3">
+        <label class="md-nav__link" for="__nav_13_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_3">
+        <label class="md-nav__title" for="__nav_13_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -762,7 +777,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/ort_utils/" class="md-nav__link">
+      <a href="../../reference/backends/ort_utils/" class="md-nav__link">
         Ort utils
       </a>
     </li>
@@ -776,7 +791,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/pytorch_utils/" class="md-nav__link">
+      <a href="../../reference/backends/pytorch_utils/" class="md-nav__link">
         Pytorch utils
       </a>
     </li>
@@ -790,7 +805,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/st_utils/" class="md-nav__link">
+      <a href="../../reference/backends/st_utils/" class="md-nav__link">
         St utils
       </a>
     </li>
@@ -804,7 +819,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/backends/trt_utils/" class="md-nav__link">
+      <a href="../../reference/backends/trt_utils/" class="md-nav__link">
         Trt utils
       </a>
     </li>
@@ -828,18 +843,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_4" type="checkbox" id="__nav_13_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_4">
+        <label class="md-nav__link" for="__nav_13_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_4">
+        <label class="md-nav__title" for="__nav_13_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -851,7 +866,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/benchmarks/utils/" class="md-nav__link">
+      <a href="../../reference/benchmarks/utils/" class="md-nav__link">
         Utils
       </a>
     </li>
@@ -875,20 +890,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_5" type="checkbox" id="__nav_13_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_5">
-          Templates
+        <label class="md-nav__link" for="__nav_13_5">
+          Triton
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_5">
+      <nav class="md-nav" aria-label="Triton" data-md-level="2">
+        <label class="md-nav__title" for="__nav_13_5">
           <span class="md-nav__icon md-icon"></span>
-          Templates
+          Triton
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -898,8 +913,36 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/templates/triton/" class="md-nav__link">
-        Triton
+      <a href="../../reference/triton/configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/triton/configuration_decoder/" class="md-nav__link">
+        Configuration decoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/triton/configuration_encoder/" class="md-nav__link">
+        Configuration encoder
       </a>
     </li>
   
@@ -922,18 +965,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_6" type="checkbox" id="__nav_13_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_6">
+        <label class="md-nav__link" for="__nav_13_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_6">
+        <label class="md-nav__title" for="__nav_13_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -945,8 +988,22 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="../reference/utils/args/" class="md-nav__link">
+      <a href="../../reference/utils/args/" class="md-nav__link">
         Args
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/utils/generative_model/" class="md-nav__link">
+        Generative model
       </a>
     </li>
   
@@ -993,15 +1050,15 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#a-very-short-intro-to-int-8-quantization" class="md-nav__link">
-    A (very) short intro to INT-8 quantization
+  <a href="#what-is-it-about" class="md-nav__link">
+    What is it about?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-does-it-matter" class="md-nav__link">
-    Why does it matter?
+  <a href="#benchmark" class="md-nav__link">
+    Benchmark
   </a>
   
 </li>
@@ -1019,39 +1076,139 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-<h1 id="some-theory">Some theory<a class="headerlink" href="#some-theory" title="Permanent link">#</a></h1>
-<h2 id="a-very-short-intro-to-int-8-quantization">A (very) short intro to INT-8 quantization<a class="headerlink" href="#a-very-short-intro-to-int-8-quantization" title="Permanent link">#</a></h2>
-<p>Basic idea behind model quantization is to replace tensors made of float numbers (usually encoded on 32 bits) by lower precision representation (integers encoded on 8 bits for Nvidia GPUs).
-Therefore computation is faster and model memory footprint is lower. Making tensor storage smaller makes memory transfer faster... and is also a source of computation acceleration.
-This approach is very interesting for its trade-off: you reduce inference time significantly, and it costs close to nothing in accuracy.</p>
-<p>Replacing float numbers by integers is done through a mapping.
-This step is called <code>calibration</code>, and its purpose is to compute for each tensor or each channel of a tensor (one of its dimensions) a range covering most weights and then define a scale and a distribution center to map float numbers to 8 bits integers.</p>
-<p>There are several ways to perform quantization, depending of how and when the <code>calibration</code> is performed:</p>
+<h1 id="nvidia-gpu-int-8-quantization">Nvidia <abbr title="Graphics Processing Unit">GPU</abbr> INT-8 quantization<a class="headerlink" href="#nvidia-gpu-int-8-quantization" title="Permanent link">#</a></h1>
+<h2 id="what-is-it-about">What is it about?<a class="headerlink" href="#what-is-it-about" title="Permanent link">#</a></h2>
+<p>Quantization is one of the most effective and generic approaches to make model inference faster.
+Basically, it replaces high precision float numbers in model tensors encoded in 32 or 16 bits by lower precision ones encoded in 8 bits or less:</p>
 <ul>
-<li>dynamically: the mapping is done online, during the inference, there are some overhead but it's usually the easiest to leverage, end user has very few configuration to set,</li>
-<li>statically, after training (<code>post training quantization</code> or <code>PTQ</code>): this way is efficient because quantization is done offline, before inference, but it may have an accuracy cost,</li>
-<li>statically, after training (<code>quantization aware training</code> or <code>QAT</code>): like a <abbr title="Post Training Quantization">PTQ</abbr> followed by a second fine tuning. Same efficiency but usually slightly better accuracy.</li>
+<li>it takes less memory</li>
+<li>computation is easier / faster</li>
 </ul>
-<p>Nvidia GPUs don't support dynamic quantization, <abbr title="Central Processing Unit">CPU</abbr> supports all types of quantization.<br />
-Compared to <code>PTQ</code>, <code>QAT</code> better preserves accuracy and should be preferred in most cases.</p>
-<p>During the <em>quantization aware training</em>:</p>
-<ul>
-<li>in the inside, Pytorch will train with high precision float numbers,</li>
-<li>on the outside, Pytorch will simulate that a quantization has already been applied and output results accordingly (for loss computation for instance)</li>
-</ul>
-<p>The simulation process is done through the add of quantization / dequantization nodes, most often called <code>QDQ</code>, it's an abbreviation you will see often in the quantization world.</p>
-<div class="admonition info">
-<p class="admonition-title">Want to learn more about quantization?</p>
-<ul>
-<li>You can check this <a href="https://leimao.github.io/article/Neural-Networks-Quantization/">high quality blog post</a> for more information.</li>
-<li>The process is well described in this <a href="https://on-demand.gputechconf.com/gtc/2017/presentation/s7310-8-bit-inference-with-tensorrt.pdf">Nvidia presentation</a></li>
-</ul>
+<p>It can be applied to any model in theory, and, if done well, it should maintain accuracy.</p>
+<p>The purpose of this notebook is to show a process to perform quantization on any <code>Transformer</code> architectures.</p>
+<p>Moreover, the library is designed to offer a simple API and still let advanced users tweak the algorithm.</p>
+<h2 id="benchmark">Benchmark<a class="headerlink" href="#benchmark" title="Permanent link">#</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">TL;DR</p>
+<p>We benchmarked Pytorch and Nvidia TensorRT, on both <abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr>, with/without quantization, our methods provide the fastest inference by large margin.</p>
 </div>
-<h2 id="why-does-it-matter">Why does it matter?<a class="headerlink" href="#why-does-it-matter" title="Permanent link">#</a></h2>
-<p><abbr title="Central Processing Unit">CPU</abbr> quantization is supported out of the box by <code>Pytorch</code> and <code>ONNX Runtime</code>.
-<strong><abbr title="Graphics Processing Unit">GPU</abbr> quantization on the other side requires specific tools and process to be applied</strong>.</p>
-<p>In the specific case of <code>Transformer</code> models, few demos from Nvidia and Microsoft exist; they are all for the old vanilla Bert architecture.</p>
-<p>It doesn't support modern architectures out of the box, like <code>Albert</code>, <code>Roberta</code>, <code>Deberta</code> or <code>Electra</code>.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Framework</th>
+<th>Precision</th>
+<th>Latency (ms)</th>
+<th>Accuracy</th>
+<th align="left">Speedup</th>
+<th align="center">Hardware</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP32</td>
+<td>4267</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP16</td>
+<td>4428</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>INT-8</td>
+<td>3300</td>
+<td>85.9 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP32</td>
+<td>77</td>
+<td>86.6 %</td>
+<td align="left">X 1</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left">Pytorch</td>
+<td>FP16</td>
+<td>56</td>
+<td>86.6 %</td>
+<td align="left">X 1.38</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP32</td>
+<td>76</td>
+<td>86.6 %</td>
+<td align="left">X 1.01</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP16</td>
+<td>34</td>
+<td>86.6 %</td>
+<td align="left">X 2.26</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP32</td>
+<td>4023</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>FP16</td>
+<td>3957</td>
+<td>86.6 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left"><abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime</td>
+<td>INT-8</td>
+<td>3336</td>
+<td>86.5 %</td>
+<td align="left">X 0.02</td>
+<td align="center"><abbr title="Central Processing Unit">CPU</abbr></td>
+</tr>
+<tr>
+<td align="left">TensorRT</td>
+<td>FP16</td>
+<td>30</td>
+<td>86.6 %</td>
+<td align="left">X 2.57</td>
+<td align="center"><abbr title="Graphics Processing Unit">GPU</abbr></td>
+</tr>
+<tr>
+<td align="left">TensorRT (<strong>our method</strong>)</td>
+<td><strong>INT-8</strong></td>
+<td><strong>17</strong></td>
+<td>86.2 %</td>
+<td align="left"><strong>X 4.53</strong></td>
+<td align="center"><strong><abbr title="Graphics Processing Unit">GPU</abbr></strong></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>measures done on a Nvidia RTX 3090 <abbr title="Graphics Processing Unit">GPU</abbr> + 12 cores i7 Intel <abbr title="Central Processing Unit">CPU</abbr> (support AVX-2 instruction)
+Roberta <code>base</code> architecture flavor with batch of size 32 / seq len 256, similar results obtained for other sizes/seq len not included in the table.
+Accuracy obtained after a single epoch, no LR search or any hyper parameter optimization</p>
+</div>
+<p>Check the end to end demo to see where these numbers are from.</p>
 
               
             </article>
@@ -1065,7 +1222,7 @@ Compared to <code>PTQ</code>, <code>QAT</code> better preserves accuracy and sho
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../quantization_intro/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Why using quantization?" rel="prev">
+        <a href="../../python/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Direct use TensorRT in Python script (no server)" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -1074,20 +1231,20 @@ Compared to <code>PTQ</code>, <code>QAT</code> better preserves accuracy and sho
               <span class="md-footer__direction">
                 Previous
               </span>
-              Why using quantization?
+              Direct use TensorRT in Python script (no server)
             </div>
           </div>
         </a>
       
       
         
-        <a href="../quantization_ast/" class="md-footer__link md-footer__link--next" aria-label="Next: How is it implemented?" rel="next">
+        <a href="../quantization_theory/" class="md-footer__link md-footer__link--next" aria-label="Next: Quantization theory" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              How is it implemented?
+              Quantization theory
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -1138,10 +1295,10 @@ Compared to <code>PTQ</code>, <code>QAT</code> better preserves accuracy and sho
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.092fa1f6.min.js"}</script>
     
     
-      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>

@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.10">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.edf004c2.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.d6be258b.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.e6a45f82.min.css">
@@ -109,7 +109,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Why transformer-deploy?
+              Getting started
             
           </span>
         </div>
@@ -227,12 +227,12 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Why transformer-deploy?
+          Getting started
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
-        Why transformer-deploy?
+        Getting started
       </a>
       
         
@@ -252,6 +252,135 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   <a href="#features" class="md-nav__link">
     Features
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#want-to-check-by-yourself-in-3-minutes" class="md-nav__link">
+    Want to check by yourself in 3 minutes?
+  </a>
+  
+    <nav class="md-nav" aria-label="Want to check by yourself in 3 minutes?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classificationreranking-encoder-model" class="md-nav__link">
+    Classification/reranking (encoder model)
+  </a>
+  
+    <nav class="md-nav" aria-label="Classification/reranking (encoder model)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-extraction-dense-embeddings" class="md-nav__link">
+    Feature extraction / dense embeddings
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature extraction / dense embeddings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model_1" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server_1" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference_1" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-text-decoder-model" class="md-nav__link">
+    Generate text (decoder model)
+  </a>
+  
+    <nav class="md-nav" aria-label="Generate text (decoder model)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model_2" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server_2" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference_2" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-code" class="md-nav__link">
+    Python code
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-quantization-on-gpu" class="md-nav__link">
+    Model quantization on GPU
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -302,7 +431,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="compare/" class="md-nav__link">
-        Which tool to choose?
+        Which tool to choose for your inference?
       </a>
     </li>
   
@@ -332,7 +461,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="optimizations/" class="md-nav__link">
-        What is done during inference optimization?
+        Understanding model optimization
       </a>
     </li>
   
@@ -347,7 +476,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
     <li class="md-nav__item">
       <a href="python/" class="md-nav__link">
-        Use TensorRT in Python script
+        Direct use TensorRT in Python script (no server)
       </a>
     </li>
   
@@ -387,7 +516,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="quantization_intro/" class="md-nav__link">
+      <a href="quantization/quantization_intro/" class="md-nav__link">
         Why using quantization?
       </a>
     </li>
@@ -401,8 +530,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="quantization_theory/" class="md-nav__link">
-        What is the theory?
+      <a href="quantization/quantization_theory/" class="md-nav__link">
+        Quantization theory
       </a>
     </li>
   
@@ -415,8 +544,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="quantization_ast/" class="md-nav__link">
-        How is it implemented?
+      <a href="quantization/quantization_ast/" class="md-nav__link">
+        How is it implemented in this library?
       </a>
     </li>
   
@@ -429,8 +558,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="quantization_ptq/" class="md-nav__link">
-        PTQ and QAT, who are they?
+      <a href="quantization/quantization_ptq/" class="md-nav__link">
+        PTQ and QAT, what are they?
       </a>
     </li>
   
@@ -443,7 +572,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="quantization/" class="md-nav__link">
+      <a href="quantization/quantization/" class="md-nav__link">
         End to end demo
       </a>
     </li>
@@ -480,8 +609,23 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
+      <a href="gpt2/" class="md-nav__link">
+        Accelerate text generation with GPT-2
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="benchmarks/" class="md-nav__link">
-        AWS benchmarks
+        Benchmarks run on AWS GPU instances
       </a>
     </li>
   
@@ -513,18 +657,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12" type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13" type="checkbox" id="__nav_13" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12">
+        <label class="md-nav__link" for="__nav_13">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_12">
+        <label class="md-nav__title" for="__nav_13">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -553,18 +697,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_2" type="checkbox" id="__nav_12_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_2" type="checkbox" id="__nav_13_2" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_2">
+        <label class="md-nav__link" for="__nav_13_2">
           QDQModels
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="QDQModels" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_2">
+        <label class="md-nav__title" for="__nav_13_2">
           <span class="md-nav__icon md-icon"></span>
           QDQModels
         </label>
@@ -726,18 +870,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_3" type="checkbox" id="__nav_12_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_3" type="checkbox" id="__nav_13_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_3">
+        <label class="md-nav__link" for="__nav_13_3">
           Backends
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Backends" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_3">
+        <label class="md-nav__title" for="__nav_13_3">
           <span class="md-nav__icon md-icon"></span>
           Backends
         </label>
@@ -815,18 +959,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_4" type="checkbox" id="__nav_12_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_4" type="checkbox" id="__nav_13_4" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_4">
+        <label class="md-nav__link" for="__nav_13_4">
           Benchmarks
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Benchmarks" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_4">
+        <label class="md-nav__title" for="__nav_13_4">
           <span class="md-nav__icon md-icon"></span>
           Benchmarks
         </label>
@@ -862,20 +1006,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_5" type="checkbox" id="__nav_12_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_5" type="checkbox" id="__nav_13_5" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_5">
-          Templates
+        <label class="md-nav__link" for="__nav_13_5">
+          Triton
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" aria-label="Templates" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_5">
+      <nav class="md-nav" aria-label="Triton" data-md-level="2">
+        <label class="md-nav__title" for="__nav_13_5">
           <span class="md-nav__icon md-icon"></span>
-          Templates
+          Triton
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -885,8 +1029,36 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
   
     <li class="md-nav__item">
-      <a href="reference/templates/triton/" class="md-nav__link">
-        Triton
+      <a href="reference/triton/configuration/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/triton/configuration_decoder/" class="md-nav__link">
+        Configuration decoder
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/triton/configuration_encoder/" class="md-nav__link">
+        Configuration encoder
       </a>
     </li>
   
@@ -909,18 +1081,18 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_12_6" type="checkbox" id="__nav_12_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_13_6" type="checkbox" id="__nav_13_6" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_12_6">
+        <label class="md-nav__link" for="__nav_13_6">
           Utils
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="Utils" data-md-level="2">
-        <label class="md-nav__title" for="__nav_12_6">
+        <label class="md-nav__title" for="__nav_13_6">
           <span class="md-nav__icon md-icon"></span>
           Utils
         </label>
@@ -934,6 +1106,20 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
     <li class="md-nav__item">
       <a href="reference/utils/args/" class="md-nav__link">
         Args
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/utils/generative_model/" class="md-nav__link">
+        Generative model
       </a>
     </li>
   
@@ -984,6 +1170,135 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#want-to-check-by-yourself-in-3-minutes" class="md-nav__link">
+    Want to check by yourself in 3 minutes?
+  </a>
+  
+    <nav class="md-nav" aria-label="Want to check by yourself in 3 minutes?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classificationreranking-encoder-model" class="md-nav__link">
+    Classification/reranking (encoder model)
+  </a>
+  
+    <nav class="md-nav" aria-label="Classification/reranking (encoder model)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-extraction-dense-embeddings" class="md-nav__link">
+    Feature extraction / dense embeddings
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature extraction / dense embeddings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model_1" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server_1" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference_1" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-text-decoder-model" class="md-nav__link">
+    Generate text (decoder model)
+  </a>
+  
+    <nav class="md-nav" aria-label="Generate text (decoder model)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimize-existing-model_2" class="md-nav__link">
+    Optimize existing model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-nvidia-triton-inference-server_2" class="md-nav__link">
+    Run Nvidia Triton inference server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-inference_2" class="md-nav__link">
+    Query inference
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-code" class="md-nav__link">
+    Python code
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-quantization-on-gpu" class="md-nav__link">
+    Model quantization on GPU
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -997,7 +1312,7 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
               
                 
 
-  <h1>Why transformer-deploy?</h1>
+  <h1>Getting started</h1>
 
 <mark class="critic block">
 <p>Efficient, scalable and enterprise-grade <abbr title="Central Processing Unit">CPU</abbr>/<abbr title="Graphics Processing Unit">GPU</abbr> inference server for <img alt="🤗" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f917.svg" title=":hugging:" /> Hugging Face transformer models <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M20.322.75a10.75 10.75 0 0 0-7.373 2.926l-1.304 1.23A23.743 23.743 0 0 0 10.103 6.5H5.066a1.75 1.75 0 0 0-1.5.85l-2.71 4.514a.75.75 0 0 0 .49 1.12l4.571.963c.039.049.082.096.129.14L8.04 15.96l1.872 1.994c.044.047.091.09.14.129l.963 4.572a.75.75 0 0 0 1.12.488l4.514-2.709a1.75 1.75 0 0 0 .85-1.5v-5.038a23.741 23.741 0 0 0 1.596-1.542l1.228-1.304a10.75 10.75 0 0 0 2.925-7.374V2.499A1.75 1.75 0 0 0 21.498.75h-1.177zM16 15.112c-.333.248-.672.487-1.018.718l-3.393 2.262.678 3.223 3.612-2.167a.25.25 0 0 0 .121-.214v-3.822zm-10.092-2.7L8.17 9.017c.23-.346.47-.685.717-1.017H5.066a.25.25 0 0 0-.214.121l-2.167 3.612 3.223.679zm8.07-7.644a9.25 9.25 0 0 1 6.344-2.518h1.177a.25.25 0 0 1 .25.25v1.176a9.25 9.25 0 0 1-2.517 6.346l-1.228 1.303a22.248 22.248 0 0 1-3.854 3.257l-3.288 2.192-1.743-1.858a.764.764 0 0 0-.034-.034l-1.859-1.744 2.193-3.29a22.248 22.248 0 0 1 3.255-3.851l1.304-1.23zM17.5 8a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-11 13c.9-.9.9-2.6 0-3.5-.9-.9-2.6-.9-3.5 0-1.209 1.209-1.445 3.901-1.49 4.743a.232.232 0 0 0 .247.247c.842-.045 3.534-.281 4.743-1.49z"/></svg></span>  </p>
@@ -1010,7 +1325,7 @@ In those setup, latency is key to provide good user experience, and relevancy in
 We have tested many solutions, and below is what we found:</p>
 <p><a href="https://pytorch.org/"><code>Pytorch</code></a> + <a href="https://fastapi.tiangolo.com/"><code>FastAPI</code></a> = 🐢<br />
 Most tutorials on <code>Transformer</code> deployment in production are built over Pytorch and FastAPI.
-Both are great tools but not very performant in inference.  </p>
+Both are great tools but not very performant in inference (actual measures below).  </p>
 <p><a href="https://github.com/microsoft/onnxruntime/"><code>Microsoft ONNX Runtime</code></a> + <a href="https://github.com/triton-inference-server/server"><code>Nvidia Triton inference server</code></a> = ️🏃💨<br />
 Then, if you spend some time, you can build something over <abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime and Triton inference server.
 You will usually get from 2X to 4X faster inference compared to vanilla Pytorch. It's cool!  </p>
@@ -1019,6 +1334,7 @@ However, if you want the best in class performances on <abbr title="Graphics Pro
 You will usually get 5X faster inference compared to vanilla Pytorch.<br />
 Sometimes it can raises up to <strong>10X faster inference</strong>.<br />
 Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come with, we implemented them for you!  </p>
+<p><a href="https://els-rd.github.io/transformer-deploy/compare/">Detailed tool compare table</a></p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h2>
 <ul>
 <li>heavily optimize transformer models for inference (<abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr>) -&gt; between 5X and 10X speed-up</li>
@@ -1028,6 +1344,183 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 <li>supported model: any model than can be exported to <abbr title="Open Neural Network EXchange">ONNX</abbr> (-&gt; most of them)</li>
 <li>supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)</li>
 </ul>
+<blockquote>
+<p>Want to understand how it works under the hood?<br />
+read <a href="https://towardsdatascience.com/hugging-face-transformer-inference-under-1-millisecond-latency-e1be0057a51c?source=friends_link&amp;sk=cd880e05c501c7880f2b9454830b8915">🤗 Hugging Face Transformer inference UNDER 1 millisecond latency 📖</a><br />
+<img src="resources/rabbit.jpg" width="120"></p>
+</blockquote>
+<h2 id="want-to-check-by-yourself-in-3-minutes">Want to check by yourself in 3 minutes?<a class="headerlink" href="#want-to-check-by-yourself-in-3-minutes" title="Permanent link">#</a></h2>
+<p>To have a raw idea of what kind of acceleration you will get on your own model, you can try the <code>docker</code> only run below.
+For <abbr title="Graphics Processing Unit">GPU</abbr> run, you need to have installed on your machine Nvidia drivers and <a href="https://github.com/NVIDIA/nvidia-docker">NVIDIA Container Toolkit</a>.</p>
+<p><strong>3 tasks are covered</strong> below: </p>
+<ul>
+<li>classification, </li>
+<li>feature extraction (text to dense embeddings) </li>
+<li>text generation (GPT-2 style).  </li>
+</ul>
+<p>Moreover, we have added a <abbr title="Graphics Processing Unit">GPU</abbr> quantization notebook to open directly on <code>Docker</code> to play with.</p>
+<h3 id="classificationreranking-encoder-model">Classification/reranking (encoder model)<a class="headerlink" href="#classificationreranking-encoder-model" title="Permanent link">#</a></h3>
+<p>Classification is a common task in NLP, and large language models have shown great results.<br />
+This task is also used for search engine to provide Google like relevancy (cf. <a href="https://arxiv.org/abs/1901.04085">arxiv</a>)</p>
+<h4 id="optimize-existing-model">Optimize existing model<a class="headerlink" href="#optimize-existing-model" title="Permanent link">#</a></h4>
+<p>This will optimize model, generate Triton configuration and Triton folder layout in a single command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">    convert_model -m \&quot;philschmid/MiniLM-L6-H384-uncased-sst2\&quot; \</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># output:  </span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># ...</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># [Pytorch (FP32)] mean=5.43ms, sd=0.70ms, min=4.88ms, max=7.81ms, median=5.09ms, 95p=7.01ms, 99p=7.53ms</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># [Pytorch (FP16)] mean=6.55ms, sd=1.00ms, min=5.75ms, max=10.38ms, median=6.01ms, 95p=8.57ms, 99p=9.21ms</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># [TensorRT (FP16)] mean=0.53ms, sd=0.03ms, min=0.49ms, max=0.61ms, median=0.52ms, 95p=0.57ms, 99p=0.58ms</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.57ms, sd=0.05ms, min=1.49ms, max=1.90ms, median=1.57ms, 95p=1.63ms, 99p=1.76ms</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># [ONNX Runtime (optimized)] mean=0.90ms, sd=0.03ms, min=0.88ms, max=1.23ms, median=0.89ms, 95p=0.95ms, 99p=0.97ms</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+</code></pre></div>
+<p>It will output mean latency and other statistics.<br />
+Usually <code>Nvidia TensorRT</code> is the fastest option, <code>ONNX Runtime</code> is usually a strong second option.<br />
+On <abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime, <code>optimized</code> means that kernel fusion and mixed precision are enabled.<br />
+<code>Pytorch</code> is never competitive on transformer inference, including mixed precision, whatever the model size.  </p>
+<h4 id="run-nvidia-triton-inference-server">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server" title="Permanent link">#</a></h4>
+<p>Note that we install <code>transformers</code> at run time.<br />
+For production, it's advised to build your own 3 lines docker image with <code>transformers</code> pre-installed.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># ...</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># I0207 09:58:32.738831 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># I0207 09:58:32.739875 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+</code></pre></div>
+<h4 id="query-inference">Query inference<a class="headerlink" href="#query-inference" title="Permanent link">#</a></h4>
+<p>Query <abbr title="Open Neural Network EXchange">ONNX</abbr> model (replace <code>transformer_onnx_inference</code> by <code>transformer_tensorrt_inference</code> to query TensorRT engine):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,2],&quot;data&quot;:[-3.431640625,3.271484375]}]}</span>
+</code></pre></div>
+<p>Model output is at the end of the Json (<code>data</code> field).
+<a href="https://els-rd.github.io/transformer-deploy/run/">More information about how to query the server from <code>Python</code>, and other languages</a>.</p>
+<p>To get very low latency inference in your Python code (no inference server): <a href="https://els-rd.github.io/transformer-deploy/python/">click here</a></p>
+<h3 id="feature-extraction-dense-embeddings">Feature extraction / dense embeddings<a class="headerlink" href="#feature-extraction-dense-embeddings" title="Permanent link">#</a></h3>
+<p>Feature extraction in NLP is the task to convert text to dense embeddings.<br />
+It has gain some traction as a robust way to improve search engine relevancy (increase recall).<br />
+This project supports models from <a href="https://github.com/UKPLab/sentence-transformers">sentence-transformers</a>.</p>
+<h4 id="optimize-existing-model_1">Optimize existing model<a class="headerlink" href="#optimize-existing-model_1" title="Permanent link">#</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s2">    convert_model -m \&quot;sentence-transformers/msmarco-distilbert-cos-v5\&quot; \</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="s2">    --task embedding \</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># output:</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># ...</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># [Pytorch (FP32)] mean=5.19ms, sd=0.45ms, min=4.74ms, max=6.64ms, median=5.03ms, 95p=6.14ms, 99p=6.26ms</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1"># [Pytorch (FP16)] mean=5.41ms, sd=0.18ms, min=5.26ms, max=8.15ms, median=5.36ms, 95p=5.62ms, 99p=5.72ms</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># [TensorRT (FP16)] mean=0.72ms, sd=0.04ms, min=0.69ms, max=1.33ms, median=0.70ms, 95p=0.78ms, 99p=0.81ms</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.69ms, sd=0.18ms, min=1.62ms, max=4.07ms, median=1.64ms, 95p=1.86ms, 99p=2.44ms</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=1.03ms, sd=0.09ms, min=0.98ms, max=2.30ms, median=1.00ms, 95p=1.15ms, 99p=1.41ms</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+</code></pre></div>
+<h4 id="run-nvidia-triton-inference-server_1">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server_1" title="Permanent link">#</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># ...</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># I0207 11:04:33.761517 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># I0207 11:04:33.761844 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># I0207 11:04:33.803373 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+</code></pre></div>
+<h4 id="query-inference_1">Query inference<a class="headerlink" href="#query-inference_1" title="Permanent link">#</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,768],&quot;data&quot;:[0.06549072265625,-0.04327392578125,0.1103515625,-0.007320404052734375,...</span>
+</code></pre></div>
+<h3 id="generate-text-decoder-model">Generate text (decoder model)<a class="headerlink" href="#generate-text-decoder-model" title="Permanent link">#</a></h3>
+<p>Text generation seems to be the way to go for NLP.<br />
+Unfortunately they are slow to run, below we will accelerate the most famous of them: GPT-2.</p>
+<h4 id="optimize-existing-model_2">Optimize existing model<a class="headerlink" href="#optimize-existing-model_2" title="Permanent link">#</a></h4>
+<p>Like before, command below will prepare Triton inference server stuff.<br />
+One point to have in mind is that Triton run:
+- inference engines (<code>ONNX Runtime</code> and <code>TensorRT</code>)
+- <code>Python</code> code in charge of the <code>decoding</code> part. <code>Python</code> code delegate to Triton server the model management.</p>
+<p><code>Python</code> code is in <code>./triton_models/transformer_tensorrt_generate/1/model.py</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s2">    convert_model -m gpt2 \</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s2">    --seq-len 6 256 256 \</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="s2">    --task text-generation&quot;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># output:</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># ...</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="c1"># [Pytorch (FP32)] mean=9.43ms, sd=0.59ms, min=8.95ms, max=15.02ms, median=9.33ms, 95p=10.38ms, 99p=12.46ms</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1"># [Pytorch (FP16)] mean=9.92ms, sd=0.55ms, min=9.50ms, max=15.06ms, median=9.74ms, 95p=10.96ms, 99p=12.26ms</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="c1"># [TensorRT (FP16)] mean=2.19ms, sd=0.18ms, min=2.06ms, max=3.04ms, median=2.10ms, 95p=2.64ms, 99p=2.79ms</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=4.99ms, sd=0.38ms, min=4.68ms, max=9.09ms, median=4.78ms, 95p=5.72ms, 99p=5.95ms</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=3.93ms, sd=0.40ms, min=3.62ms, max=6.53ms, median=3.81ms, 95p=4.49ms, 99p=5.79ms</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+</code></pre></div>
+<h4 id="run-nvidia-triton-inference-server_2">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server_2" title="Permanent link">#</a></h4>
+<p>To run decoding algorithm server side, we need to install <code>Pytorch</code> on <code>Triton</code> docker image.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g <span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  bash -c <span class="s2">&quot;pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html &amp;&amp; \</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s2">  tritonserver --model-repository=/models&quot;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># output:</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># ...</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1"># I0207 10:29:19.091191 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># I0207 10:29:19.091417 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+</code></pre></div>
+<h4 id="query-inference_2">Query inference<a class="headerlink" href="#query-inference_2" title="Permanent link">#</a></h4>
+<p>Replace <code>transformer_onnx_generate</code> by <code>transformer_tensorrt_generate</code> to query <code>TensorRT</code> engine.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_generate&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;BYTES&quot;,&quot;shape&quot;:[],&quot;data&quot;:[&quot;This live event is great. I will sign-up for Infinity.\n\nI&#39;m going to be doing a live stream of the event.\n\nI&quot;]}]}</span>
+</code></pre></div>
+<p>Ok, the output is not very interesting (💩 in -&gt; 💩 out) but you get the idea.<br />
+Source code of the generative model is in <code>./triton_models/transformer_tensorrt_generate/1/model.py</code>.<br />
+You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).</p>
+<h4 id="python-code">Python code<a class="headerlink" href="#python-code" title="Permanent link">#</a></h4>
+<p>You may be interested in running optimized text generation on Python directly, without using any inference server:  </p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
+</code></pre></div>
+<h3 id="model-quantization-on-gpu">Model quantization on <abbr title="Graphics Processing Unit">GPU</abbr><a class="headerlink" href="#model-quantization-on-gpu" title="Permanent link">#</a></h3>
+<p>Quantization is a generic method to get X2 speedup on top of other inference optimization.<br />
+<abbr title="Graphics Processing Unit">GPU</abbr> quantization on transformers is almost never used because it requires to modify model source code.  </p>
+<p>We have implemented in this library a mechanism which update Hugging Face transformers library to support quantization.<br />
+It makes it easy to use.</p>
+<p>To play with it, open this notebook:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
+</code></pre></div>
 <!-- END INCLUDE -->
 
               
@@ -1100,10 +1593,10 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": ".", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "assets/javascripts/workers/search.092fa1f6.min.js"}</script>
     
     
-      <script src="assets/javascripts/bundle.e1a181d9.min.js"></script>
+      <script src="assets/javascripts/bundle.e3b2bf44.min.js"></script>
       
     
   </body>

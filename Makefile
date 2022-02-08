@@ -35,7 +35,7 @@ docker_build:
 .PHONY: docker_build_push
 docker_build_push:
 	! docker manifest inspect ghcr.io/els-rd/transformer-deploy:$(shell cat VERSION) > /dev/null || exit 1
-	${MAKE} build_docker || exit 1
+	${MAKE} docker_build || exit 1
 	docker push ghcr.io/els-rd/transformer-deploy:latest || exit 1
 	docker push ghcr.io/els-rd/transformer-deploy:$(VERSION) || exit 1
 

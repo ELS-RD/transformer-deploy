@@ -1,5 +1,5 @@
 mkdocs
-mkdocstrings
+mkdocstrings[python-legacy]
 mkdocs-material
 mkdocs-include-markdown-plugin
 mkdocs-gen-files

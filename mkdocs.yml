@@ -71,20 +71,21 @@ extra:
   generator: false
 
 nav:
-    - Why transformer-deploy?: index.md
+    - Getting started: index.md
     - Installation (local or Docker only): setup_local.md
     - Run (1 command): run.md
-    - Which tool to choose?: compare.md
+    - Which tool to choose for your inference?: compare.md
     - How ONNX conversion works? : onnx_convert.md
-    - What is done during inference optimization? : optimizations.md
-    - Use TensorRT in Python script: python.md
+    - Understanding model optimization : optimizations.md
+    - Direct use TensorRT in Python script (no server): python.md
     - GPU quantization for X2 speed-up:
-        - Why using quantization?: quantization_intro.md
-        - What is the theory?: quantization_theory.md
-        - How is it implemented?: quantization_ast.md
-        - PTQ and QAT, who are they?: quantization_ptq.md
-        - End to end demo: quantization.ipynb
+        - Why using quantization?: quantization/quantization_intro.md
+        - Quantization theory: quantization/quantization_theory.md
+        - How is it implemented in this library?: quantization/quantization_ast.md
+        - PTQ and QAT, what are they?: quantization/quantization_ptq.md
+        - End to end demo: quantization/quantization.ipynb
     - "From optimization to deployment: end to end demo": demo.md
-    - AWS benchmarks: benchmarks.md
+    - "Accelerate text generation with GPT-2": gpt2.ipynb
+    - Benchmarks run on AWS GPU instances: benchmarks.md
     - FAQ: faq.md
     - API: reference/

@@ -20,7 +20,7 @@ import logging
 import time
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -28,8 +28,9 @@ import torch
 
 def print_timings(name: str, timings: List[float]) -> None:
     """
-    Format and print latencies
-    :param name: engine name
+    Format and print inference latencies.
+
+    :param name: inference engine name
     :param timings: latencies measured during the inference
     """
     mean_time = 1e3 * np.mean(timings)
@@ -70,23 +71,21 @@ def track_infer_time(buffer: List[int]) -> None:
 
 
 def generate_input(
-    seq_len: int, batch_size: int, include_token_ids: bool, device: str = "cuda"
+    seq_len: int, batch_size: int, input_names: List[str], device: str = "cuda"
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
     """
     Generate dummy inputs.
     :param seq_len: number of token per input.
     :param batch_size: first dimension of the tensor
-    :param include_token_ids: should we add token_type_ids
+    :param input_names: tensor input names to generate
     :param device: where to store tensors (Pytorch only). One of [cpu, cuda]
     :return: a tuple of tensors, Pytorch and numpy
     """
     assert device in ["cpu", "cuda"]
     shape = (batch_size, seq_len)
     inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
-    inputs_pytorch["input_ids"] = torch.randint(high=100, size=shape, dtype=torch.long, device=device)
-    if include_token_ids:
-        inputs_pytorch["token_type_ids"] = torch.ones(size=shape, dtype=torch.long, device=device)
-    inputs_pytorch["attention_mask"] = torch.ones(size=shape, dtype=torch.long, device=device)
+    for name in input_names:
+        inputs_pytorch[name] = torch.ones(size=shape, dtype=torch.int32, device=device)
     inputs_onnx: Dict[str, np.ndarray] = {
         k: np.ascontiguousarray(v.detach().cpu().numpy()) for k, v in inputs_pytorch.items()
     }
@@ -94,18 +93,41 @@ def generate_input(
 
 
 def generate_multiple_inputs(
-    seq_len: int, batch_size: int, include_token_ids: bool, nb_inputs_to_gen: int, device: str = "cuda"
-):
-    all_inputs_pytorch = list()
-    all_inputs_onnx = list()
+    seq_len: int, batch_size: int, input_names: List[str], nb_inputs_to_gen: int, device: str
+) -> Tuple[List[Dict[str, torch.Tensor]], List[Dict[str, np.ndarray]]]:
+    """
+    Generate multiple random inputs.
+
+    :param seq_len: sequence length to generate
+    :param batch_size: number of sequences per batch to generate
+    :param input_names: tensor input names to generate
+    :param nb_inputs_to_gen: number of batches of sequences to generate
+    :param device: one of [cpu, cuda]
+    :return: generated sequences
+    """
+    all_inputs_pytorch: List[Dict[str, torch.Tensor]] = list()
+    all_inputs_onnx: List[Dict[str, np.ndarray]] = list()
     for _ in range(nb_inputs_to_gen):
         inputs_pytorch, inputs_onnx = generate_input(
-            seq_len=seq_len, batch_size=batch_size, include_token_ids=include_token_ids, device=device
+            seq_len=seq_len, batch_size=batch_size, input_names=input_names, device=device
         )
         all_inputs_pytorch.append(inputs_pytorch)
         all_inputs_onnx.append(inputs_onnx)
     return all_inputs_pytorch, all_inputs_onnx
 
 
-def compare_outputs(pytorch_output: List[np.ndarray], engine_output: List[np.ndarray]) -> float:
-    return np.mean(np.abs(np.asarray(pytorch_output) - np.asarray(engine_output)))
+def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Union[np.ndarray, torch.Tensor]]) -> float:
+    """
+    Compare 2 model outputs by computing the mean of absolute value difference between them.
+
+    :param pytorch_output: reference output
+    :param engine_output: other engine output
+    :return: difference between outputs as a single float
+    """
+    if isinstance(pytorch_output[0], torch.Tensor):
+        pytorch_output = [t.detach().cpu().numpy() for t in pytorch_output]
+    pt_output = np.asarray(pytorch_output)
+    if isinstance(engine_output[0], torch.Tensor):
+        engine_output = [t.detach().cpu().numpy() for t in engine_output]
+    eng_output = np.asarray(engine_output)
+    return np.mean(np.abs(pt_output - eng_output))

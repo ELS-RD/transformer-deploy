@@ -37,11 +37,6 @@ Optional, to run this library from Docker (so you don't have to install all othe
 
 You may need to login with a free Nvidia account to download some dependencies.
 
-!!! tip
-
-    To be able to leverage your CUDA installation by the Pycuda dependency, don't forget to add to CUDA path to your 
-    $PATH env variable. Otherwise, you will have issues, like Pycuda failing to compile.
-
 Then, it's the usual git clone:
 
 ```shell
@@ -53,14 +48,18 @@ cd transformer-deploy
 
 ```shell
 pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
-# if you want to perform GPU quantization (recommended)
+# if you want to perform GPU quantization (recommended):
 pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\&subdirectory=tools/pytorch-quantization/
+# if you want to accelerate dense embeddings extraction:
+pip install sentence-transformers
 ```
 
 * for CPU **only** support:
 
 ```shell
 pip3 install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
+# if you want to accelerate dence embeddings extraction:
+pip install sentence-transformers
 ```
 
 To build your own version of the Docker image:

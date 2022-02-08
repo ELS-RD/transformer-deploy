@@ -22,14 +22,26 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Type, Union
 
 import numpy as np
 import torch
-from numpy import ndarray
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    PretrainedConfig,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+)
 
-from transformer_deploy.backends.ort_utils import cpu_quantization, create_model_for_provider, optimize_onnx
+from transformer_deploy.backends.ort_utils import (
+    cpu_quantization,
+    create_model_for_provider,
+    inference_onnx_binding,
+    optimize_onnx,
+)
 from transformer_deploy.backends.pytorch_utils import (
     convert_to_onnx,
     get_model_size,
@@ -44,15 +56,22 @@ from transformer_deploy.benchmarks.utils import (
     setup_logging,
     track_infer_time,
 )
-from transformer_deploy.templates.triton import Configuration, ModelType
+from transformer_deploy.triton.configuration import Configuration, EngineType
+from transformer_deploy.triton.configuration_decoder import ConfigurationDec
+from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.utils.args import parse_args
 
 
 def check_accuracy(
-    engine_name: str, pytorch_output: List[np.ndarray], engine_output: List[np.ndarray], tolerance: float
+    engine_name: str,
+    pytorch_output: List[torch.Tensor],
+    engine_output: List[Union[np.ndarray, torch.Tensor]],
+    tolerance: float,
 ) -> None:
     """
-    Compare engine predictions with a reference. Assert that the difference is under a threshold.
+    Compare engine predictions with a reference.
+    Assert that the difference is under a threshold.
+
     :param engine_name: string used in error message, if any
     :param pytorch_output: reference output used for the comparaison
     :param engine_output: output from the engine
@@ -72,9 +91,10 @@ def check_accuracy(
 
 def launch_inference(
     infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
-) -> Tuple[List[np.ndarray], List[float]]:
+) -> Tuple[List[Union[np.ndarray, torch.Tensor]], List[float]]:
     """
-    Perform inference and measure latency
+    Perform inference and measure latency.
+
     :param infer: a lambda which will perform the inference
     :param inputs: tensor compatible with the lambda (Torch tensor for Pytorch, or numpy otherwise)
     :param nb_measures: number of measures to perform for the latency measure
@@ -91,6 +111,14 @@ def launch_inference(
         with track_infer_time(time_buffer):
             _ = infer(inputs[0])
     return outputs, time_buffer
+
+
+def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
+    triton_output_shape = list(output.shape)
+    triton_output_shape[0] = -1  # dynamic batch size
+    if task == "text-generation":
+        triton_output_shape[1] = -1  # dynamic sequence size
+    return triton_output_shape
 
 
 def main(commands: argparse.Namespace):
@@ -121,13 +149,18 @@ def main(commands: argparse.Namespace):
         assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
+    model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
     input_names: List[str] = tokenizer.model_input_names
     logging.info(f"axis: {input_names}")
-    include_token_ids = "token_type_ids" in input_names
-    if commands.sentence_transformers:
+    if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
-    else:
+    elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
+    elif commands.task == "text-generation":
+        model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
+        input_names = ["input_ids"]
+    else:
+        raise Exception(f"unknown task: {commands.task}")
     model_pytorch.eval()
     if run_on_cuda:
         model_pytorch.cuda()
@@ -137,7 +170,7 @@ def main(commands: argparse.Namespace):
     inputs_pytorch, inputs_onnx = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
-        include_token_ids=include_token_ids,
+        input_names=input_names,
         device=commands.device,
         nb_inputs_to_gen=commands.warmup,
     )
@@ -148,19 +181,32 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
+        var_output_seq=commands.task == "text-generation",
     )
 
     timings = {}
-    pytorch_infer = (
-        infer_feature_extraction_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
-        if commands.sentence_transformers
-        else infer_classification_pytorch(model=model_pytorch, run_on_cuda=run_on_cuda)
-    )
+
+    def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
+        if task in ["classification", "text-generation"]:
+            return infer_classification_pytorch(model=model, run_on_cuda=cuda)
+        if task == "embedding":
+            return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
+        raise Exception(f"unknown task: {task}")
+
     with torch.inference_mode():
         pytorch_output, time_buffer = launch_inference(
-            infer=pytorch_infer,
+            infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
+        )
+        conf_class: Type[Configuration] = ConfigurationDec if commands.task == "text-generation" else ConfigurationEnc
+        triton_conf = conf_class(
+            model_name_base=commands.name,
+            dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),
+            nb_instance=commands.nb_instances,
+            tensor_input_names=input_names,
+            working_directory=commands.output,
+            device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
         if run_on_cuda:
@@ -169,7 +215,7 @@ def main(commands: argparse.Namespace):
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=pytorch_infer,
+                    infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
@@ -184,7 +230,7 @@ def main(commands: argparse.Namespace):
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
             pytorch_int8_output, time_buffer = launch_inference(
-                infer=pytorch_infer,
+                infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                 inputs=inputs_pytorch,
                 nb_measures=commands.nb_measures,
             )
@@ -195,7 +241,7 @@ def main(commands: argparse.Namespace):
                 tolerance=commands.atol,
             )
             timings[engine_name] = time_buffer
-    del model_pytorch
+    model_pytorch.cpu()
 
     if "tensorrt" in commands.backend:
         try:
@@ -205,8 +251,8 @@ def main(commands: argparse.Namespace):
             from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
         except ImportError:
             raise ImportError(
-                "It seems that pycuda and TensorRT are not yet installed. "
-                "They are required when you declare TensorRT backend."
+                "It seems that TensorRT is not yet installed. "
+                "It is required when you declare TensorRT backend."
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
@@ -226,33 +272,25 @@ def main(commands: argparse.Namespace):
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
-        tensorrt_model: Callable[[Dict[str, ndarray]], ndarray] = load_engine(
+        tensorrt_model: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = load_engine(
             runtime=runtime, engine_file_path=tensorrt_path
         )
 
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=tensorrt_model, inputs=inputs_onnx, nb_measures=commands.nb_measures
+            infer=tensorrt_model, inputs=inputs_pytorch, nb_measures=commands.nb_measures
         )
         check_accuracy(
             engine_name=engine_name,
             pytorch_output=pytorch_output,
-            engine_output=tensorrt_output,
+            engine_output=tensorrt_output[0],  # TRT output are wrapped in List
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
-        conf = Configuration(
-            model_name=commands.name,
-            model_type=ModelType.TensorRT,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
-            workind_directory=commands.output,
-            device=commands.device,
+        triton_conf.create_configs(
+            tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
         )
-        conf.create_folders(tokenizer=tokenizer, model_path=tensorrt_path)
 
     if "onnx" in commands.backend:
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
@@ -280,11 +318,12 @@ def main(commands: argparse.Namespace):
                 nb_instances=commands.nb_instances,
             )
 
-            def infer_ort(inputs: Dict[str, np.ndarray]) -> np.ndarray:
-                return ort_model.run(None, inputs)
+            def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+                results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
+                return results["output"]
 
             ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=inputs_onnx, nb_measures=commands.nb_measures
+                infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )
             check_accuracy(
                 engine_name=benchmark_name,
@@ -295,17 +334,12 @@ def main(commands: argparse.Namespace):
             timings[benchmark_name] = time_buffer
             del ort_model
 
-        conf = Configuration(
-            model_name=commands.name,
-            model_type=ModelType.ONNX,
-            batch_size=0,
-            nb_output=pytorch_output[0].shape[1],
-            nb_instance=commands.nb_instances,
-            include_token_type=include_token_ids,
-            workind_directory=commands.output,
-            device=commands.device,
+        triton_conf.create_configs(
+            tokenizer=tokenizer,
+            model_path=onnx_optim_model_path,
+            config=model_config,
+            engine_type=EngineType.ONNX,
         )
-        conf.create_folders(tokenizer=tokenizer, model_path=onnx_optim_model_path)
 
     if run_on_cuda:
         from torch.cuda import get_device_name
@@ -315,6 +349,7 @@ def main(commands: argparse.Namespace):
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
+    print(f"Each infence engine output is within {commands.atol} tolerance compared to Pytorch output")
 
 
 def entrypoint():

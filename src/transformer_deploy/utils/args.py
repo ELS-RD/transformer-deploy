@@ -31,7 +31,12 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     )
     parser.add_argument("-m", "--model", required=True, help="path to model or URL to Hugging Face hub")
     parser.add_argument("-t", "--tokenizer", help="path to tokenizer or URL to Hugging Face hub")
-    parser.add_argument("--sentence-transformers", action="store_true", help="use sentence-transformers to load model")
+    parser.add_argument(
+        "--task",
+        default="classification",
+        choices=["classification", "embedding", "text-generation"],
+        help="task to manage. embeddings is for sentence-transformers models",
+    )
     parser.add_argument(
         "--auth-token",
         default=None,
@@ -77,7 +82,7 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     )
     parser.add_argument("--nb-threads", default=1, help="# of CPU threads to use for inference", type=int)
     parser.add_argument(
-        "--nb-instances", default=1, help="# of model instances, may improve troughput (Triton)", type=int
+        "--nb-instances", default=1, help="# of model instances, may improve throughput (Triton)", type=int
     )
     parser.add_argument("--warmup", default=10, help="# of inferences to warm each model", type=int)
     parser.add_argument("--nb-measures", default=1000, help="# of inferences for benchmarks", type=int)

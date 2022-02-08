@@ -1,4 +1,4 @@
-# Run in a single command
+## Command line
 
 !!! tip
 
@@ -44,19 +44,16 @@ convert_model -m philschmid/MiniLM-L6-H384-uncased-sst2 --backend onnx --seq-len
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:21.12-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
   bash -c "pip install transformers sentencepiece && tritonserver --model-repository=/models"
 ```
 
 > As you can see we install Transformers and then launch the server itself.  
 > This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
-Right now, only TensorRT 8.0.3 backend is available in Triton.  
-Until the TensorRT 8.2 backend is available, we advise you to only use ONNX Runtime backend.   
+## Query the inference server
 
-* Query the inference server:
-
-First you need to convert your strings to a binary file following the format of `demo/query_body.bin`.  
+First you need to convert your strings to a binary file following the format of `demo/infinity/query_body.bin`.  
 The `Json` part is straightforward, the second part a bit less.  
 Please follow the code below for the recipe for a single string.  
 If you have several strings, just concatenate the results.
@@ -65,8 +62,9 @@ If you have several strings, just concatenate the results.
 import struct
 
 text: str = "This live event is great. I will sign-up for Infinity.\n"
-text_b = text.encode('UTF-8')
-print(struct.pack("<I", len(text_b))+text_b)  # <I means little-endian unsigned integers, followed by the number of elements
+text_b: bytes = text.encode("UTF-8")
+print(struct.pack("<I", len(text_b))+text_b)
+# <I means little-endian unsigned integers, followed by the number of elements
 ```
 
 !!! tip
@@ -78,10 +76,10 @@ print(struct.pack("<I", len(text_b))+text_b)  # <I means little-endian unsigned 
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)
 curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
-  --data-binary "@demo/query_body.bin" \
+  --data-binary "@demo/infinity/query_body.bin" \
   --header "Inference-Header-Content-Length: 161"
 ```
 
-> check [`demo`](./demo) folder to discover more performant ways to query the server from Python or elsewhere.
+> check [`demo`](./demo/infinity) folder to discover more performant ways to query the server from Python or elsewhere.
 
 --8<-- "resources/abbreviations.md"

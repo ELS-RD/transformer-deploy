@@ -152,7 +152,8 @@ def test_sentence_transformers_cpu():
         "sentence-transformers/msmarco-distilbert-cos-v5",
         "--backend",
         "onnx",
-        "--sentence-transformers",
+        "--task",
+        "embedding",
         "--batch",
         "1",
         "16",
@@ -163,6 +164,30 @@ def test_sentence_transformers_cpu():
         "8",
         "--device",
         "cpu",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
+@pytest.mark.gpu
+def test_gpt2_gpu():
+    commands = [
+        "--model",
+        "distilgpt2",
+        "--task",
+        "text-generation",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
         "--output",
         tempfile.mkdtemp(),
     ]

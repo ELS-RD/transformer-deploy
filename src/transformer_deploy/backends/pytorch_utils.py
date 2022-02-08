@@ -20,15 +20,17 @@ from typing import Callable, Dict
 from typing import OrderedDict as Od
 from typing import Tuple
 
-import numpy as np
+import onnx
 import torch
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
 
+from transformer_deploy.backends.st_utils import STransformerWrapper
+
 
 def infer_classification_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
-) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for classification task
     :param model: Pytorch model (transformers)
@@ -36,8 +38,8 @@ def infer_classification_pytorch(
     :return: a function to perform inference
     """
 
-    def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model(**inputs).logits.detach().cpu().numpy()  # noqa: F821
+    def infer(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        model_output = model(**inputs).logits.detach()  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
@@ -47,7 +49,7 @@ def infer_classification_pytorch(
 
 def infer_feature_extraction_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
-) -> Callable[[Dict[str, torch.Tensor]], np.ndarray]:
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for feature extraction task
     :param model: Pytorch model (sentence-transformers)
@@ -55,8 +57,8 @@ def infer_feature_extraction_pytorch(
     :return: a function to perform inference
     """
 
-    def infer(inputs: Dict[str, torch.Tensor]) -> np.ndarray:
-        model_output = model(**inputs).detach().cpu().numpy()  # noqa: F821
+    def infer(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        model_output = model(**inputs).detach()  # noqa: F821
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
@@ -77,7 +79,11 @@ def get_model_size(path: str) -> Tuple[int, int]:
 
 
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel, output_path: str, inputs_pytorch: Od[str, torch.Tensor], quantization: bool
+    model_pytorch: PreTrainedModel,
+    output_path: str,
+    inputs_pytorch: Od[str, torch.Tensor],
+    quantization: bool,
+    var_output_seq: bool,
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
@@ -87,6 +93,7 @@ def convert_to_onnx(
     :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
     Should be on the same device than the model (CPU or GPU)
     :param quantization: model is quantized
+    :param var_output_seq: variable size sequence
     """
     if quantization:
         try:
@@ -102,12 +109,19 @@ def convert_to_onnx(
             )
 
         TensorQuantizer.use_fb_fake_quant = True
+    if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
+        setattr(model_pytorch.config, "use_cache", False)
 
     # dynamic axis == variable length axis
     dynamic_axis = OrderedDict()
     for k in inputs_pytorch.keys():
         dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
     dynamic_axis["output"] = {0: "batch_size"}
+    if var_output_seq:
+        dynamic_axis["output"][1] = "sequence"
+    # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
+    for k, v in inputs_pytorch.items():
+        inputs_pytorch[k] = v.type(torch.int32)
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize
@@ -116,10 +130,29 @@ def convert_to_onnx(
             opset_version=13,  # the ONNX version to use, >= 13 supports channel quantized model
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
-            output_names=["output"],  # output axis name
+            output_names=["output"],  # output axis name, hard coded so only 1 output supported
             dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
             training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,
         )
     if quantization:
         TensorQuantizer.use_fb_fake_quant = False
+    if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
+        setattr(model_pytorch.config, "use_cache", True)
+
+    # Pytorch fails to infer output tensor shape of models based on torch.Sequential (used by sentence-transformers)
+    # In ONNX graph it marked the dim as "Divoutput_dim_1" which is a generated name, and there is also warnings:
+    # ** "WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape inference
+    # for the exported graph. Please consider adding it in symbolic function." **
+    # ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374
+    # We need the nb of dims to be fixed to reserve GPU memory when using ONNX Runtime io binding API
+    # Below we reopen the model and override the dynamic shape by a fixed one
+    if isinstance(model_pytorch, STransformerWrapper):  # for sentence-transformers model only
+        output = model_pytorch(**inputs_pytorch)
+        assert len(output.shape) == 2, "unexpected output tensor shape (!=2)"
+        nb_dim = output.shape[1]
+        onnx_model = onnx.load(output_path)
+        assert len(onnx_model.graph.output) == 1, "unexpected number of output tensors (!=1)"
+        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, "unexpected ouput tensor shape (!=2)"
+        onnx_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value = nb_dim
+        onnx.save(onnx_model, output_path)

@@ -213,7 +213,7 @@ cython_debug/
 
 # custom
 *.onnx
+*.plan
 .idea/
 TensorRT/
 triton_models/
-demo/roberta-*/

@@ -18,12 +18,8 @@ All the tooling to ease TensorRT usage.
 
 from typing import Callable, Dict, List, OrderedDict, Tuple
 
-import numpy as np
-import pycuda.autoinit  # noqa: F401
-import pycuda.driver as cuda
 import tensorrt as trt
-from numpy import ndarray
-from pycuda._driver import DeviceAllocation, Stream
+import torch
 from tensorrt import ICudaEngine, IExecutionContext
 from tensorrt.tensorrt import (
     Builder,
@@ -37,57 +33,6 @@ from tensorrt.tensorrt import (
     OnnxParser,
     Runtime,
 )
-
-
-def setup_binding_shapes(
-    context: trt.IExecutionContext,
-    host_inputs: List[np.ndarray],
-    input_binding_idxs: List[int],
-    output_binding_idxs: List[int],
-) -> Tuple[List[np.ndarray], List[DeviceAllocation]]:
-    """
-    Reserve memory in GPU for input and output tensors.
-    :param context: TensorRT context shared accross inference steps
-    :param host_inputs: input tensor
-    :param input_binding_idxs: indexes of each input vector (should be the same than during building)
-    :param output_binding_idxs: indexes of each output vector (should be the same than during building)
-    :return: tensors where output will be stored and GPU memory address of output tensor
-    """
-    # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
-    for host_input, binding_index in zip(host_inputs, input_binding_idxs):
-        context.set_binding_shape(binding_index, host_input.shape)
-    assert context.all_binding_shapes_specified
-    host_outputs: List[np.ndarray] = []
-    device_outputs: List[DeviceAllocation] = []
-    for binding_index in output_binding_idxs:
-        output_shape = context.get_binding_shape(binding_index)
-        # allocate buffers to hold output results after copying back to host
-        buffer = np.empty(output_shape, dtype=np.float32)
-        host_outputs.append(buffer)
-        # allocate output buffers on device
-        device_outputs.append(cuda.mem_alloc(buffer.nbytes))
-    return host_outputs, device_outputs
-
-
-def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
-    """
-    Calculate start/end binding indices for current context's profile
-    https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#opt_profiles_bindings
-    :param engine: TensorRT engine generated during the model building
-    :param profile_index: profile to use (several profiles can be set during building)
-    :return: input and output tensor indexes
-    """
-    num_bindings_per_profile = engine.num_bindings // engine.num_optimization_profiles
-    start_binding = profile_index * num_bindings_per_profile
-    end_binding = start_binding + num_bindings_per_profile  # Separate input and output binding indices for convenience
-    input_binding_idxs: List[int] = []
-    output_binding_idxs: List[int] = []
-    for binding_index in range(start_binding, end_binding):
-        if engine.binding_is_input(binding_index):
-            input_binding_idxs.append(binding_index)
-        else:
-            output_binding_idxs.append(binding_index)
-    return input_binding_idxs, output_binding_idxs
 
 
 def fix_fp16_network(network_definition: INetworkDefinition) -> INetworkDefinition:
@@ -163,7 +108,7 @@ def build_engine(
                     config.set_flag(trt.BuilderFlag.FP16)
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
-                config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+                config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
@@ -183,6 +128,96 @@ def build_engine(
                 return engine
 
 
+def get_output_tensors(
+    context: trt.IExecutionContext,
+    host_inputs: List[torch.Tensor],
+    input_binding_idxs: List[int],
+    output_binding_idxs: List[int],
+) -> List[torch.Tensor]:
+    """
+    Reserve memory in GPU for input and output tensors.
+    :param context: TensorRT context shared accross inference steps
+    :param host_inputs: input tensor
+    :param input_binding_idxs: indexes of each input vector (should be the same than during building)
+    :param output_binding_idxs: indexes of each output vector (should be the same than during building)
+    :return: tensors where output will be stored
+    """
+    # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
+    for host_input, binding_index in zip(host_inputs, input_binding_idxs):
+        context.set_binding_shape(binding_index, tuple(host_input.shape))
+    assert context.all_binding_shapes_specified
+    device_outputs: List[torch.Tensor] = []
+    for binding_index in output_binding_idxs:
+        # TensorRT computes output shape based on input shape provided above
+        output_shape = context.get_binding_shape(binding_index)
+        # allocate buffers to hold output results
+        output = torch.empty(tuple(output_shape), device="cuda")
+        device_outputs.append(output)
+    return device_outputs
+
+
+def infer_tensorrt(
+    context: IExecutionContext,
+    host_inputs: OrderedDict[str, torch.Tensor],
+    input_binding_idxs: List[int],
+    output_binding_idxs: List[int],
+) -> List[torch.Tensor]:
+    """
+    Perform inference with TensorRT.
+    :param context: shared variable
+    :param host_inputs: input tensor
+    :param input_binding_idxs: input tensor indexes
+    :param output_binding_idxs: output tensor indexes
+    :return: output tensor
+    """
+    input_tensors: List[torch.Tensor] = list()
+    for tensor in host_inputs.values():
+        assert isinstance(tensor, torch.Tensor), f"unexpected tensor type: {tensor.dtype}"
+        # warning: small changes in output if int64 is used instead of int32
+        tensor = tensor.type(torch.int32)
+        tensor = tensor.to("cuda")
+        input_tensors.append(tensor)
+    # calculate input shape, bind it, allocate GPU memory for the output
+    output_tensors: List[torch.Tensor] = get_output_tensors(
+        context, input_tensors, input_binding_idxs, output_binding_idxs
+    )
+    bindings = [int(i.data_ptr()) for i in input_tensors + output_tensors]
+    assert context.execute_async_v2(
+        bindings, torch.cuda.current_stream().cuda_stream
+    ), "failure during execution of inference"
+    torch.cuda.current_stream().synchronize()  # sync all CUDA ops
+    return output_tensors
+
+
+def load_engine(
+    runtime: Runtime, engine_file_path: str, profile_index: int = 0
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
+    """
+    Load serialized TensorRT engine.
+    :param runtime: shared variable
+    :param engine_file_path: path to the serialized engine
+    :param profile_index: which profile to load, 0 if you have not used multiple profiles
+    :return: A function to perform inference
+    """
+    with open(file=engine_file_path, mode="rb") as f:
+        engine: ICudaEngine = runtime.deserialize_cuda_engine(f.read())
+        stream: int = torch.cuda.current_stream().cuda_stream
+        context: IExecutionContext = engine.create_execution_context()
+        context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream)
+        # retrieve input/output IDs
+        input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
+
+        def tensorrt_model(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+            return infer_tensorrt(
+                context=context,
+                host_inputs=inputs,
+                input_binding_idxs=input_binding_idxs,
+                output_binding_idxs=output_binding_idxs,
+            )
+
+        return tensorrt_model
+
+
 def save_engine(engine: ICudaEngine, engine_file_path: str) -> None:
     """
     Serialize TensorRT engine to file.
@@ -193,67 +228,22 @@ def save_engine(engine: ICudaEngine, engine_file_path: str) -> None:
         f.write(engine.serialize())
 
 
-def load_engine(
-    runtime: Runtime, engine_file_path: str, profile_index: int = 0
-) -> Callable[[Dict[str, np.ndarray]], np.ndarray]:
+def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
     """
-    Load serialized TensorRT engine.
-    :param runtime: shared variable
-    :param engine_file_path: path to the serialized engine
-    :param profile_index: which profile to load, 0 if you have not used multiple profiles
-    :return: A function to perform inference
+    Calculate start/end binding indices for current context's profile
+    https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#opt_profiles_bindings
+    :param engine: TensorRT engine generated during the model building
+    :param profile_index: profile to use (several profiles can be set during building)
+    :return: input and output tensor indexes
     """
-    with open(file=engine_file_path, mode="rb") as f:
-        engine: ICudaEngine = runtime.deserialize_cuda_engine(f.read())
-        stream: Stream = cuda.Stream()
-        context: IExecutionContext = engine.create_execution_context()
-        context.set_optimization_profile_async(profile_index=profile_index, stream_handle=stream.handle)
-        # retrieve input/output IDs
-        input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
-
-        def tensorrt_model(inputs: Dict[str, np.ndarray]) -> np.ndarray:
-            return infer_tensorrt(
-                context=context,
-                host_inputs=inputs,
-                input_binding_idxs=input_binding_idxs,
-                output_binding_idxs=output_binding_idxs,
-                stream=stream,
-            )
-
-        return tensorrt_model
-
-
-def infer_tensorrt(
-    context: IExecutionContext,
-    host_inputs: OrderedDict[str, np.ndarray],
-    input_binding_idxs: List[int],
-    output_binding_idxs: List[int],
-    stream: Stream,
-) -> np.ndarray:
-    """
-    Perform inference with TensorRT.
-    :param context: shared variable
-    :param host_inputs: input tensor
-    :param input_binding_idxs: input tensor indexes
-    :param output_binding_idxs: output tensor indexes
-    :param stream: GPU stream to synchronize memories
-    :return: output tensor
-    """
-    input_list: List[ndarray] = list()
-    device_inputs: List[DeviceAllocation] = list()
-    for tensor in host_inputs.values():
-        # warning: small change in output if int64 is used instead of int32
-        tensor_int32: np.ndarray = np.asarray(tensor, dtype=np.int32)
-        input_list.append(tensor_int32)
-        # allocate GPU memory for input tensors
-        device_input: DeviceAllocation = cuda.mem_alloc(tensor_int32.nbytes)
-        device_inputs.append(device_input)
-        cuda.memcpy_htod_async(device_input, tensor_int32.ravel(), stream)
-    # calculate input shape, bind it, allocate GPU memory for the output
-    host_outputs, device_outputs = setup_binding_shapes(context, input_list, input_binding_idxs, output_binding_idxs)
-    bindings = device_inputs + device_outputs
-    assert context.execute_async_v2(bindings, stream_handle=stream.handle), "failure during execution of inference"
-    for h_output, d_output in zip(host_outputs, device_outputs):
-        cuda.memcpy_dtoh_async(h_output, d_output)  # GPU to host
-    stream.synchronize()  # sync all CUDA ops
-    return host_outputs
+    num_bindings_per_profile = engine.num_bindings // engine.num_optimization_profiles
+    start_binding = profile_index * num_bindings_per_profile
+    end_binding = start_binding + num_bindings_per_profile  # Separate input and output binding indices for convenience
+    input_binding_idxs: List[int] = []
+    output_binding_idxs: List[int] = []
+    for binding_index in range(start_binding, end_binding):
+        if engine.binding_is_input(binding_index):
+            input_binding_idxs.append(binding_index)
+        else:
+            output_binding_idxs.append(binding_index)
+    return input_binding_idxs, output_binding_idxs

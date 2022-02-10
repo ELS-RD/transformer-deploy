@@ -8,6 +8,8 @@ There are few ways to optimize a model for inference, some of them are basically
 
 Another orthogonal approach is to use lower precision tensors, it may be FP16 float number or INT-8 quantization.
 
+![Image title](../resources/img/optimization_process.png){ align=center width="300" }
+
 !!! attention
 
     Mixed precision and INT-8 quantization may have an accuracy cost.

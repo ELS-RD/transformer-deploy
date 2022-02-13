@@ -63,4 +63,8 @@ def convert_to_onnx(
     If we were not doing that, the graph would only accept tensors with the exact same shape that the ones we are using to build it (the dummy data), so sequence length or batch size would be fixed.  
     The name we have given to input and output fields will be reused in other tools.
 
+A complete conversion process in real life (including TensorRT engine step) looks like that: 
+
+![Image title](img/export_process.png)
+
 --8<-- "resources/abbreviations.md"

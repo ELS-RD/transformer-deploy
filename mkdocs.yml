@@ -44,6 +44,8 @@ markdown_extensions:
   - pymdownx.mark
   - pymdownx.tilde
   - abbr
+  - attr_list
+  - md_in_html
 
 plugins:
   - search

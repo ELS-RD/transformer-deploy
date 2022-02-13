@@ -8,12 +8,14 @@ There are few ways to optimize a model for inference, some of them are basically
 
 Another orthogonal approach is to use lower precision tensors, it may be FP16 float number or INT-8 quantization.
 
+![Image title](img/optimization_process.png)
+
 !!! attention
 
     Mixed precision and INT-8 quantization may have an accuracy cost.
-    The reason is that you can't code as many information in FP16 or INT-8 tensor that you can in FP32 tensor.  
+    The reason is that you can't encode as many information in FP16 or INT-8 tensor that you can in FP32 tensor.  
     Sometimes you have not enough granularity, some other times the range is not big enough.
-    When it happens, you need to modify the graph to keep some operators in full precision.  
-    This library does it for mixed precision and provide you with a simple way to do it for INT-8 quantization
+    When it happens, you need to modify the computation graph to keep some operators in full precision.  
+    This library does it for mixed precision (for most models) and provide you with a simple way to do it for INT-8 quantization
 
 --8<-- "resources/abbreviations.md"

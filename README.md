@@ -56,7 +56,14 @@ For GPU run, you need to have installed on your machine Nvidia drivers and [NVID
 * feature extraction (text to dense embeddings) 
 * text generation (GPT-2 style).  
 
-Moreover, we have added a GPU quantization notebook to open directly on `Docker` to play with.
+Moreover, we have added a GPU `quantization` notebook to open directly on `Docker` to play with.
+
+First, clone the repo as some commands below expects to find the `demo` folder:
+
+```shell
+git clone git@github.com:ELS-RD/transformer-deploy.git
+cd transformer-deploy
+```
 
 ### Classification/reranking (encoder model)
 

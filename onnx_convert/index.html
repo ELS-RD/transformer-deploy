@@ -1106,6 +1106,8 @@ The target graph format is <abbr title="Open Neural Network EXchange">ONNX</abbr
 If we were not doing that, the graph would only accept tensors with the exact same shape that the ones we are using to build it (the dummy data), so sequence length or batch size would be fixed.<br />
 The name we have given to input and output fields will be reused in other tools.</p>
 </div>
+<p>A complete conversion process in real life (including TensorRT engine step) looks like that: </p>
+<p><img alt="Image title" src="../img/export_process.png" /></p>
 
               
             </article>

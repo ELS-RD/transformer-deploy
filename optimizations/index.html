@@ -1022,13 +1022,14 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8 17 4-4h3.2c.4 1.2 1.5 2 2.8 2 1.7 0 3-1.3 3-3s-1.3-3-3-3c-1.3 0-2.4.8-2.8 2H12L8 7V3H3v5h3l4.2 4L6 16H3v5h5v-4z"/></svg></span> <code>kernel fusion</code>: to avoid 1/ loading time, 2/ share memory to avoid back and forth transfers with the global memory and 3/ use optimal implementation of a serie of operations. Obviously, it will mainly benefit to memory bound operations (like multiply and add operations, a very common pattern in deep learning), it’s called “kernel fusion”;</li>
 </ul>
 <p>Another orthogonal approach is to use lower precision tensors, it may be FP16 float number or INT-8 quantization.</p>
+<p><img alt="Image title" src="../img/optimization_process.png" /></p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>Mixed precision and INT-8 quantization may have an accuracy cost.
-The reason is that you can't code as many information in FP16 or INT-8 tensor that you can in FP32 tensor.<br />
+The reason is that you can't encode as many information in FP16 or INT-8 tensor that you can in FP32 tensor.<br />
 Sometimes you have not enough granularity, some other times the range is not big enough.
-When it happens, you need to modify the graph to keep some operators in full precision.<br />
-This library does it for mixed precision and provide you with a simple way to do it for INT-8 quantization</p>
+When it happens, you need to modify the computation graph to keep some operators in full precision.<br />
+This library does it for mixed precision (for most models) and provide you with a simple way to do it for INT-8 quantization</p>
 </div>
 
               

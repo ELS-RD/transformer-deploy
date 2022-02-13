@@ -1358,29 +1358,33 @@ For <abbr title="Graphics Processing Unit">GPU</abbr> run, you need to have inst
 <li>feature extraction (text to dense embeddings) </li>
 <li>text generation (GPT-2 style).  </li>
 </ul>
-<p>Moreover, we have added a <abbr title="Graphics Processing Unit">GPU</abbr> quantization notebook to open directly on <code>Docker</code> to play with.</p>
+<p>Moreover, we have added a <abbr title="Graphics Processing Unit">GPU</abbr> <code>quantization</code> notebook to open directly on <code>Docker</code> to play with.</p>
+<p>First, clone the repo as some commands below expects to find the <code>demo</code> folder:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone git@github.com:ELS-RD/transformer-deploy.git
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span> transformer-deploy
+</code></pre></div>
 <h3 id="classificationreranking-encoder-model">Classification/reranking (encoder model)<a class="headerlink" href="#classificationreranking-encoder-model" title="Permanent link">#</a></h3>
 <p>Classification is a common task in NLP, and large language models have shown great results.<br />
 This task is also used for search engine to provide Google like relevancy (cf. <a href="https://arxiv.org/abs/1901.04085">arxiv</a>)</p>
 <h4 id="optimize-existing-model">Optimize existing model<a class="headerlink" href="#optimize-existing-model" title="Permanent link">#</a></h4>
 <p>This will optimize model, generate Triton configuration and Triton folder layout in a single command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s2">    convert_model -m \&quot;philschmid/MiniLM-L6-H384-uncased-sst2\&quot; \</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s2">    --backend tensorrt onnx \</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># output:  </span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># ...</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># latencies:</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># [Pytorch (FP32)] mean=5.43ms, sd=0.70ms, min=4.88ms, max=7.81ms, median=5.09ms, 95p=7.01ms, 99p=7.53ms</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># [Pytorch (FP16)] mean=6.55ms, sd=1.00ms, min=5.75ms, max=10.38ms, median=6.01ms, 95p=8.57ms, 99p=9.21ms</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># [TensorRT (FP16)] mean=0.53ms, sd=0.03ms, min=0.49ms, max=0.61ms, median=0.52ms, 95p=0.57ms, 99p=0.58ms</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.57ms, sd=0.05ms, min=1.49ms, max=1.90ms, median=1.57ms, 95p=1.63ms, 99p=1.76ms</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># [ONNX Runtime (optimized)] mean=0.90ms, sd=0.03ms, min=0.88ms, max=1.23ms, median=0.89ms, 95p=0.95ms, 99p=0.97ms</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="s2">    convert_model -m \&quot;philschmid/MiniLM-L6-H384-uncased-sst2\&quot; \</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># output:  </span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># ...</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># [Pytorch (FP32)] mean=5.43ms, sd=0.70ms, min=4.88ms, max=7.81ms, median=5.09ms, 95p=7.01ms, 99p=7.53ms</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># [Pytorch (FP16)] mean=6.55ms, sd=1.00ms, min=5.75ms, max=10.38ms, median=6.01ms, 95p=8.57ms, 99p=9.21ms</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="c1"># [TensorRT (FP16)] mean=0.53ms, sd=0.03ms, min=0.49ms, max=0.61ms, median=0.52ms, 95p=0.57ms, 99p=0.58ms</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.57ms, sd=0.05ms, min=1.49ms, max=1.90ms, median=1.57ms, 95p=1.63ms, 99p=1.76ms</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># [ONNX Runtime (optimized)] mean=0.90ms, sd=0.03ms, min=0.88ms, max=1.23ms, median=0.89ms, 95p=0.95ms, 99p=0.97ms</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
 </code></pre></div>
 <p>It will output mean latency and other statistics.<br />
 Usually <code>Nvidia TensorRT</code> is the fastest option, <code>ONNX Runtime</code> is usually a strong second option.<br />
@@ -1389,24 +1393,24 @@ On <abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime, <code>optimiz
 <h4 id="run-nvidia-triton-inference-server">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server" title="Permanent link">#</a></h4>
 <p>Note that we install <code>transformers</code> at run time.<br />
 For production, it's advised to build your own 3 lines docker image with <code>transformers</code> pre-installed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># output:</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># ...</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># I0207 09:58:32.738831 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># I0207 09:58:32.739875 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># ...</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># I0207 09:58:32.738831 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># I0207 09:58:32.739875 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
 </code></pre></div>
 <h4 id="query-inference">Query inference<a class="headerlink" href="#query-inference" title="Permanent link">#</a></h4>
 <p>Query <abbr title="Open Neural Network EXchange">ONNX</abbr> model (replace <code>transformer_onnx_inference</code> by <code>transformer_tensorrt_inference</code> to query TensorRT engine):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># output:</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,2],&quot;data&quot;:[-3.431640625,3.271484375]}]}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,2],&quot;data&quot;:[-3.431640625,3.271484375]}]}</span>
 </code></pre></div>
 <p>Model output is at the end of the Json (<code>data</code> field).
 <a href="https://els-rd.github.io/transformer-deploy/run/">More information about how to query the server from <code>Python</code>, and other languages</a>.</p>
@@ -1416,43 +1420,43 @@ For production, it's advised to build your own 3 lines docker image with <code>t
 It has gain some traction as a robust way to improve search engine relevancy (increase recall).<br />
 This project supports models from <a href="https://github.com/UKPLab/sentence-transformers">sentence-transformers</a>.</p>
 <h4 id="optimize-existing-model_1">Optimize existing model<a class="headerlink" href="#optimize-existing-model_1" title="Permanent link">#</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s2">    convert_model -m \&quot;sentence-transformers/msmarco-distilbert-cos-v5\&quot; \</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="s2">    --backend tensorrt onnx \</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="s2">    --task embedding \</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># output:</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># ...</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># latencies:</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># [Pytorch (FP32)] mean=5.19ms, sd=0.45ms, min=4.74ms, max=6.64ms, median=5.03ms, 95p=6.14ms, 99p=6.26ms</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1"># [Pytorch (FP16)] mean=5.41ms, sd=0.18ms, min=5.26ms, max=8.15ms, median=5.36ms, 95p=5.62ms, 99p=5.72ms</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># [TensorRT (FP16)] mean=0.72ms, sd=0.04ms, min=0.69ms, max=1.33ms, median=0.70ms, 95p=0.78ms, 99p=0.81ms</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.69ms, sd=0.18ms, min=1.62ms, max=4.07ms, median=1.64ms, 95p=1.86ms, 99p=2.44ms</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=1.03ms, sd=0.09ms, min=0.98ms, max=2.30ms, median=1.00ms, 95p=1.15ms, 99p=1.41ms</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s2">    convert_model -m \&quot;sentence-transformers/msmarco-distilbert-cos-v5\&quot; \</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s2">    --task embedding \</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s2">    --seq-len 16 128 128&quot;</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># output:</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1"># ...</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># [Pytorch (FP32)] mean=5.19ms, sd=0.45ms, min=4.74ms, max=6.64ms, median=5.03ms, 95p=6.14ms, 99p=6.26ms</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="c1"># [Pytorch (FP16)] mean=5.41ms, sd=0.18ms, min=5.26ms, max=8.15ms, median=5.36ms, 95p=5.62ms, 99p=5.72ms</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># [TensorRT (FP16)] mean=0.72ms, sd=0.04ms, min=0.69ms, max=1.33ms, median=0.70ms, 95p=0.78ms, 99p=0.81ms</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=1.69ms, sd=0.18ms, min=1.62ms, max=4.07ms, median=1.64ms, 95p=1.86ms, 99p=2.44ms</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=1.03ms, sd=0.09ms, min=0.98ms, max=2.30ms, median=1.00ms, 95p=1.15ms, 99p=1.41ms</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
 </code></pre></div>
 <h4 id="run-nvidia-triton-inference-server_1">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server_1" title="Permanent link">#</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># output:</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># ...</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># I0207 11:04:33.761517 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># I0207 11:04:33.761844 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># I0207 11:04:33.803373 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
-</code></pre></div>
-<h4 id="query-inference_1">Query inference<a class="headerlink" href="#query-inference_1" title="Permanent link">#</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># output:</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,768],&quot;data&quot;:[0.06549072265625,-0.04327392578125,0.1103515625,-0.007320404052734375,...</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># ...</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># I0207 11:04:33.761517 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1"># I0207 11:04:33.761844 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1"># I0207 11:04:33.803373 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+</code></pre></div>
+<h4 id="query-inference_1">Query inference<a class="headerlink" href="#query-inference_1" title="Permanent link">#</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_inference&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;parameters&quot;:{&quot;sequence_id&quot;:0,&quot;sequence_start&quot;:false,&quot;sequence_end&quot;:false},&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;FP32&quot;,&quot;shape&quot;:[1,768],&quot;data&quot;:[0.06549072265625,-0.04327392578125,0.1103515625,-0.007320404052734375,...</span>
 </code></pre></div>
 <h3 id="generate-text-decoder-model">Generate text (decoder model)<a class="headerlink" href="#generate-text-decoder-model" title="Permanent link">#</a></h3>
 <p>Text generation seems to be the way to go for NLP.<br />
@@ -1463,54 +1467,54 @@ One point to have in mind is that Triton run:
 - inference engines (<code>ONNX Runtime</code> and <code>TensorRT</code>)
 - <code>Python</code> code in charge of the <code>decoding</code> part. <code>Python</code> code delegate to Triton server the model management.</p>
 <p><code>Python</code> code is in <code>./triton_models/transformer_tensorrt_generate/1/model.py</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s2">    convert_model -m gpt2 \</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="s2">    --backend tensorrt onnx \</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s2">    --seq-len 6 256 256 \</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="s2">    --task text-generation&quot;</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># output:</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># ...</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="c1"># latencies:</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="c1"># [Pytorch (FP32)] mean=9.43ms, sd=0.59ms, min=8.95ms, max=15.02ms, median=9.33ms, 95p=10.38ms, 99p=12.46ms</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1"># [Pytorch (FP16)] mean=9.92ms, sd=0.55ms, min=9.50ms, max=15.06ms, median=9.74ms, 95p=10.96ms, 99p=12.26ms</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="c1"># [TensorRT (FP16)] mean=2.19ms, sd=0.18ms, min=2.06ms, max=3.04ms, median=2.10ms, 95p=2.64ms, 99p=2.79ms</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=4.99ms, sd=0.38ms, min=4.68ms, max=9.09ms, median=4.78ms, 95p=5.72ms, 99p=5.95ms</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=3.93ms, sd=0.40ms, min=3.62ms, max=6.53ms, median=3.81ms, 95p=4.49ms, 99p=5.79ms</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s2">    convert_model -m gpt2 \</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="s2">    --backend tensorrt onnx \</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="s2">    --seq-len 6 256 256 \</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="s2">    --task text-generation&quot;</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># output:</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># ...</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1"># Inference done on NVIDIA GeForce RTX 3090</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1"># latencies:</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="c1"># [Pytorch (FP32)] mean=9.43ms, sd=0.59ms, min=8.95ms, max=15.02ms, median=9.33ms, 95p=10.38ms, 99p=12.46ms</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="c1"># [Pytorch (FP16)] mean=9.92ms, sd=0.55ms, min=9.50ms, max=15.06ms, median=9.74ms, 95p=10.96ms, 99p=12.26ms</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># [TensorRT (FP16)] mean=2.19ms, sd=0.18ms, min=2.06ms, max=3.04ms, median=2.10ms, 95p=2.64ms, 99p=2.79ms</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="c1"># [ONNX Runtime (FP32)] mean=4.99ms, sd=0.38ms, min=4.68ms, max=9.09ms, median=4.78ms, 95p=5.72ms, 99p=5.95ms</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="c1"># [ONNX Runtime (optimized)] mean=3.93ms, sd=0.40ms, min=3.62ms, max=6.53ms, median=3.81ms, 95p=4.49ms, 99p=5.79ms</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
 </code></pre></div>
 <h4 id="run-nvidia-triton-inference-server_2">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server_2" title="Permanent link">#</a></h4>
 <p>To run decoding algorithm server side, we need to install <code>Pytorch</code> on <code>Triton</code> docker image.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g <span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  bash -c <span class="s2">&quot;pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html &amp;&amp; \</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s2">  tritonserver --model-repository=/models&quot;</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># output:</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># ...</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1"># I0207 10:29:19.091191 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># I0207 10:29:19.091417 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g <span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  bash -c <span class="s2">&quot;pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html &amp;&amp; \</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s2">  tritonserver --model-repository=/models&quot;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># output:</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># ...</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># I0207 10:29:19.091191 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># I0207 10:29:19.091417 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1"># I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
 </code></pre></div>
 <h4 id="query-inference_2">Query inference<a class="headerlink" href="#query-inference_2" title="Permanent link">#</a></h4>
 <p>Replace <code>transformer_onnx_generate</code> by <code>transformer_tensorrt_generate</code> to query <code>TensorRT</code> engine.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions/1/infer <span class="se">\</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># output:</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_generate&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;BYTES&quot;,&quot;shape&quot;:[],&quot;data&quot;:[&quot;This live event is great. I will sign-up for Infinity.\n\nI&#39;m going to be doing a live stream of the event.\n\nI&quot;]}]}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions/1/infer <span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># output:</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># {&quot;model_name&quot;:&quot;transformer_onnx_generate&quot;,&quot;model_version&quot;:&quot;1&quot;,&quot;outputs&quot;:[{&quot;name&quot;:&quot;output&quot;,&quot;datatype&quot;:&quot;BYTES&quot;,&quot;shape&quot;:[],&quot;data&quot;:[&quot;This live event is great. I will sign-up for Infinity.\n\nI&#39;m going to be doing a live stream of the event.\n\nI&quot;]}]}</span>
 </code></pre></div>
 <p>Ok, the output is not very interesting (💩 in -&gt; 💩 out) but you get the idea.<br />
 Source code of the generative model is in <code>./triton_models/transformer_tensorrt_generate/1/model.py</code>.<br />
 You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).</p>
 <h4 id="python-code">Python code<a class="headerlink" href="#python-code" title="Permanent link">#</a></h4>
 <p>You may be interested in running optimized text generation on Python directly, without using any inference server:  </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
 </code></pre></div>
 <h3 id="model-quantization-on-gpu">Model quantization on <abbr title="Graphics Processing Unit">GPU</abbr><a class="headerlink" href="#model-quantization-on-gpu" title="Permanent link">#</a></h3>
 <p>Quantization is a generic method to get X2 speedup on top of other inference optimization.<br />
@@ -1518,8 +1522,8 @@ You may want to tweak it regarding your needs (defauld is set for greedy search 
 <p>We have implemented in this library a mechanism which update Hugging Face transformers library to support quantization.<br />
 It makes it easy to use.</p>
 <p>To play with it, open this notebook:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root&quot;</span>
 </code></pre></div>
 <!-- END INCLUDE -->
 

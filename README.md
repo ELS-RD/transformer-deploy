@@ -11,7 +11,7 @@
 
 <!--why-start-->
 
-At [Lefebvre Dalloz](https://www.lefebvre-dalloz.fr/) we run in production several *semantic search engine* in the legal domain, 
+At [Lefebvre Dalloz](https://www.lefebvre-dalloz.fr/) we run in production *semantic search engines* in the legal domain, 
 in non-marketing language it's a reranker, and we based ours on `Transformer`.  
 In those setup, latency is key to provide good user experience, and relevancy inference is done online for hundreds of snippets per user query.  
 We have tested many solutions, and below is what we found:
@@ -28,9 +28,9 @@ You will usually get from 2X to 4X faster inference compared to vanilla Pytorch.
 However, if you want the best in class performances on GPU, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch.  
 Sometimes it can raises up to **10X faster inference**.  
-Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come with, we implemented them for you!  
+Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come up with, we implemented them for you!  
 
-[Detailed tool compare table](https://els-rd.github.io/transformer-deploy/compare/)
+[Detailed tool comparaison table](https://els-rd.github.io/transformer-deploy/compare/)
 
 ## Features
 
@@ -38,7 +38,7 @@ Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy
 * deploy model on `Nvidia Triton` inference server (enterprise-grade), 6X faster than `FastAPI`
 * add quantization support for both CPU and GPU
 * simple to use: optimization done in a single command line!
-* supported model: any model than can be exported to ONNX (-> most of them)
+* supported model: any model that can be exported to ONNX (-> most of them)
 * supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)
 
 > Want to understand how it works under the hood?  
@@ -58,17 +58,19 @@ For GPU run, you need to have installed on your machine Nvidia drivers and [NVID
 
 Moreover, we have added a GPU `quantization` notebook to open directly on `Docker` to play with.
 
-First, clone the repo as some commands below expects to find the `demo` folder:
+First, clone the repo as some commands below expect to find the `demo` folder:
 
 ```shell
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
+# docker image may take a few minutes
+docker pull ghcr.io/els-rd/transformer-deploy:0.4.0 
 ```
 
 ### Classification/reranking (encoder model)
 
 Classification is a common task in NLP, and large language models have shown great results.  
-This task is also used for search engine to provide Google like relevancy (cf. [arxiv](https://arxiv.org/abs/1901.04085))
+This task is also used for search engines to provide Google like relevancy (cf. [arxiv](https://arxiv.org/abs/1901.04085))
 
 #### Optimize existing model
 
@@ -272,7 +274,7 @@ docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/tr
 Quantization is a generic method to get X2 speedup on top of other inference optimization.  
 GPU quantization on transformers is almost never used because it requires to modify model source code.  
 
-We have implemented in this library a mechanism which update Hugging Face transformers library to support quantization.  
+We have implemented in this library a mechanism which updates Hugging Face transformers library to support quantization.  
 It makes it easy to use.
 
 To play with it, open this notebook:
@@ -284,4 +286,4 @@ docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transf
 
 <!--why-end-->
 
-## Check our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.
+## See our [documentation](https://els-rd.github.io/transformer-deploy/) for detailed instructions on how to use the package, including setup, GPU quantization support and Nvidia Triton inference server deployment.

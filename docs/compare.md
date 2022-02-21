@@ -1,4 +1,4 @@
-# High level comparaison
+# High-level comparison
 
 ## Inference engine
 

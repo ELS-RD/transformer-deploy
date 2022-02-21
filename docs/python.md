@@ -7,7 +7,7 @@ There are 2 ways to use a TensorRT optimized model:
 
 This document is about the second option.
 
-## High level explanations
+## High-level explanations
 
 * call `load_engine()` to parse an existing TensorRT engine or `build_engine()` to convert an ONNX file
 * setup a CUDA `stream` (for async call), a TensorRT `runtime` and a `context`

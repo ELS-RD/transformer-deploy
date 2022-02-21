@@ -14,7 +14,7 @@ in many cases, you will get a better throughput by using multiple instances of t
 Triton server has an option for that.
 * you use dynamic quantization
 
-In most cases, Nvidia T4 GPU (the cheapest GPU option available on all cloud) will offer you the best perf / cost trade-off by a large margin.  
+In most cases, Nvidia T4 GPU (the cheapest GPU option available on all clouds) will offer you the best perf / cost trade-off by a large margin.  
 Compared to Intel Xeon of 2nd/3rd generation, they are cheaper for better results.
 
 ## What should I use to optimize GPU deployment?
@@ -66,8 +66,8 @@ More info on [https://pytorch.org/docs/stable/onnx.html#static-symbolic-method](
 
 There are few reasons why ONNX Runtime GPU quantization support is not supported:
 
-* it doesn’t support QAT, it "just" patches ONNX file and run them on TensorRT provider. Because ONNX file can’t be retrained, you can't do a fine tuning after quantization. Concretely, it means that if post training quantization doesn't provide an accuracy good enough for your use case, you won't use quantization at all.
-* [QAT library from Nvidia](https://github.com/NVIDIA/TensorRT/tree/main/tools/pytorch-quantization) (the one used in this project) let you easily enable and disable each quantizer (on Python). You can see how useful it is in the quantization demo notebook, we used that feature to disable quantization on layernorm on specific layers to retrieve 1 point of accuracy without sacrificing perf at the post training quantization step. However, the way it currently works on ONNX Runtime is all or nothing (for each operator). Of course, if you are well verse if ONNX things, you can manually parse your graph with a graph surgery tools and make your change but it would take a lot of time compared to just for loop in your Pytorch modules.
+* it doesn’t support QAT, it "just" patches ONNX file and run them on TensorRT provider. Because ONNX file can’t be retrained, you can't do a fine-tuning after quantization. Concretely, it means that if post-training quantization doesn't provide accuracy good enough for your use case, you won't use quantization at all.
+* [QAT library from Nvidia](https://github.com/NVIDIA/TensorRT/tree/main/tools/pytorch-quantization) (the one used in this project) let you easily enable and disable each quantizer (on Python). You can see how useful it is in the quantization demo notebook, we used that feature to disable quantization on layernorm on specific layers to retrieve 1 point of accuracy without sacrificing perf at the post-training quantization step. However, the way it currently works on ONNX Runtime is all or nothing (for each operator). Of course, if you are well verse if ONNX things, you can manually parse your graph with a graph surgery tools and make your change but it would take a lot of time compared to just for loop in your Pytorch modules.
 * and more important, in our own experiment, models that contain unsupported operators by TensorRT just crashed on ONNX Runtime… It was unexpected as ONNX Runtime is supposed to split graph and leverage several providers when one doesn't support an operation. I suppose in my case that the issue is that the operator exists but not with the right type. At the end, to make it work, I needed to patch the source code. So not a better user experience.
 
 Check [this page](https://elinux.org/TensorRT/ONNX) for more questions.

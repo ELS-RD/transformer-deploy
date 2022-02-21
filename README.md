@@ -12,7 +12,7 @@
 <!--why-start-->
 
 At [Lefebvre Dalloz](https://www.lefebvre-dalloz.fr/) we run in production *semantic search engines* in the legal domain, 
-in non-marketing language it's a reranker, and we based ours on `Transformer`.  
+in non-marketing language it's a re-ranker, and we based ours on `Transformer`.  
 In those setup, latency is key to provide good user experience, and relevancy inference is done online for hundreds of snippets per user query.  
 We have tested many solutions, and below is what we found:
 
@@ -27,15 +27,15 @@ You will usually get from 2X to 4X faster inference compared to vanilla Pytorch.
 [`Nvidia TensorRT`](https://github.com/NVIDIA/TensorRT/)  + [`Nvidia Triton inference server`](https://github.com/triton-inference-server/server) = ⚡️🏃💨💨  
 However, if you want the best in class performances on GPU, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch.  
-Sometimes it can raises up to **10X faster inference**.  
+Sometimes it can rise up to **10X faster inference**.  
 Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come up with, we implemented them for you!  
 
-[Detailed tool comparaison table](https://els-rd.github.io/transformer-deploy/compare/)
+[Detailed tool comparison table](https://els-rd.github.io/transformer-deploy/compare/)
 
 ## Features
 
-* heavily optimize transformer models for inference (CPU and GPU) -> between 5X and 10X speed-up
-* deploy model on `Nvidia Triton` inference server (enterprise-grade), 6X faster than `FastAPI`
+* Heavily optimize transformer models for inference (CPU and GPU) -> between 5X and 10X speedup
+* deploy models on `Nvidia Triton` inference servers (enterprise grade), 6X faster than `FastAPI`
 * add quantization support for both CPU and GPU
 * simple to use: optimization done in a single command line!
 * supported model: any model that can be exported to ONNX (-> most of them)
@@ -52,7 +52,7 @@ For GPU run, you need to have installed on your machine Nvidia drivers and [NVID
 
 **3 tasks are covered** below: 
 
-* classification, 
+* Classification, 
 * feature extraction (text to dense embeddings) 
 * text generation (GPT-2 style).  
 
@@ -74,7 +74,7 @@ This task is also used for search engines to provide Google like relevancy (cf. 
 
 #### Optimize existing model
 
-This will optimize model, generate Triton configuration and Triton folder layout in a single command:
+This will optimize models, generate Triton configuration and Triton folder layout in a single command:
 
 ```shell
 docker run -it --rm --gpus all \
@@ -97,14 +97,14 @@ docker run -it --rm --gpus all \
 ```
 
 It will output mean latency and other statistics.  
-Usually `Nvidia TensorRT` is the fastest option, `ONNX Runtime` is usually a strong second option.  
+Usually `Nvidia TensorRT` is the fastest option and `ONNX Runtime` is usually a strong second option.  
 On ONNX Runtime, `optimized` means that kernel fusion and mixed precision are enabled.  
 `Pytorch` is never competitive on transformer inference, including mixed precision, whatever the model size.  
 
 #### Run Nvidia Triton inference server
 
 Note that we install `transformers` at run time.  
-For production, it's advised to build your own 3 lines docker image with `transformers` pre-installed.
+For production, it's advised to build your own 3-line Docker image with `transformers` pre-installed.
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
@@ -120,7 +120,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 
 #### Query inference 
 
-Query ONNX model (replace `transformer_onnx_inference` by `transformer_tensorrt_inference` to query TensorRT engine):
+Query ONNX models (replace `transformer_onnx_inference` by `transformer_tensorrt_inference` to query TensorRT engine):
 
 ```shell
 curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
@@ -139,7 +139,7 @@ To get very low latency inference in your Python code (no inference server): [cl
 ### Feature extraction / dense embeddings
 
 Feature extraction in NLP is the task to convert text to dense embeddings.  
-It has gain some traction as a robust way to improve search engine relevancy (increase recall).  
+It has gained some traction as a robust way to improve search engine relevancy (increase recall).  
 This project supports models from [sentence-transformers](https://github.com/UKPLab/sentence-transformers).
 
 #### Optimize existing model
@@ -194,7 +194,7 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 ### Generate text (decoder model)
 
 Text generation seems to be the way to go for NLP.  
-Unfortunately they are slow to run, below we will accelerate the most famous of them: GPT-2.
+Unfortunately, they are slow to run, below we will accelerate the most famous of them: GPT-2.
 
 #### Optimize existing model
 
@@ -258,7 +258,7 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions
 
 Ok, the output is not very interesting (💩 in -> 💩 out) but you get the idea.  
 Source code of the generative model is in `./triton_models/transformer_tensorrt_generate/1/model.py`.  
-You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).
+You may want to tweak it regarding your needs (default is set for greedy search and output 64 tokens).
 
 #### Python code
 

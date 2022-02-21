@@ -48,8 +48,8 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
   bash -c "pip install transformers sentencepiece && tritonserver --model-repository=/models"
 ```
 
-> As you can see we install Transformers and then launch the server itself.  
-> This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
+> As you can see, we install Transformers and then launch the server itself.  
+> This is, of course, a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.
 
 ## Query the inference server
 

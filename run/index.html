@@ -1115,8 +1115,8 @@ Better to have the same value for seq len to get best performances from TensorRT
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  bash -c <span class="s2">&quot;pip install transformers sentencepiece &amp;&amp; tritonserver --model-repository=/models&quot;</span>
 </code></pre></div>
 <blockquote>
-<p>As you can see we install Transformers and then launch the server itself.<br />
-This is of course a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.</p>
+<p>As you can see, we install Transformers and then launch the server itself.<br />
+This is, of course, a bad practice, you should make your own 2 lines Dockerfile with Transformers inside.</p>
 </blockquote>
 <h2 id="query-the-inference-server">Query the inference server<a class="headerlink" href="#query-the-inference-server" title="Permanent link">#</a></h2>
 <p>First you need to convert your strings to a binary file following the format of <code>demo/infinity/query_body.bin</code>.<br />

@@ -1019,15 +1019,15 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 <ul>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg></span> <code>find and remove redundant operations</code>: for instance dropout has no use outside the training loop, it can be removed without any impact on inference;</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6c1.38 0 2.63.56 3.54 1.46L12 10h6V4l-2.05 2.05A6.976 6.976 0 0 0 11 4c-3.53 0-6.43 2.61-6.92 6H6.1A5 5 0 0 1 11 6m5.64 9.14A6.89 6.89 0 0 0 17.92 12H15.9a5 5 0 0 1-4.9 4c-1.38 0-2.63-.56-3.54-1.46L10 12H4v6l2.05-2.05A6.976 6.976 0 0 0 11 18c1.55 0 3-.5 4.14-1.36L20 21.5l1.5-1.5-4.86-4.86z"/></svg></span> <code>perform constant folding</code>: meaning find some parts of the graph made of constant expressions, and compute the results at compile time instead of runtime (similar to most programming language compiler);</li>
-<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8 17 4-4h3.2c.4 1.2 1.5 2 2.8 2 1.7 0 3-1.3 3-3s-1.3-3-3-3c-1.3 0-2.4.8-2.8 2H12L8 7V3H3v5h3l4.2 4L6 16H3v5h5v-4z"/></svg></span> <code>kernel fusion</code>: to avoid 1/ loading time, 2/ share memory to avoid back and forth transfers with the global memory and 3/ use optimal implementation of a serie of operations. Obviously, it will mainly benefit to memory bound operations (like multiply and add operations, a very common pattern in deep learning), it’s called “kernel fusion”;</li>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8 17 4-4h3.2c.4 1.2 1.5 2 2.8 2 1.7 0 3-1.3 3-3s-1.3-3-3-3c-1.3 0-2.4.8-2.8 2H12L8 7V3H3v5h3l4.2 4L6 16H3v5h5v-4z"/></svg></span> <code>kernel fusion</code>: to avoid 1/ loading time, 2/ share memory to avoid back and forth transfers with the global memory and 3/ use optimal implementation of a series of operations. Obviously, it will mainly benefit to memory bound operations (like multiply and add operations, a very common pattern in deep learning), it’s called “kernel fusion”;</li>
 </ul>
 <p>Another orthogonal approach is to use lower precision tensors, it may be FP16 float number or INT-8 quantization.</p>
 <p><img alt="Image title" src="../img/optimization_process.png" /></p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>Mixed precision and INT-8 quantization may have an accuracy cost.
-The reason is that you can't encode as many information in FP16 or INT-8 tensor that you can in FP32 tensor.<br />
-Sometimes you have not enough granularity, some other times the range is not big enough.
+The reason is that you can't encode as much information in FP16 or INT-8 tensor that you can in FP32 tensor.<br />
+Sometimes you do not have enough granularity, some other times the range is not big enough.
 When it happens, you need to modify the computation graph to keep some operators in full precision.<br />
 This library does it for mixed precision (for most models) and provide you with a simple way to do it for INT-8 quantization</p>
 </div>

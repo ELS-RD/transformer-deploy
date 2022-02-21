@@ -1319,8 +1319,8 @@ For updates follow <strong>@pommedeterre33</strong> on <span class="twemoji twit
 </mark>
 <!-- BEGIN INCLUDE ../README.md &lt;!--why-start--&gt; &lt;!--why-end--&gt; -->
 
-<p>At <a href="https://www.lefebvre-dalloz.fr/">Lefebvre Dalloz</a> we run in production several <em>semantic search engine</em> in the legal domain, 
-in non-marketing language it's a reranker, and we based ours on <code>Transformer</code>.<br />
+<p>At <a href="https://www.lefebvre-dalloz.fr/">Lefebvre Dalloz</a> we run in production <em>semantic search engines</em> in the legal domain, 
+in non-marketing language it's a re-ranker, and we based ours on <code>Transformer</code>.<br />
 In those setup, latency is key to provide good user experience, and relevancy inference is done online for hundreds of snippets per user query.<br />
 We have tested many solutions, and below is what we found:</p>
 <p><a href="https://pytorch.org/"><code>Pytorch</code></a> + <a href="https://fastapi.tiangolo.com/"><code>FastAPI</code></a> = 🐢<br />
@@ -1332,16 +1332,16 @@ You will usually get from 2X to 4X faster inference compared to vanilla Pytorch.
 <p><a href="https://github.com/NVIDIA/TensorRT/"><code>Nvidia TensorRT</code></a>  + <a href="https://github.com/triton-inference-server/server"><code>Nvidia Triton inference server</code></a> = ⚡️🏃💨💨<br />
 However, if you want the best in class performances on <abbr title="Graphics Processing Unit">GPU</abbr>, there is only a single possible combination: Nvidia TensorRT and Triton.
 You will usually get 5X faster inference compared to vanilla Pytorch.<br />
-Sometimes it can raises up to <strong>10X faster inference</strong>.<br />
-Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come with, we implemented them for you!  </p>
-<p><a href="https://els-rd.github.io/transformer-deploy/compare/">Detailed tool compare table</a></p>
+Sometimes it can rise up to <strong>10X faster inference</strong>.<br />
+Buuuuttt... TensorRT can ask some efforts to master, it requires tricks not easy to come up with, we implemented them for you!  </p>
+<p><a href="https://els-rd.github.io/transformer-deploy/compare/">Detailed tool comparison table</a></p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h2>
 <ul>
-<li>heavily optimize transformer models for inference (<abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr>) -&gt; between 5X and 10X speed-up</li>
-<li>deploy model on <code>Nvidia Triton</code> inference server (enterprise-grade), 6X faster than <code>FastAPI</code></li>
+<li>Heavily optimize transformer models for inference (<abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr>) -&gt; between 5X and 10X speedup</li>
+<li>deploy models on <code>Nvidia Triton</code> inference servers (enterprise grade), 6X faster than <code>FastAPI</code></li>
 <li>add quantization support for both <abbr title="Central Processing Unit">CPU</abbr> and <abbr title="Graphics Processing Unit">GPU</abbr></li>
 <li>simple to use: optimization done in a single command line!</li>
-<li>supported model: any model than can be exported to <abbr title="Open Neural Network EXchange">ONNX</abbr> (-&gt; most of them)</li>
+<li>supported model: any model that can be exported to <abbr title="Open Neural Network EXchange">ONNX</abbr> (-&gt; most of them)</li>
 <li>supported tasks: classification, feature extraction (aka sentence-transformers dense embeddings)</li>
 </ul>
 <blockquote>
@@ -1354,20 +1354,22 @@ read <a href="https://towardsdatascience.com/hugging-face-transformer-inference-
 For <abbr title="Graphics Processing Unit">GPU</abbr> run, you need to have installed on your machine Nvidia drivers and <a href="https://github.com/NVIDIA/nvidia-docker">NVIDIA Container Toolkit</a>.</p>
 <p><strong>3 tasks are covered</strong> below: </p>
 <ul>
-<li>classification, </li>
+<li>Classification, </li>
 <li>feature extraction (text to dense embeddings) </li>
 <li>text generation (GPT-2 style).  </li>
 </ul>
 <p>Moreover, we have added a <abbr title="Graphics Processing Unit">GPU</abbr> <code>quantization</code> notebook to open directly on <code>Docker</code> to play with.</p>
-<p>First, clone the repo as some commands below expects to find the <code>demo</code> folder:</p>
+<p>First, clone the repo as some commands below expect to find the <code>demo</code> folder:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone git@github.com:ELS-RD/transformer-deploy.git
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span> transformer-deploy
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># docker image may take a few minutes</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>docker pull ghcr.io/els-rd/transformer-deploy:0.4.0 
 </code></pre></div>
 <h3 id="classificationreranking-encoder-model">Classification/reranking (encoder model)<a class="headerlink" href="#classificationreranking-encoder-model" title="Permanent link">#</a></h3>
 <p>Classification is a common task in NLP, and large language models have shown great results.<br />
-This task is also used for search engine to provide Google like relevancy (cf. <a href="https://arxiv.org/abs/1901.04085">arxiv</a>)</p>
+This task is also used for search engines to provide Google like relevancy (cf. <a href="https://arxiv.org/abs/1901.04085">arxiv</a>)</p>
 <h4 id="optimize-existing-model">Optimize existing model<a class="headerlink" href="#optimize-existing-model" title="Permanent link">#</a></h4>
-<p>This will optimize model, generate Triton configuration and Triton folder layout in a single command:</p>
+<p>This will optimize models, generate Triton configuration and Triton folder layout in a single command:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -v <span class="nv">$PWD</span>:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  bash -c <span class="s2">&quot;cd /project &amp;&amp; \</span>
@@ -1387,12 +1389,12 @@ This task is also used for search engine to provide Google like relevancy (cf. <
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Each infence engine output is within 0.3 tolerance compared to Pytorch output</span>
 </code></pre></div>
 <p>It will output mean latency and other statistics.<br />
-Usually <code>Nvidia TensorRT</code> is the fastest option, <code>ONNX Runtime</code> is usually a strong second option.<br />
+Usually <code>Nvidia TensorRT</code> is the fastest option and <code>ONNX Runtime</code> is usually a strong second option.<br />
 On <abbr title="Open Neural Network EXchange">ONNX</abbr> Runtime, <code>optimized</code> means that kernel fusion and mixed precision are enabled.<br />
 <code>Pytorch</code> is never competitive on transformer inference, including mixed precision, whatever the model size.  </p>
 <h4 id="run-nvidia-triton-inference-server">Run Nvidia Triton inference server<a class="headerlink" href="#run-nvidia-triton-inference-server" title="Permanent link">#</a></h4>
 <p>Note that we install <code>transformers</code> at run time.<br />
-For production, it's advised to build your own 3 lines docker image with <code>transformers</code> pre-installed.</p>
+For production, it's advised to build your own 3-line Docker image with <code>transformers</code> pre-installed.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m <span class="se">\</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  -v <span class="nv">$PWD</span>/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 <span class="se">\</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  bash -c <span class="s2">&quot;pip install transformers &amp;&amp; tritonserver --model-repository=/models&quot;</span>
@@ -1404,7 +1406,7 @@ For production, it's advised to build your own 3 lines docker image with <code>t
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002</span>
 </code></pre></div>
 <h4 id="query-inference">Query inference<a class="headerlink" href="#query-inference" title="Permanent link">#</a></h4>
-<p>Query <abbr title="Open Neural Network EXchange">ONNX</abbr> model (replace <code>transformer_onnx_inference</code> by <code>transformer_tensorrt_inference</code> to query TensorRT engine):</p>
+<p>Query <abbr title="Open Neural Network EXchange">ONNX</abbr> models (replace <code>transformer_onnx_inference</code> by <code>transformer_tensorrt_inference</code> to query TensorRT engine):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer <span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  --data-binary <span class="s2">&quot;@demo/infinity/query_body.bin&quot;</span> <span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  --header <span class="s2">&quot;Inference-Header-Content-Length: 161&quot;</span>
@@ -1417,7 +1419,7 @@ For production, it's advised to build your own 3 lines docker image with <code>t
 <p>To get very low latency inference in your Python code (no inference server): <a href="https://els-rd.github.io/transformer-deploy/python/">click here</a></p>
 <h3 id="feature-extraction-dense-embeddings">Feature extraction / dense embeddings<a class="headerlink" href="#feature-extraction-dense-embeddings" title="Permanent link">#</a></h3>
 <p>Feature extraction in NLP is the task to convert text to dense embeddings.<br />
-It has gain some traction as a robust way to improve search engine relevancy (increase recall).<br />
+It has gained some traction as a robust way to improve search engine relevancy (increase recall).<br />
 This project supports models from <a href="https://github.com/UKPLab/sentence-transformers">sentence-transformers</a>.</p>
 <h4 id="optimize-existing-model_1">Optimize existing model<a class="headerlink" href="#optimize-existing-model_1" title="Permanent link">#</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker run -it --rm --gpus all <span class="se">\</span>
@@ -1460,7 +1462,7 @@ This project supports models from <a href="https://github.com/UKPLab/sentence-tr
 </code></pre></div>
 <h3 id="generate-text-decoder-model">Generate text (decoder model)<a class="headerlink" href="#generate-text-decoder-model" title="Permanent link">#</a></h3>
 <p>Text generation seems to be the way to go for NLP.<br />
-Unfortunately they are slow to run, below we will accelerate the most famous of them: GPT-2.</p>
+Unfortunately, they are slow to run, below we will accelerate the most famous of them: GPT-2.</p>
 <h4 id="optimize-existing-model_2">Optimize existing model<a class="headerlink" href="#optimize-existing-model_2" title="Permanent link">#</a></h4>
 <p>Like before, command below will prepare Triton inference server stuff.<br />
 One point to have in mind is that Triton run:
@@ -1510,7 +1512,7 @@ One point to have in mind is that Triton run:
 </code></pre></div>
 <p>Ok, the output is not very interesting (💩 in -&gt; 💩 out) but you get the idea.<br />
 Source code of the generative model is in <code>./triton_models/transformer_tensorrt_generate/1/model.py</code>.<br />
-You may want to tweak it regarding your needs (defauld is set for greedy search and output 64 tokens).</p>
+You may want to tweak it regarding your needs (default is set for greedy search and output 64 tokens).</p>
 <h4 id="python-code">Python code<a class="headerlink" href="#python-code" title="Permanent link">#</a></h4>
 <p>You may be interested in running optimized text generation on Python directly, without using any inference server:  </p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>
@@ -1519,7 +1521,7 @@ You may want to tweak it regarding your needs (defauld is set for greedy search 
 <h3 id="model-quantization-on-gpu">Model quantization on <abbr title="Graphics Processing Unit">GPU</abbr><a class="headerlink" href="#model-quantization-on-gpu" title="Permanent link">#</a></h3>
 <p>Quantization is a generic method to get X2 speedup on top of other inference optimization.<br />
 <abbr title="Graphics Processing Unit">GPU</abbr> quantization on transformers is almost never used because it requires to modify model source code.  </p>
-<p>We have implemented in this library a mechanism which update Hugging Face transformers library to support quantization.<br />
+<p>We have implemented in this library a mechanism which updates Hugging Face transformers library to support quantization.<br />
 It makes it easy to use.</p>
 <p>To play with it, open this notebook:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>docker run -p <span class="m">8888</span>:8888 -v <span class="nv">$PWD</span>/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 <span class="se">\</span>

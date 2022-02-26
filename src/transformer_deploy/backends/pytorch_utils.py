@@ -110,6 +110,7 @@ def convert_to_onnx(
 
         TensorQuantizer.use_fb_fake_quant = True
     if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
+        use_cache = getattr(model_pytorch.config, "use_cache")
         setattr(model_pytorch.config, "use_cache", False)
 
     # dynamic axis == variable length axis
@@ -138,21 +139,24 @@ def convert_to_onnx(
     if quantization:
         TensorQuantizer.use_fb_fake_quant = False
     if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
-        setattr(model_pytorch.config, "use_cache", True)
+        setattr(model_pytorch.config, "use_cache", use_cache)
 
-    # Pytorch fails to infer output tensor shape of models based on torch.Sequential (used by sentence-transformers)
-    # In ONNX graph it marked the dim as "Divoutput_dim_1" which is a generated name, and there is also warnings:
+    # Pytorch sometimes fails to infer output tensor shape of models
+    # In ONNX graph, axis name is marked like "Divoutput_dim_1" which is a generated name, and there may be a warning:
     # ** "WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape inference
     # for the exported graph. Please consider adding it in symbolic function." **
     # ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374
-    # We need the nb of dims to be fixed to reserve GPU memory when using ONNX Runtime io binding API
+    # We need non dynamic axis to have fixed value to reserve GPU memory when using ONNX Runtime io binding API
     # Below we reopen the model and override the dynamic shape by a fixed one
-    if isinstance(model_pytorch, STransformerWrapper):  # for sentence-transformers model only
-        output = model_pytorch(**inputs_pytorch)
-        assert len(output.shape) == 2, "unexpected output tensor shape (!=2)"
-        nb_dim = output.shape[1]
-        onnx_model = onnx.load(output_path)
-        assert len(onnx_model.graph.output) == 1, "unexpected number of output tensors (!=1)"
-        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, "unexpected ouput tensor shape (!=2)"
-        onnx_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value = nb_dim
-        onnx.save(onnx_model, output_path)
+    output = model_pytorch(**inputs_pytorch)
+    # sentence-transformers outputs a torch tensor, Hugging Face transformers model output an ordered dictionary
+    if not isinstance(output, torch.Tensor):
+        output: torch.Tensor = output[0]
+    assert len(output[0].shape) >= len(dynamic_axis["output"]), f"{len(output[0].shape)} >= {len(dynamic_axis['output'])}"
+    onnx_model = onnx.load(output_path)
+    output_axis_name = set(dynamic_axis["output"].values())
+    for index in range(len(onnx_model.graph.output[0].type.tensor_type.shape.dim)):
+        if onnx_model.graph.output[0].type.tensor_type.shape.dim[index].dim_param in output_axis_name:
+            continue
+        onnx_model.graph.output[0].type.tensor_type.shape.dim[index].dim_value = output.shape[index]
+    onnx.save(onnx_model, output_path)

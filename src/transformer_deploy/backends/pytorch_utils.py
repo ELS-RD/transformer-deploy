@@ -152,7 +152,9 @@ def convert_to_onnx(
     # sentence-transformers outputs a torch tensor, Hugging Face transformers model output an ordered dictionary
     if not isinstance(output, torch.Tensor):
         output: torch.Tensor = output[0]
-    assert len(output[0].shape) >= len(dynamic_axis["output"]), f"{len(output[0].shape)} >= {len(dynamic_axis['output'])}"
+    assert len(output[0].shape) >= len(
+        dynamic_axis["output"]
+    ), f"{len(output[0].shape)} >= {len(dynamic_axis['output'])}"
     onnx_model = onnx.load(output_path)
     output_axis_name = set(dynamic_axis["output"].values())
     for index in range(len(onnx_model.graph.output[0].type.tensor_type.shape.dim)):

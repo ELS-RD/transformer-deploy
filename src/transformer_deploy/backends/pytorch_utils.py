@@ -122,7 +122,8 @@ def convert_to_onnx(
         dynamic_axis["output"][1] = "sequence"
     # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
     for k, v in inputs_pytorch.items():
-        inputs_pytorch[k] = v.type(torch.int32)
+        if v.dtype in [torch.long, torch.int64]:
+            inputs_pytorch[k] = v.type(torch.int32)
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize

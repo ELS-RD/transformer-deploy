@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:22.01-py3
+FROM nvcr.io/nvidia/tritonserver:22.02-py3
 
 # see .dockerignore to check what is transfered
 COPY . ./

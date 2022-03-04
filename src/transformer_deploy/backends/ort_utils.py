@@ -18,7 +18,7 @@ All the tooling to ease ONNX Runtime usage.
 
 import logging
 import multiprocessing
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -153,7 +153,11 @@ def gess_output_shape(inputs: Dict[str, torch.Tensor], model_onnx: InferenceSess
 
 
 def inference_onnx_binding(
-    model_onnx: InferenceSession, inputs: Dict[str, torch.Tensor], device: str, device_id: int = 0
+    model_onnx: InferenceSession,
+    inputs: Dict[str, torch.Tensor],
+    device: str,
+    output_shape: Optional[Tuple[int]] = None,
+    device_id: int = 0,
 ) -> Dict[str, torch.Tensor]:
     """
     Performs inference on ONNX Runtime in an optimized way.
@@ -162,6 +166,7 @@ def inference_onnx_binding(
     :param model_onnx: ONNX model
     :param inputs: input torch tensor
     :param device: where to run the inference. One of [cpu, cuda]
+    :param output_shape: tensor output shape if known, otherwise will be guessed from axis names
     :param device_id: ID of the device where to run the inference, to be used when there are multiple GPUs, etc.
     :return: a dict {axis name: output tensor}
     """
@@ -184,12 +189,12 @@ def inference_onnx_binding(
         )
         inputs[input_onnx.name] = tensor
     outputs = dict()
-    output_shapes = gess_output_shape(inputs=inputs, model_onnx=model_onnx)
-    for axis_name, shape in output_shapes.items():
+    dict_shapes = {"output": output_shape} if output_shape else gess_output_shape(inputs=inputs, model_onnx=model_onnx)
+    for output_name, shape in dict_shapes.items():
         tensor = torch.empty(shape, dtype=torch.float32, device=device).contiguous()
-        outputs[axis_name] = tensor
+        outputs[output_name] = tensor
         binding.bind_output(
-            name=axis_name,
+            name=output_name,
             device_type=device,
             device_id=device_id,
             element_type=np.float32,  # hard coded output type

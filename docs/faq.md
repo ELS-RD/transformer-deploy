@@ -60,7 +60,10 @@ Check in the convert source code how we did it.
 
 Most of the time ONNX export fail because of unsupported operations.
 One way to workaround is to reimplement that part or override the module with `symbolic()` static function.
-More info on [https://pytorch.org/docs/stable/onnx.html#static-symbolic-method](https://pytorch.org/docs/stable/onnx.html#static-symbolic-method)
+More info on [pytorch.org](https://pytorch.org/docs/stable/onnx.html#static-symbolic-method).
+
+And for TensorRT supported operations, you can check
+[docs.nvidia.com](https://docs.nvidia.com/deeplearning/tensorrt/support-matrix/index.html?utm_source=pocket_mylist).
 
 ## Why don't you support GPU quantization on ONNX Runtime instead of TensorRT?
 

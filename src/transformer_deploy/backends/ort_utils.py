@@ -87,7 +87,8 @@ def optimize_onnx(
         optimization_options=optimization_options,
     )
     if fp16:
-        optimized_model.convert_float_to_float16()  # FP32 -> FP16
+        # use_symbolic_shape_infer set to false because doesn't work after ONNX package v1.10.2
+        optimized_model.convert_float_to_float16(use_symbolic_shape_infer=False)  # FP32 -> FP16
     logging.info(f"optimizations applied: {optimized_model.get_fused_operator_statistics()}")
     optimized_model.save_model_to_file(onnx_optim_model_path)
 

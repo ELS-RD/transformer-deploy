@@ -250,7 +250,7 @@ def infer_tensorrt(
     """
     input_tensors: List[torch.Tensor] = list()
     for tensor in host_inputs.values():
-        assert isinstance(tensor, torch.Tensor), f"unexpected tensor type: {tensor.dtype}"
+        assert isinstance(tensor, torch.Tensor), f"unexpected tensor class: {type(tensor)}"
         # warning: small changes in output if int64 is used instead of int32
         if tensor.dtype in [torch.int64, torch.long]:
             tensor = tensor.type(torch.int32)

@@ -28,6 +28,7 @@ import numpy as np
 import torch
 from transformers import (
     AutoConfig,
+    AutoModel,
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -159,6 +160,9 @@ def main(commands: argparse.Namespace):
     elif commands.task == "text-generation":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
+    elif commands.task == "summarization":
+        model_pytorch = AutoModel.from_pretrained(commands.model, use_auth_token=auth_token)
+        input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
     model_pytorch.eval()
@@ -189,7 +193,7 @@ def main(commands: argparse.Namespace):
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
         if task in ["classification", "text-generation"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
-        if task == "embedding":
+        if task == ["embedding", "summarization"]:
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
         raise Exception(f"unknown task: {task}")
 

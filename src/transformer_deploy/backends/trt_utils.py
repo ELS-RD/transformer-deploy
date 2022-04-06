@@ -15,25 +15,19 @@
 """
 All the tooling to ease TensorRT usage.
 """
+import copy
 import dataclasses
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, OrderedDict
+from typing import Callable, Dict, List, Optional, OrderedDict, Set
 
+import numpy as np
+import onnx
 import tensorrt as trt
 import torch
-from tensorrt import ICudaEngine, IExecutionContext
-from tensorrt.tensorrt import (
-    Builder,
-    IBuilderConfig,
-    IElementWiseLayer,
-    ILayer,
-    INetworkDefinition,
-    IOptimizationProfile,
-    IReduceLayer,
-    Logger,
-    OnnxParser,
-    Runtime,
-)
+from onnx import ModelProto, NodeProto
+from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, LayerType, Logger, Runtime
+from tensorrt.tensorrt import Builder, IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser
 
 
 @dataclass
@@ -326,3 +320,111 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
         else:
             output_binding_idxs.append(binding_index)
     return input_binding_idxs, output_binding_idxs
+
+
+def convert_fp16(tensor: np.ndarray, min_positive_val: float = 5.96e-08) -> np.ndarray:
+    """
+    Convert FP32 tensors to FP16, manage out of range values and close to 0 values.
+    Code from ONNX Runtime Python package.
+    Min positive default value: https://en.wikipedia.org/wiki/Machine_epsilon
+    :param tensor: input tensor
+    :param min_positive_val: closest positive value to zero that can be expressed in FP16
+    :return: converted tensor
+    """
+
+    def between(a, b, c):
+        return np.logical_and(a < b, b < c)
+
+    max_finite_val = np.finfo(np.float16).max
+    # minimum pos value
+    tensor = np.where(between(0, tensor, min_positive_val), min_positive_val, tensor)
+    # maximum neg value
+    tensor = np.where(between(-min_positive_val, tensor, 0), -min_positive_val, tensor)
+    tensor = np.where(between(max_finite_val, tensor, float("inf")), max_finite_val, tensor)
+    tensor = np.where(between(float("-inf"), tensor, -max_finite_val), -max_finite_val, tensor)
+    return np.float16(tensor)
+
+
+def add_output_nodes(model: ModelProto) -> ModelProto:
+    """
+    Set each node as output node for debugging purpose.
+    :param model: ONNX model in protobuf format
+    :return: modified ONNX model
+    """
+    model = copy.deepcopy(model)
+    output_nodes = list()
+    for n in model.graph.node:
+        for output_name in n.output:
+            output_nodes.append(onnx.ValueInfoProto(name=output_name))
+    model.graph.output.extend(output_nodes)
+    return model
+
+
+def get_all_outputs(model: ModelProto, inputs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    """
+    Join ouput values from ONNX model with their names.
+    :param model: ONNX model
+    :param inputs: model input
+    :return: tensor outputs and their names
+    """
+    outputs_names = [x.name for x in model.get_outputs()]
+    ort_outs = model.run(output_names=outputs_names, input_feed=inputs)
+    return dict(zip(outputs_names, ort_outs))
+
+
+# https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/python/tools/transformers/float16.py
+def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, np.ndarray]) -> List[str]:
+    """
+    Identify out of range values in model output.
+    :param graph: graph as adjency nodes dict
+    :param output_nodes: output of each node
+    :return: list of nodes producing outputs outside fp16 tensor
+    """
+    keep_fp32 = list()
+    for k, v in output_nodes.items():
+        if v.dtype != np.float32:
+            continue
+        if np.max(v) > np.finfo(np.float16).max or np.min(v) < np.finfo(np.float16).min:
+            keep_fp32 += [n for n in graph[k]]
+    return keep_fp32
+
+
+def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
+    """
+    Generate a function to set precision of specific nodes to FP32 to keep tensorrt FP16 output close to FP32 nodes
+    :param keep_fp32: nodes to keep in FP32
+    :return: a function to set node precisions
+    """
+
+    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
+        for layer_index in range(network_definition.num_layers - 1):
+            layer: ILayer = network_definition.get_layer(layer_index)
+            # next layer should take FP16 as input
+            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
+
+            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
+                layer.precision = trt.DataType.FLOAT
+                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                # identity function is mainly used for casting
+                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
+                if next_layer.type != LayerType.IDENTITY:
+                    next_layer.precision = trt.DataType.FLOAT
+                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+
+        return network_definition
+
+    return f
+
+
+def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:
+    """
+    Convert ONNX model to adjency
+    :param model: ONNX model
+    :return: a dict to link input to output nodes
+    """
+    adj_dict: Dict[str, Set[str]] = defaultdict(set)
+    for n in model.graph.node:  # type: NodeProto
+        assert len(n.output) == 1
+        output_node = n.output[0]
+        adj_dict[output_node].add(n.name)
+    return adj_dict

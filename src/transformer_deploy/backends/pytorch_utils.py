@@ -16,9 +16,7 @@
 Utils related to Pytorch inference.
 """
 from collections import OrderedDict
-from typing import Callable, Dict
-from typing import OrderedDict as Od
-from typing import Tuple
+from typing import Callable, Dict, Tuple
 
 import onnx
 import torch
@@ -79,7 +77,7 @@ def get_model_size(path: str) -> Tuple[int, int]:
 def convert_to_onnx(
     model_pytorch: PreTrainedModel,
     output_path: str,
-    inputs_pytorch: Od[str, torch.Tensor],
+    inputs_pytorch: Dict[str, torch.Tensor],
     quantization: bool,
     var_output_seq: bool,
     fix_output_dim_size: bool = True,

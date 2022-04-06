@@ -1,13 +1,12 @@
-import copy
 from collections import defaultdict
-from typing import Callable, Dict, List, Set, Tuple
+from typing import Callable, Dict, Set
 
 import numpy as np
 import onnx
 import tensorrt as trt
 import torch
-from onnx import ModelProto, NodeProto
-from tensorrt import ICudaEngine, ILayer, INetworkDefinition, LayerType, Logger, Runtime
+from onnx import ModelProto
+from tensorrt import ICudaEngine, Logger, Runtime
 from torch.nn import Linear
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, T5ForConditionalGeneration, T5TokenizerFast, TensorType
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
@@ -15,7 +14,16 @@ from transformers.models.t5.modeling_t5 import T5Stack
 
 from transformer_deploy.backends.ort_utils import create_model_for_provider, inference_onnx_binding
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
-from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
+from transformer_deploy.backends.trt_utils import (
+    add_output_nodes,
+    build_engine,
+    find_node_fp32,
+    get_adjency_dict,
+    get_all_outputs,
+    get_fix_fp16_network_func,
+    load_engine,
+    save_engine,
+)
 
 
 class ExportT5(torch.nn.Module):
@@ -63,82 +71,9 @@ assert np.allclose(enc_onnx_out.detach().cpu().numpy(), out_enc.last_hidden_stat
 org_outputs = [x.name for x in enc_onnx.get_outputs()]
 
 
-# https://en.wikipedia.org/wiki/Machine_epsilon
-# 2**-24
-# from onnxruntime package
-def convert_fp16(np_array: np.ndarray, min_positive_val: float = 5.96e-08, max_finite_val: float = 65504.0):
-    def between(a, b, c):
-        return np.logical_and(a < b, b < c)
-
-    # minimum pos value
-    np_array = np.where(between(0, np_array, min_positive_val), min_positive_val, np_array)
-    # maximum neg value
-    np_array = np.where(between(-min_positive_val, np_array, 0), -min_positive_val, np_array)
-    np_array = np.where(between(max_finite_val, np_array, float("inf")), max_finite_val, np_array)
-    np_array = np.where(between(float("-inf"), np_array, -max_finite_val), -max_finite_val, np_array)
-    return np.float16(np_array)
-
-
-def add_output_nodes(model: ModelProto) -> ModelProto:
-    model = copy.deepcopy(model)
-    output_nodes = list()
-    for n in model.graph.node:
-        for output_name in n.output:
-            output_nodes.append(onnx.ValueInfoProto(name=output_name))
-    model.graph.output.extend(output_nodes)
-    return model
-
-
-def get_all_outputs(model: ModelProto, inputs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-    outputs_names = [x.name for x in model.get_outputs()]
-    ort_outs = model.run(output_names=outputs_names, input_feed=inputs)
-    return dict(zip(outputs_names, ort_outs))
-
-
-# https://github.com/microsoft/onnxruntime/blob/master/onnxruntime/python/tools/transformers/float16.py
-def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, np.ndarray]) -> List[str]:
-    keep_fp32 = list()
-    for k, v in output_nodes.items():
-        if v.dtype != np.float32:
-            continue
-        if np.max(v) > np.finfo(np.float16).max or np.min(v) < np.finfo(np.float16).min:
-            keep_fp32 += [n for n in graph[k]]
-    return keep_fp32
-
-
-def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
-    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
-        for layer_index in range(network_definition.num_layers - 1):
-            layer: ILayer = network_definition.get_layer(layer_index)
-            # next layer should take FP16 as input
-            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
-
-            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
-                layer.precision = trt.DataType.FLOAT
-                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-                # identity function is mainly used for casting
-                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
-                if next_layer.type != LayerType.IDENTITY:
-                    next_layer.precision = trt.DataType.FLOAT
-                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-
-        return network_definition
-
-    return f
-
-
-def get_adjency_list(model: ModelProto) -> Dict[str, Set[str]]:
-    adj_dict: Dict[str, Set[str]] = defaultdict(set)
-    for n in model.graph.node:  # type: NodeProto
-        assert len(n.output) == 1
-        output_node = n.output[0]
-        adj_dict[output_node].add(n.name)
-    return adj_dict
-
-
 model_onnx: ModelProto = onnx.load("test-enc.onnx")
 model_onnx_all_nodes = add_output_nodes(model=model_onnx)
-onnx_graph: Dict[str, Set[str]] = get_adjency_list(model=model_onnx)
+onnx_graph: Dict[str, Set[str]] = get_adjency_dict(model=model_onnx)
 ort_model_all_nodes = create_model_for_provider(model_onnx_all_nodes.SerializeToString(), "CUDAExecutionProvider")
 
 all_outputs = list()

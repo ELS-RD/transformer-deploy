@@ -34,7 +34,7 @@ def create_model_for_provider(
 ) -> InferenceSession:
     """
     Create an ONNX Runtime instance.
-    :param path: path to ONNX file
+    :param path: path to ONNX file or serialized to string model
     :param provider_to_use: provider to use for inference
     :param nb_threads: intra_op_num_threads to use
     :param nb_instances: inter_op_num_threads to use
@@ -42,7 +42,7 @@ def create_model_for_provider(
     """
     options = SessionOptions()
     options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
-    if type(provider_to_use) != list:
+    if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
         options.execution_mode = ExecutionMode.ORT_SEQUENTIAL if nb_instances <= 1 else ExecutionMode.ORT_PARALLEL

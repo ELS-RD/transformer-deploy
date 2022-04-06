@@ -120,7 +120,7 @@ def build_engine(
     workspace_size: int,
     fp16: bool,
     int8: bool,
-    fp16_fix: Callable = fix_fp16_network,
+    fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
     **kwargs,
 ) -> ICudaEngine:
     """

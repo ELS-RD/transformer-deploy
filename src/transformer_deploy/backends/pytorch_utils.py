@@ -25,8 +25,6 @@ import torch
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
 
-from transformer_deploy.backends.st_utils import STransformerWrapper
-
 
 def infer_classification_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
@@ -152,7 +150,8 @@ def convert_to_onnx(
 
     if fix_output_dim_size:
         # Pytorch sometimes fails to infer output tensor shape of models
-        # In ONNX graph, axis name is marked like "Divoutput_dim_1" which is a generated name, and there may be a warning:
+        # In ONNX graph, axis name is marked like "Divoutput_dim_1" which is a generated name,
+        # and there may be a warning:
         # ** "WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape inference
         # for the exported graph. Please consider adding it in symbolic function." **
         # ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374

@@ -68,7 +68,7 @@ assert np.allclose(enc_onnx_out.detach().cpu().numpy(), out_enc.last_hidden_stat
 
 # https://github.com/microsoft/onnxruntime/issues/1455#issuecomment-979901463
 # add all intermediate outputs to onnx net
-org_outputs = [x.name for x in enc_onnx.get_outputs()]
+# org_outputs = [x.name for x in enc_onnx.get_outputs()]
 
 
 model_onnx: ModelProto = onnx.load("test-enc.onnx")
@@ -103,7 +103,7 @@ engine: ICudaEngine = build_engine(
     workspace_size=12 * 1024 * 1024,
     fp16=True,
     int8=False,
-    fp16_fix=get_fix_fp16_network_func(keep_fp32=keep_node_io),
+    fp16_fix=get_fix_fp16_network_func(keep_fp32=list(counter.keys())),
 )
 save_engine(engine=engine, engine_file_path="test-enc.plan")
 

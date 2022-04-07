@@ -26,6 +26,7 @@ import onnx
 import tensorrt as trt
 import torch
 from onnx import ModelProto, NodeProto
+from onnxruntime import InferenceSession
 from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, LayerType, Logger, Runtime
 from tensorrt.tensorrt import Builder, IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser
 
@@ -420,7 +421,7 @@ def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:
     """
     Convert ONNX model to adjency
     :param model: ONNX model
-    :return: a dict to link input to output nodes
+    :return: a dict of links from input to output nodes
     """
     adj_dict: Dict[str, Set[str]] = defaultdict(set)
     for n in model.graph.node:  # type: NodeProto
@@ -428,3 +429,25 @@ def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:
         output_node = n.output[0]
         adj_dict[output_node].add(n.name)
     return adj_dict
+
+
+def get_list_fp32_nodes(
+    model: InferenceSession,
+    onnx_graph: Dict[str, Set[str]],
+    get_input: Callable[[], Dict[str, np.ndarray]],
+    nb_try: int,
+) -> List[str]:
+    """
+    Find the list of nodes to keep in FP32 to avoid out of range values
+    :param model: model to test
+    :param onnx_graph: a dict of links from input to output nodes
+    :param get_input: generate input to test the model. Output should change from call to call.
+    :param nb_try: nb of tests to perform. More is better and slower
+    :return: list of names of nodes to keep in FP32
+    """
+    keep_fp32_nodes = list()
+    for _ in range(nb_try):
+        outputs: Dict[str, np.ndarray] = get_all_outputs(model=model, inputs=get_input())
+        keep_node_io = find_node_fp32(graph=onnx_graph, output_nodes=outputs)
+        keep_fp32_nodes.extend([n for n in keep_node_io if n not in keep_fp32_nodes])
+    return keep_fp32_nodes

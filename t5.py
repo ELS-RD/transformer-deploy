@@ -1,10 +1,12 @@
 from collections import OrderedDict
 from time import time
-from typing import Callable
+from typing import Callable, Dict, Set
 
 import numpy as np
+import onnx
 import tensorrt as trt
 import torch
+from onnx import ModelProto
 from tensorrt import ICudaEngine
 from tensorrt.tensorrt import Logger, Runtime
 from torch.nn import Linear
@@ -15,7 +17,16 @@ from transformers.models.t5.modeling_t5 import T5Stack
 
 from transformer_deploy.backends.ort_utils import create_model_for_provider, inference_onnx_binding, optimize_onnx
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
-from transformer_deploy.backends.trt_utils import TensorRTShape, build_engine, load_engine, save_engine
+from transformer_deploy.backends.trt_utils import (
+    TensorRTShape,
+    add_output_nodes,
+    build_engine,
+    get_adjency_dict,
+    get_fix_fp16_network_func,
+    get_list_fp32_nodes,
+    load_engine,
+    save_engine,
+)
 
 
 class ExportT5(torch.nn.Module):
@@ -57,7 +68,7 @@ enc_onnx_out = inference_onnx_binding(
     model_onnx=enc_onnx,
     inputs={"input_ids": input_ids},
     device=input_ids.device.type,
-    output_shape=tuple(input_ids.shape) + (model.encoder.config.d_model,),
+    output_shape=tuple(input_ids.shape) + (int(model.encoder.config.d_model),),
 )["output"]
 assert np.allclose(enc_onnx_out.detach().cpu().numpy(), out_enc.last_hidden_state.detach().cpu().numpy(), atol=1e-2)
 
@@ -127,7 +138,7 @@ def encoder_onnx_inference(input_ids: torch.Tensor, **_) -> BaseModelOutputWithP
     result = inference_onnx_binding(
         model_onnx=enc_onnx,
         inputs={"input_ids": input_ids},
-        output_shape=tuple(input_ids.shape) + (model.encoder.config.d_model,),
+        output_shape=tuple(input_ids.shape) + (int(model.encoder.config.d_model),),
         device=input_ids.device.type,
     )
     return BaseModelOutputWithPastAndCrossAttentions(last_hidden_state=result["output"])
@@ -225,68 +236,24 @@ encoder_hidden_states_shape = TensorRTShape(
 )
 
 
-def add_extra_fp32(network_definition):
-    """
-    Force operations involved in layer norm to run in FP32 precision.
-    Copied from TensorRT repository (small adapation)
-    """
-    pow_ops = {}
-    for layer_index, layer in enumerate(network_definition):
-        if layer.type == trt.LayerType.IDENTITY:
-            all_fp32 = all(
-                [
-                    layer.output_type_is_set(o) and layer.get_output_type(o) == trt.float32
-                    for o in range(layer.num_outputs)
-                ]
-            )
-            if all_fp32:
-                if layer.get_input(0).dtype == trt.float32:
-                    layer.precision = trt.float32
+model = model.cuda()
+model_onnx: ModelProto = onnx.load("test-dec.onnx")
+model_onnx_all_nodes = add_output_nodes(model=model_onnx)
+onnx_graph: Dict[str, Set[str]] = get_adjency_dict(model=model_onnx)
+ort_model_all_nodes = create_model_for_provider(model_onnx_all_nodes.SerializeToString(), "CUDAExecutionProvider")
 
-        if layer.type == trt.LayerType.ELEMENTWISE:
-            layer.__class__ = getattr(trt, "IElementWiseLayer")
-            if layer.op == trt.ElementWiseOperation.POW:
-                pow_ops[layer] = layer_index
-                layer.precision = trt.float32
-                layer.set_output_type(0, trt.float32)
 
-    for _, index in pow_ops.items():
-        # Iterate from few layers before pow to include residual add and cast op.
-        # Iterate till 10 layers after pow op to include all operations included in layer norm.
-        START_OFFSET = 4
-        END_OFFSET = 12
-        for i in range(index - START_OFFSET, index + END_OFFSET):
-            l = network_definition.get_layer(i)
-            if l.type == trt.LayerType.REDUCE:
-                l.precision = trt.float32
-                l.set_output_type(0, trt.float32)
+# use info from tokenizer size and max shape provided through the command line
+def get_random_input():
+    input = torch.randint(high=tokenizer.vocab_size, size=(5, 500), dtype=torch.int32, device="cuda")
+    hidden_state = model.encoder(input_ids=input).last_hidden_state.detach().cpu().numpy()
+    return {"input_ids": input.detach().cpu().numpy(), "encoder_hidden_states": hidden_state}
 
-            if l.type == trt.LayerType.ELEMENTWISE:
-                l.__class__ = getattr(trt, "IElementWiseLayer")
-                if l.op == trt.ElementWiseOperation.SUM:
-                    l.precision = trt.float32
-                    l.set_output_type(0, trt.float32)
 
-            if l.type == trt.LayerType.UNARY:
-                l.__class__ = getattr(trt, "IUnaryLayer")
-                if l.op == trt.UnaryOperation.SQRT:
-                    l.precision = trt.float32
-                    l.set_output_type(0, trt.float32)
-
-            if l.type == trt.LayerType.ELEMENTWISE:
-                l.__class__ = getattr(trt, "IElementWiseLayer")
-                if l.op == trt.ElementWiseOperation.DIV:
-                    l.precision = trt.float32
-                    l.set_output_type(0, trt.float32)
-
-            if l.type == trt.LayerType.ELEMENTWISE:
-                l.__class__ = getattr(trt, "IElementWiseLayer")
-                if l.op == trt.ElementWiseOperation.PROD:
-                    l.precision = trt.float32
-                    l.set_output_type(0, trt.float32)
-
-    return network_definition
-
+keep_fp32 = get_list_fp32_nodes(
+    onnx_graph=onnx_graph, model=ort_model_all_nodes, get_input=get_random_input, nb_try=200
+)
+model = model.cpu()
 
 engine: ICudaEngine = build_engine(
     runtime=runtime,
@@ -296,7 +263,7 @@ engine: ICudaEngine = build_engine(
     fp16=True,
     int8=False,
     input_shapes=[input_id_shape, encoder_hidden_states_shape],
-    fp16_fix=add_extra_fp32,
+    fp16_fix=get_fix_fp16_network_func(keep_fp32=keep_fp32),
 )
 save_engine(engine, trt_model_name)
 

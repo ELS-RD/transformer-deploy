@@ -80,7 +80,9 @@ def get_random_input():
     return {"input_ids": np.random.randint(low=0, high=32100, size=(32, 512), dtype=np.int32)}
 
 
-keep_fp32 = get_list_fp32_nodes(model=ort_model_all_nodes, get_input=get_random_input, nb_try=200)
+keep_fp32 = get_list_fp32_nodes(
+    onnx_graph=onnx_graph, model=ort_model_all_nodes, get_input=get_random_input, nb_try=200
+)
 
 trt_logger: Logger = trt.Logger(trt.Logger.INFO)
 runtime: Runtime = trt.Runtime(trt_logger)

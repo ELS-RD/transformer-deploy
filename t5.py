@@ -118,7 +118,7 @@ def decoder_onnx_inference(input_ids: torch.Tensor, last_hidden_state: torch.Ten
         model_onnx=dec_onnx,
         inputs={"input_ids": input_ids, "encoder_hidden_states": last_hidden_state},
         device=input_ids.device.type,
-        output_shape=tuple(input_ids.shape) + (model.config.vocab_size,),
+        output_shape=tuple(input_ids.shape) + (int(model.config.vocab_size),),
     )
     return result_dict["output"]
 

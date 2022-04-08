@@ -75,7 +75,7 @@ def get_model_size(path: str) -> Tuple[int, int]:
 
 
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel,
+    model_pytorch: torch.nn.Module,
     output_path: str,
     inputs_pytorch: Dict[str, torch.Tensor],
     quantization: bool,

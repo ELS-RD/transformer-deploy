@@ -97,11 +97,6 @@ optimize_onnx(
     hidden_size=model.config.d_model,
 )
 
-# import onnx
-# onnx_dec_model = onnx.load("test-dec-opt.onnx")
-# onnx_dec_model.graph.output[0].type.tensor_type.shape.dim[1].dim_param = "seq1"
-# onnx.save(onnx_dec_model, "test-dec-opt.onnx")
-
 dec_onnx = create_model_for_provider("test-dec-opt.onnx", "CUDAExecutionProvider")
 
 
@@ -136,7 +131,7 @@ assert np.allclose(dec_onnx_out.detach().cpu().numpy(), out_full.logits.detach()
 
 def encoder_onnx_inference(input_ids: torch.Tensor, **_) -> BaseModelOutputWithPastAndCrossAttentions:
     result = inference_onnx_binding(
-        model_onnx=enc_onnx,
+        model_onnx=enc_onnx,  # noqa: F821
         inputs={"input_ids": input_ids},
         output_shape=tuple(input_ids.shape) + (int(model.encoder.config.d_model),),
         device=input_ids.device.type,
@@ -274,7 +269,7 @@ a = tensorrt_model(
         "encoder_hidden_states": out_enc.last_hidden_state.repeat((5, 1, 1)),
     }
 )
-print(a[0][0])
+print(a[0])
 
 benchmark_input = torch.ones((5, 500), dtype=torch.int32, device="cuda")
 benchmark_enc_output = out_enc.last_hidden_state.repeat((5, 1, 1))

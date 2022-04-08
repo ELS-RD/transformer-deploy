@@ -106,7 +106,7 @@ def launch_inference(
     for batch_input in inputs:
         output = infer(batch_input)
         outputs.append(output)
-    time_buffer: List[float] = list()
+    time_buffer: List[int] = list()
     for _ in range(nb_measures):
         with track_infer_time(time_buffer):
             _ = infer(inputs[0])
@@ -256,7 +256,7 @@ def main(commands: argparse.Namespace):
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
-
+        # TODO if text-generation -> use the new process to detect Fp16 overflow
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
         engine: ICudaEngine = build_engine(
@@ -283,7 +283,7 @@ def main(commands: argparse.Namespace):
         check_accuracy(
             engine_name=engine_name,
             pytorch_output=pytorch_output,
-            engine_output=tensorrt_output[0],  # TRT output are wrapped in List
+            engine_output=tensorrt_output,
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer

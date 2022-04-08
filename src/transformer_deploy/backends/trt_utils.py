@@ -19,7 +19,7 @@ import copy
 import dataclasses
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, OrderedDict, Set
+from typing import Callable, Dict, List, Optional, Set
 
 import numpy as np
 import onnx
@@ -231,7 +231,7 @@ def get_output_tensors(
 
 def infer_tensorrt(
     context: IExecutionContext,
-    host_inputs: OrderedDict[str, torch.Tensor],
+    host_inputs: Dict[str, torch.Tensor],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
 ) -> List[torch.Tensor]:
@@ -287,7 +287,7 @@ def load_engine(
                 host_inputs=inputs,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
-            )
+            )[0]
 
         return tensorrt_model
 

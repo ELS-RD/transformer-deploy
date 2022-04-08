@@ -18,6 +18,7 @@ All the tooling to ease ONNX Runtime usage.
 
 import logging
 import multiprocessing
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -101,8 +102,8 @@ def cpu_quantization(input_model_path: str, output_model_path: str) -> None:
     :param output_model_path: where to save quantized model
     """
     quantize_dynamic(
-        model_input=input_model_path,
-        model_output=output_model_path,
+        model_input=Path(input_model_path),
+        model_output=Path(output_model_path),
         op_types_to_quantize=["MatMul", "Attention"],
         weight_type=QuantType.QInt8,
         per_channel=True,

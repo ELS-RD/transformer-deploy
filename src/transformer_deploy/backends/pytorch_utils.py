@@ -74,6 +74,7 @@ def get_model_size(path: str) -> Tuple[int, int]:
     return num_attention_heads, hidden_size
 
 
+# TODO manage encoder / decoder architecture
 def convert_to_onnx(
     model_pytorch: torch.nn.Module,
     output_path: str,

@@ -158,7 +158,7 @@ def inference_onnx_binding(
     model_onnx: InferenceSession,
     inputs: Dict[str, torch.Tensor],
     device: str,
-    output_shape: Optional[Tuple[int]] = None,
+    output_shape: Optional[Union[Tuple[int], Dict[str, Tuple[int]]]] = None,
     device_id: int = 0,
 ) -> Dict[str, torch.Tensor]:
     """
@@ -191,7 +191,12 @@ def inference_onnx_binding(
         )
         inputs[input_onnx.name] = tensor
     outputs = dict()
-    dict_shapes = {"output": output_shape} if output_shape else gess_output_shape(inputs=inputs, model_onnx=model_onnx)
+    if isinstance(output_shape, dict):
+        dict_shapes = output_shape
+    elif isinstance(output_shape, tuple):
+        dict_shapes = {"output": output_shape}
+    else:
+        dict_shapes = gess_output_shape(inputs=inputs, model_onnx=model_onnx)
     for output_name, shape in dict_shapes.items():
         tensor = torch.empty(shape, dtype=torch.float32, device=device).contiguous()
         outputs[output_name] = tensor

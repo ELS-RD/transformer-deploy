@@ -15,7 +15,6 @@
 """
 Utils related to Pytorch inference.
 """
-from collections import OrderedDict
 from typing import Callable, Dict, Tuple
 
 import onnx
@@ -74,7 +73,7 @@ def get_model_size(path: str) -> Tuple[int, int]:
     return num_attention_heads, hidden_size
 
 
-# TODO manage encoder / decoder architecture
+# TODO manage encoder / decoder architecture + cache
 def convert_to_onnx(
     model_pytorch: torch.nn.Module,
     output_path: str,
@@ -114,7 +113,7 @@ def convert_to_onnx(
         setattr(model_pytorch.config, "use_cache", False)
 
     # dynamic axis == variable length axis
-    dynamic_axis = OrderedDict()
+    dynamic_axis = dict()
     for k in inputs_pytorch.keys():
         if var_output_seq:
             # seq axis name is fixed to be matched with output seq axis name (for output shape prediction)
@@ -127,6 +126,8 @@ def convert_to_onnx(
         dynamic_axis["output"][1] = "sequence"
     # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
     for k, v in inputs_pytorch.items():
+        if not isinstance(v, torch.Tensor):
+            continue
         if v.dtype in [torch.long, torch.int64]:
             inputs_pytorch[k] = v.type(torch.int32)
     with torch.no_grad():

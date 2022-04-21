@@ -110,7 +110,7 @@ def build_engine(
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
-                logger.log("parsing trt model", trt.ILogger.INFO)
+                logger.log(msg="parsing trt model", severity=trt.ILogger.INFO)
                 with open(onnx_file_path, "rb") as f:
                     # File path needed for models with external dataformat
                     parser.parse(model=f.read(), path=onnx_file_path)
@@ -126,11 +126,11 @@ def build_engine(
                 if fp16:
                     network_definition = fix_fp16_network(network_definition)
                 
-                logger.log("building engine. depending on model size this may take some minutes", trt.ILogger.INFO)
+                logger.log(msg="building engine. depending on model size this may take a while", severity=trt.ILogger.INFO)
                 t0 = time()
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
-                logger.log(f"building engine took {time() - t0:4.1f} seconds", trt.ILogger.INFO)
+                logger.log(msg=f"building engine took {time() - t0:4.1f} seconds", severity=trt.ILogger.INFO)
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 

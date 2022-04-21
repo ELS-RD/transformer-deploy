@@ -66,6 +66,7 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     parser.add_argument("-o", "--output", default="triton_models", help="name to be used for ")
     parser.add_argument("-n", "--name", default="transformer", help="model name to be used in triton server")
     parser.add_argument("-v", "--verbose", action="store_true", help="display detailed information")
+    parser.add_argument("--fast", action="store_true", help="skip the Pytorch (FP16) benchmark")
     parser.add_argument(
         "--backend",
         default=["onnx"],

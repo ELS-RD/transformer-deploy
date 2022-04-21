@@ -319,7 +319,6 @@ def main(commands: argparse.Namespace):
         )
 
     if "onnx" in commands.backend:
-        logging.info("preparing ONNX benchmark")
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
         optimize_onnx(
@@ -338,6 +337,7 @@ def main(commands: argparse.Namespace):
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
             (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
         ]:
+            logging.info("preparing %s benchmark", benchmark_name)
             ort_model = create_model_for_provider(
                 path=model_path,
                 provider_to_use=provider,
@@ -349,7 +349,7 @@ def main(commands: argparse.Namespace):
                 results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
                 return results["output"]
 
-            logging.info("running ONNX benchmark")
+            logging.info("running %s benchmark", benchmark_name)
             ort_output, time_buffer = launch_inference(
                 infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )

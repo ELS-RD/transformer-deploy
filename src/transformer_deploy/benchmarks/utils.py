@@ -25,6 +25,8 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import torch
 
+from transformer_deploy.backends.pytorch_utils import convert_tensors
+
 
 def print_timings(name: str, timings: List[float]) -> None:
     """
@@ -124,10 +126,8 @@ def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Unio
     :param engine_output: other engine output
     :return: difference between outputs as a single float
     """
-    if isinstance(pytorch_output[0], torch.Tensor):
-        pytorch_output = [t.detach().cpu().numpy() for t in pytorch_output]
+    pytorch_output = convert_tensors(pytorch_output)
     pt_output = np.asarray(pytorch_output)
-    if isinstance(engine_output[0], torch.Tensor):
-        engine_output = [t.detach().cpu().numpy() for t in engine_output]
+    engine_output = convert_tensors(engine_output)
     eng_output = np.asarray(engine_output)
     return np.mean(np.abs(pt_output - eng_output))

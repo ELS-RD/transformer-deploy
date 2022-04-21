@@ -44,6 +44,7 @@ from transformer_deploy.backends.ort_utils import (
 )
 from transformer_deploy.backends.pytorch_utils import (
     convert_to_onnx,
+    convert_tensors,
     get_model_size,
     infer_classification_pytorch,
     infer_feature_extraction_pytorch,
@@ -77,6 +78,7 @@ def check_accuracy(
     :param engine_output: output from the engine
     :param tolerance: if difference in outputs is above threshold, an error will be raised
     """
+    engine_output = convert_tensors(engine_output)
     discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
     assert discrepency < tolerance, (
         f"{engine_name} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"

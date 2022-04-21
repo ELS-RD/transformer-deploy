@@ -126,6 +126,7 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 
 def main(commands: argparse.Namespace):
     setup_logging(level=logging.DEBUG if commands.verbose else logging.INFO)
+    logging.info("running with commands: %s", commands)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:

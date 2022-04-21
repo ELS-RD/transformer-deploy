@@ -231,7 +231,7 @@ docker run -it --rm --gpus all \
 To optimize models which typically don't fit twice onto a single GPU, run the script as follows:
 
 ```shell
-docker run -it --rm --gpus all \
+docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
   -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && \
     convert_model -m gpt2-medium \

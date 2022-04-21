@@ -249,7 +249,7 @@ def main(commands: argparse.Namespace):
         torch.cuda.empty_cache()
     gc.collect()
     
-    inputs_pytorch, _ = generate_multiple_inputs(
+    inputs_export, _ = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
         input_names=input_names,
@@ -262,7 +262,7 @@ def main(commands: argparse.Namespace):
     convert_to_onnx(
         model_pytorch=model_pytorch,
         output_path=onnx_model_path,
-        inputs_pytorch=inputs_pytorch[0],
+        inputs_pytorch=inputs_export[0],
         quantization=commands.quantization,
         var_output_seq=commands.task == "text-generation",
     )

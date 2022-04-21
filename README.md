@@ -243,6 +243,9 @@ docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 -
 ```
 
 The larger the model gets, the more likely it is that you need to also increase the absolute tolerance of the script.
+Additionally, some models may return a message similar to: `Converted FP32 value in weights (either FP32 infinity or FP32 value outside FP16 range) to corresponding FP16 infinity`. It is best to test and evaluate the model afterwards to understand the implications of this conversion.
+
+Depending on model size this may take really long. GPT Neo 2.7B can easily take 1 hour of conversion or more.
 
 #### Run Nvidia Triton inference server
 

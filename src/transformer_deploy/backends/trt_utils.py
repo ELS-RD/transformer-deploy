@@ -126,11 +126,11 @@ def build_engine(
                 if fp16:
                     network_definition = fix_fp16_network(network_definition)
                 
-                logger.info("building engine. depending on model size this may take some minutes")
+                logger.log("building engine. depending on model size this may take some minutes", trt.ILogger.INFO)
                 t0 = time()
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
-                logger.info(f"building engine took {time() - t0:4.1f} seconds", )
+                logger.log(f"building engine took {time() - t0:4.1f} seconds", trt.ILogger.INFO)
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 

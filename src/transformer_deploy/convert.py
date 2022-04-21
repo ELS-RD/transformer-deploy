@@ -21,6 +21,7 @@ This module contains code related to client interface.
 import argparse
 import logging
 import os
+import gc
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Type, Union
 
@@ -124,7 +125,7 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 
 
 def main(commands: argparse.Namespace):
-    setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
+    setup_logging(level=logging.DEBUG if commands.verbose else logging.INFO)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
@@ -153,7 +154,6 @@ def main(commands: argparse.Namespace):
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
     input_names: List[str] = tokenizer.model_input_names
-    logging.info(f"axis: {input_names}")
     if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
     elif commands.task == "classification":
@@ -163,27 +163,21 @@ def main(commands: argparse.Namespace):
         input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
+    
+    logging.info(f"axis: {input_names}")
+    
     model_pytorch.eval()
     if run_on_cuda:
         model_pytorch.cuda()
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # take optimial size
-    inputs_pytorch, inputs_onnx = generate_multiple_inputs(
+    inputs_pytorch, _ = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
         input_names=input_names,
         device=commands.device,
         nb_inputs_to_gen=commands.warmup,
-    )
-
-    # create onnx model and compare results
-    convert_to_onnx(
-        model_pytorch=model_pytorch,
-        output_path=onnx_model_path,
-        inputs_pytorch=inputs_pytorch[0],
-        quantization=commands.quantization,
-        var_output_seq=commands.task == "text-generation",
     )
 
     timings = {}
@@ -196,6 +190,7 @@ def main(commands: argparse.Namespace):
         raise Exception(f"unknown task: {task}")
 
     with torch.inference_mode():
+        logging.info("running Pytorch (FP32) benchmark")
         pytorch_output, time_buffer = launch_inference(
             infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
@@ -211,11 +206,12 @@ def main(commands: argparse.Namespace):
             device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
-        if run_on_cuda:
+        if run_on_cuda and not commands.fast:
             from torch.cuda.amp import autocast
 
             with autocast():
                 engine_name = "Pytorch (FP16)"
+                logging.info("running Pytorch (FP16) benchmark")
                 pytorch_fp16_output, time_buffer = launch_inference(
                     infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                     inputs=inputs_pytorch,
@@ -229,8 +225,10 @@ def main(commands: argparse.Namespace):
                 )
                 timings[engine_name] = time_buffer
         elif commands.device == "cpu":
+            logging.info("preparing Pytorch (INT-8) benchmark")
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
+            logging.info("running Pytorch (FP32) benchmark")
             pytorch_int8_output, time_buffer = launch_inference(
                 infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                 inputs=inputs_pytorch,
@@ -244,8 +242,32 @@ def main(commands: argparse.Namespace):
             )
             timings[engine_name] = time_buffer
     model_pytorch.cpu()
+    
+    logging.info("cleaning up")
+    if run_on_cuda:
+        torch.cuda.empty_cache()
+    gc.collect()
+    
+    inputs_pytorch, _ = generate_multiple_inputs(
+        batch_size=tensor_shapes[1][0],
+        seq_len=tensor_shapes[1][1],
+        input_names=input_names,
+        device="cpu",
+        nb_inputs_to_gen=commands.warmup,
+    )
+    
+    # create onnx model and compare results
+    # do conversion after the model has been unloaded from GPU for larger models
+    convert_to_onnx(
+        model_pytorch=model_pytorch,
+        output_path=onnx_model_path,
+        inputs_pytorch=inputs_pytorch[0],
+        quantization=commands.quantization,
+        var_output_seq=commands.task == "text-generation",
+    )
 
     if "tensorrt" in commands.backend:
+        logging.info("preparing TensorRT (FP16) benchmark")
         try:
             import tensorrt as trt
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
@@ -278,6 +300,7 @@ def main(commands: argparse.Namespace):
             runtime=runtime, engine_file_path=tensorrt_path
         )
 
+        logging.info("running TensorRT (FP16) benchmark")
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
             infer=tensorrt_model, inputs=inputs_pytorch, nb_measures=commands.nb_measures
@@ -295,6 +318,7 @@ def main(commands: argparse.Namespace):
         )
 
     if "onnx" in commands.backend:
+        logging.info("preparing ONNX benchmark")
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
         optimize_onnx(
@@ -324,6 +348,7 @@ def main(commands: argparse.Namespace):
                 results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
                 return results["output"]
 
+            logging.info("running ONNX benchmark")
             ort_output, time_buffer = launch_inference(
                 infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )

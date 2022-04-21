@@ -20,6 +20,7 @@ from typing import Callable, Dict, List, OrderedDict, Tuple
 
 import tensorrt as trt
 import torch
+from time import time
 from tensorrt import ICudaEngine, IExecutionContext
 from tensorrt.tensorrt import (
     Builder,
@@ -109,6 +110,7 @@ def build_engine(
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
+                logger.info("parsing trt model")
                 with open(onnx_file_path, "rb") as f:
                     # File path needed for models with external dataformat
                     parser.parse(model=f.read(), path=onnx_file_path)
@@ -123,8 +125,12 @@ def build_engine(
                 config.add_optimization_profile(profile)
                 if fp16:
                     network_definition = fix_fp16_network(network_definition)
+                
+                logger.info("building engine. depending on model size this may take some minutes")
+                t0 = time()
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
+                logger.info(f"building engine took {time() - t0:4.1f} seconds", )
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 

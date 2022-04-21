@@ -110,7 +110,8 @@ def build_engine(
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
                 with open(onnx_file_path, "rb") as f:
-                    parser.parse(f.read())
+                    # File path needed for models with external dataformat
+                    parser.parse(model=f.read(), path=onnx_file_path)
                 profile: IOptimizationProfile = builder.create_optimization_profile()
                 for num_input in range(network_definition.num_inputs):
                     profile.set_shape(

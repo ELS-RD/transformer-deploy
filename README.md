@@ -226,6 +226,24 @@ docker run -it --rm --gpus all \
 # Each infence engine output is within 0.3 tolerance compared to Pytorch output
 ```
 
+#### Optimize existing large model
+
+To optimize models which typically don't fit twice onto a single GPU, run the script as follows:
+
+```shell
+docker run -it --rm --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
+  bash -c "cd /project && \
+    convert_model -m gpt2-medium \
+    --backend tensorrt onnx \
+    --seq-len 6 256 256 \
+    --fast \
+    --atol 3 \
+    --task text-generation"
+```
+
+The larger the model gets, the more likely it is that you need to also increase the absolute tolerance of the script.
+
 #### Run Nvidia Triton inference server
 
 To run decoding algorithm server side, we need to install `Pytorch` on `Triton` docker image.

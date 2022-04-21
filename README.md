@@ -64,7 +64,7 @@ First, clone the repo as some commands below expect to find the `demo` folder:
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 # docker image may take a few minutes
-docker pull ghcr.io/els-rd/transformer-deploy:0.4.0 
+docker pull ghcr.io/els-rd/transformer-deploy:0.4.1 
 ```
 
 ### Classification/reranking (encoder model)
@@ -78,7 +78,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \
@@ -146,7 +146,7 @@ This project supports models from [sentence-transformers](https://github.com/UKP
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && \
     convert_model -m \"sentence-transformers/msmarco-distilbert-cos-v5\" \
     --backend tensorrt onnx \
@@ -207,7 +207,7 @@ One point to have in mind is that Triton run:
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && \
     convert_model -m gpt2 \
     --backend tensorrt onnx \
@@ -265,7 +265,7 @@ You may want to tweak it regarding your needs (default is set for greedy search 
 You may be interested in running optimized text generation on Python directly, without using any inference server:  
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 
@@ -280,7 +280,7 @@ It makes it easy to use.
 To play with it, open this notebook:
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 

@@ -157,13 +157,13 @@ docker run -it --rm --gpus all \
 
 # output:  
 # ...
-# Inference done on NVIDIA GeForce GTX 1080 Ti
+# Inference done on Tesla T4
 # latencies:
-# [Pytorch (FP32)] mean=6.97ms, sd=0.24ms, min=6.88ms, max=13.15ms, median=6.94ms, 95p=7.11ms, 99p=7.86ms
-# [Pytorch (FP16)] mean=6.84ms, sd=0.04ms, min=6.81ms, max=7.74ms, median=6.83ms, 95p=6.88ms, 99p=6.94ms
-# [TensorRT (FP16)] mean=4.96ms, sd=0.07ms, min=4.80ms, max=5.21ms, median=4.98ms, 95p=5.05ms, 99p=5.14ms
-# [ONNX Runtime (FP32)] mean=5.79ms, sd=0.18ms, min=5.71ms, max=6.93ms, median=5.74ms, 95p=5.96ms, 99p=6.90ms
-# [ONNX Runtime (optimized)] mean=5.07ms, sd=0.03ms, min=5.01ms, max=5.30ms, median=5.07ms, 95p=5.11ms, 99p=5.22ms
+# [Pytorch (FP32)] mean=8.24ms, sd=0.46ms, min=7.66ms, max=13.91ms, median=8.20ms, 95p=8.38ms, 99p=10.01ms
+# [Pytorch (FP16)] mean=6.87ms, sd=0.44ms, min=6.69ms, max=13.05ms, median=6.78ms, 95p=7.33ms, 99p=8.86ms
+# [TensorRT (FP16)] mean=2.33ms, sd=0.32ms, min=2.19ms, max=4.18ms, median=2.24ms, 95p=3.00ms, 99p=4.04ms
+# [ONNX Runtime (FP32)] mean=8.08ms, sd=0.33ms, min=7.78ms, max=10.61ms, median=8.06ms, 95p=8.18ms, 99p=10.55ms
+# [ONNX Runtime (optimized)] mean=2.57ms, sd=0.04ms, min=2.38ms, max=2.83ms, median=2.56ms, 95p=2.68ms, 99p=2.73ms
 # Each infence engine output is within 0.3 tolerance compared to Pytorch output
 ```
 

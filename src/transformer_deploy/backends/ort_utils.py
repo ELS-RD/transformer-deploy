@@ -50,6 +50,8 @@ def create_model_for_provider(
         options.intra_op_num_threads = nb_threads
         if nb_instances > 1:
             options.inter_op_num_threads = nb_instances
+    options.inter_op_num_threads = 6
+    options.intra_op_num_threads = 6
     return InferenceSession(path, options, providers=provider_to_use)
 
 
@@ -173,9 +175,11 @@ def inference_onnx_binding(
     :return: a dict {axis name: output tensor}
     """
     assert device in ["cpu", "cuda"]
-    assert len(inputs) == len(model_onnx.get_inputs())
+    # assert len(inputs) == len(model_onnx.get_inputs())
     binding: IOBinding = model_onnx.io_binding()
     for input_onnx in model_onnx.get_inputs():
+        if input_onnx.name not in inputs:  # some inputs may be optional
+            continue
         tensor: torch.Tensor = inputs[input_onnx.name]
         tensor = tensor.contiguous()
         if tensor.dtype in [torch.int64, torch.long]:

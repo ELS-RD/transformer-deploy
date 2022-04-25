@@ -150,7 +150,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 docker run -it --rm --gpus all \
   -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
   bash -c "cd /project && \
-    convert_model -m \"dslim/bert-base-NER\" \
+    convert_model -m \"kamalkraj/bert-base-cased-ner-conll2003\" \
     --backend tensorrt onnx \
     --seq-len 16 128 128 \
     --task token-classification"

@@ -181,10 +181,11 @@ def inference_onnx_binding(
         if input_onnx.name not in inputs:  # some inputs may be optional
             continue
         tensor: torch.Tensor = inputs[input_onnx.name]
-        tensor = tensor.contiguous()
+        tensor = tensor.detach()
         if tensor.dtype in [torch.int64, torch.long]:
             # int32 mandatory as input of bindings, int64 not supported
-            tensor = tensor.type(dtype=torch.int32).to(device)
+            tensor = tensor.type(dtype=torch.int32)
+        tensor = tensor.contiguous()
         binding.bind_input(
             name=input_onnx.name,
             device_type=device,
@@ -201,6 +202,7 @@ def inference_onnx_binding(
         dict_shapes = {"output": output_shape}
     else:
         dict_shapes = gess_output_shape(inputs=inputs, model_onnx=model_onnx)
+
     for output_name, shape in dict_shapes.items():
         tensor = torch.empty(shape, dtype=torch.float32, device=device).contiguous()
         outputs[output_name] = tensor
@@ -213,4 +215,5 @@ def inference_onnx_binding(
             buffer_ptr=tensor.data_ptr(),
         )
     model_onnx.run_with_iobinding(binding)
+    torch.cuda.synchronize()
     return outputs

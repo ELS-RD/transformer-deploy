@@ -175,7 +175,6 @@ def inference_onnx_binding(
     :return: a dict {axis name: output tensor}
     """
     assert device in ["cpu", "cuda"]
-    # assert len(inputs) == len(model_onnx.get_inputs())
     binding: IOBinding = model_onnx.io_binding()
     for input_onnx in model_onnx.get_inputs():
         if input_onnx.name not in inputs:  # some inputs may be optional
@@ -214,6 +213,7 @@ def inference_onnx_binding(
             shape=tuple(shape),
             buffer_ptr=tensor.data_ptr(),
         )
+    binding.synchronize_inputs()
     model_onnx.run_with_iobinding(binding)
-    torch.cuda.synchronize()
+    binding.synchronize_outputs()
     return outputs

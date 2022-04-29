@@ -18,7 +18,6 @@ Shared functions related to benchmarks.
 
 import logging
 import time
-from collections import OrderedDict
 from contextlib import contextmanager
 from typing import Dict, List, Tuple, Union
 
@@ -83,7 +82,7 @@ def generate_input(
     """
     assert device in ["cpu", "cuda"]
     shape = (batch_size, seq_len)
-    inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
+    inputs_pytorch: Dict[str, torch.Tensor] = dict()
     for name in input_names:
         inputs_pytorch[name] = torch.ones(size=shape, dtype=torch.int32, device=device)
     inputs_onnx: Dict[str, np.ndarray] = {

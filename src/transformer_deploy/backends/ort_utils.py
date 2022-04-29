@@ -19,7 +19,7 @@ All the tooling to ease ONNX Runtime usage.
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Union
 
 import cupy as cp
 import numpy as np
@@ -133,8 +133,15 @@ numpy_to_torch_dtype_dict = {
 torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
 
-# TODO add test + documentation
+# TODO add test + documentation + test if cloning can be made optional + remove typing arg (replaced by a mapping)
 def to_pytorch(ort_tensor: OrtValue, np_type: type) -> torch.Tensor:
+    """
+    Convert OrtValue output by Onnx Runtime to Pytorch tensor.
+    Most of the process (but the last step) is done in a zero copy way.
+    :param ort_tensor: output from Onnx Runtime
+    :param np_type: type of the tensor
+    :return: Pytorch tensor
+    """
     if ort_tensor.device_name().lower() == "cuda":
         fake_owner = 1
         # size not used anywhere, so just put 0
@@ -142,7 +149,9 @@ def to_pytorch(ort_tensor: OrtValue, np_type: type) -> torch.Tensor:
         memory_ptr = cp.cuda.MemoryPointer(memory, 0)
         # make sure you interpret the array shape/dtype/strides correctly
         cp_array = cp.ndarray(shape=ort_tensor.shape(), memptr=memory_ptr, dtype=np_type)
-        return torch.from_dlpack(cp_array.toDlpack())
+        # cloning required to avoid ORT rewriting tensor storage array
+        # if new inference is done before tensor is discarded
+        return torch.from_dlpack(cp_array.toDlpack()).clone()
     else:
         np_tensor = ort_tensor.numpy()
         return torch.from_numpy(np_tensor)
@@ -195,6 +204,7 @@ def inference_onnx_binding(
         )
     binding.synchronize_inputs()
     model_onnx.run_with_iobinding(binding)
+    # binding.synchronize_outputs()
     # WARNING: output type is hard coded
     outputs = {
         out.name: to_pytorch(t, np_type=np.float32) for out, t in zip(model_onnx.get_outputs(), binding.get_outputs())

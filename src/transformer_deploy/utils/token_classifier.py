@@ -34,13 +34,7 @@ try:
 except ImportError:
     pass  # triton_python_backend_utils exists only inside Triton Python backend.
 
-from transformers import (
-    AutoConfig,
-    AutoTokenizer,
-    BatchEncoding,
-    PreTrainedTokenizer,
-    TensorType,
-)
+from transformers import AutoConfig, AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType
 
 
 class AggregationStrategy(Enum):
@@ -65,9 +59,7 @@ class TritonPythonModel:
         Initialize the tokenization process
         :param args: arguments from Triton config file
         """
-        current_path: str = os.path.join(
-            args["model_repository"], args["model_version"]
-        )
+        current_path: str = os.path.join(args["model_repository"], args["model_version"])
         target_model = args["model_name"].replace("_inference", "_model")
         self.device = "cpu" if args["model_instance_kind"] == "CPU" else "cuda"
 
@@ -81,12 +73,8 @@ class TritonPythonModel:
             attention_mask = attention_mask.type(dtype=torch.int32)
             inputs = [
                 pb_utils.Tensor.from_dlpack("input_ids", torch.to_dlpack(input_ids)),
-                pb_utils.Tensor.from_dlpack(
-                    "token_type_ids", torch.to_dlpack(token_type_ids)
-                ),
-                pb_utils.Tensor.from_dlpack(
-                    "attention_mask", torch.to_dlpack(attention_mask)
-                ),
+                pb_utils.Tensor.from_dlpack("token_type_ids", torch.to_dlpack(token_type_ids)),
+                pb_utils.Tensor.from_dlpack("attention_mask", torch.to_dlpack(attention_mask)),
             ]
             inference_request = pb_utils.InferenceRequest(
                 model_name=target_model,
@@ -95,13 +83,9 @@ class TritonPythonModel:
             )
             inference_response = inference_request.exec()
             if inference_response.has_error():
-                raise pb_utils.TritonModelException(
-                    inference_response.error().message()
-                )
+                raise pb_utils.TritonModelException(inference_response.error().message())
             else:
-                output = pb_utils.get_output_tensor_by_name(
-                    inference_response, "output"
-                )
+                output = pb_utils.get_output_tensor_by_name(inference_response, "output")
                 tensor: torch.Tensor = torch.from_dlpack(output.to_dlpack())
                 return tensor.detach().cpu().numpy()
 
@@ -119,12 +103,7 @@ class TritonPythonModel:
         # for loop for batch requests (disabled in our case)
         for request in requests:
             # binary data typed back to string
-            query = [
-                t.decode("UTF-8")
-                for t in pb_utils.get_input_tensor_by_name(request, "TEXT")
-                .as_numpy()
-                .tolist()
-            ]
+            query = [t.decode("UTF-8") for t in pb_utils.get_input_tensor_by_name(request, "TEXT").as_numpy().tolist()]
             tokens: BatchEncoding = self.tokenizer(
                 text=query[0],
                 return_tensors=TensorType.PYTORCH,
@@ -142,16 +121,12 @@ class TritonPythonModel:
                 token_type_ids = token_type_ids.to("cuda")
                 attention_mask = attention_mask.to("cuda")
 
-            output_seq: np.ndarray = self.model(
-                input_ids, token_type_ids, attention_mask
-            )
+            output_seq: np.ndarray = self.model(input_ids, token_type_ids, attention_mask)
 
             logits = output_seq[0]
             sentence = query[0]
             input_ids = input_ids.cpu().numpy()[0]
-            offset_mapping = (
-                tokens["offset_mapping"][0] if "offset_mapping" in tokens else None
-            )
+            offset_mapping = tokens["offset_mapping"][0] if "offset_mapping" in tokens else None
             special_tokens_mask = tokens["special_tokens_mask"].numpy()[0]
 
             maxes = np.max(logits, axis=-1, keepdims=True)
@@ -175,9 +150,7 @@ class TritonPythonModel:
                 and entity.get("entity_group", None) not in self.ignore_labels
             ]
 
-            tensor_output = [
-                pb_utils.Tensor("output", np.array(json.dumps(entities), dtype=object))
-            ]
+            tensor_output = [pb_utils.Tensor("output", np.array(json.dumps(entities), dtype=object))]
             responses.append(pb_utils.InferenceResponse(tensor_output))
         return responses
 
@@ -206,14 +179,14 @@ class TritonPythonModel:
                     start_ind = int(start_ind.numpy())
                     end_ind = int(end_ind.numpy())
                 word_ref = sentence[start_ind:end_ind]
-                if getattr(
-                    self.tokenizer._tokenizer.model, "continuing_subword_prefix", None
-                ):
+                if getattr(self.tokenizer._tokenizer.model, "continuing_subword_prefix", None):
                     # This is a BPE, word aware tokenizer, there is a correct way
                     # to fuse tokens
                     is_subword = len(word) != len(word_ref)
                 else:
-                    # This is a fallback heuristic. This will fail most likely on any kind of text + punctuation mixtures that will be considered "words". Non word aware models cannot do better than this unfortunately.
+                    # This is a fallback heuristic. This will fail most likely on any kind of text + punctuation
+                    # mixtures that will be considered "words". Non word aware models cannot do better
+                    # than this unfortunately.
                     if aggregation_strategy in {
                         AggregationStrategy.FIRST,
                         AggregationStrategy.AVERAGE,
@@ -223,11 +196,7 @@ class TritonPythonModel:
                             "Tokenizer does not support real words, using fallback heuristic",
                             UserWarning,
                         )
-                    is_subword = (
-                        sentence[start_ind - 1 : start_ind] != " "
-                        if start_ind > 0
-                        else False
-                    )
+                    is_subword = sentence[start_ind - 1 : start_ind] != " " if start_ind > 0 else False  # noqa: E203
 
                 if int(input_ids[idx]) == self.tokenizer.unk_token_id:
                     word = word_ref
@@ -248,9 +217,7 @@ class TritonPythonModel:
             pre_entities.append(pre_entity)
         return pre_entities
 
-    def aggregate(
-        self, pre_entities: List[dict], aggregation_strategy: AggregationStrategy
-    ) -> List[dict]:
+    def aggregate(self, pre_entities: List[dict], aggregation_strategy: AggregationStrategy) -> List[dict]:
         if aggregation_strategy in {
             AggregationStrategy.NONE,
             AggregationStrategy.SIMPLE,
@@ -275,12 +242,8 @@ class TritonPythonModel:
             return entities
         return self.group_entities(entities)
 
-    def aggregate_word(
-        self, entities: List[dict], aggregation_strategy: AggregationStrategy
-    ) -> dict:
-        word = self.tokenizer.convert_tokens_to_string(
-            [entity["word"] for entity in entities]
-        )
+    def aggregate_word(self, entities: List[dict], aggregation_strategy: AggregationStrategy) -> dict:
+        word = self.tokenizer.convert_tokens_to_string([entity["word"] for entity in entities])
         if aggregation_strategy == AggregationStrategy.FIRST:
             scores = entities[0]["scores"]
             idx = scores.argmax()
@@ -309,9 +272,7 @@ class TritonPythonModel:
         }
         return new_entity
 
-    def aggregate_words(
-        self, entities: List[dict], aggregation_strategy: AggregationStrategy
-    ) -> List[dict]:
+    def aggregate_words(self, entities: List[dict], aggregation_strategy: AggregationStrategy) -> List[dict]:
         """
         Override tokens from a given word that disagree to force agreement on word boundaries.
         Example: micro|soft| com|pany| B-ENT I-NAME I-ENT I-ENT will be rewritten with first strategy as microsoft|
@@ -321,9 +282,7 @@ class TritonPythonModel:
             AggregationStrategy.NONE,
             AggregationStrategy.SIMPLE,
         }:
-            raise ValueError(
-                "NONE and SIMPLE strategies are invalid for word aggregation"
-            )
+            raise ValueError("NONE and SIMPLE strategies are invalid for word aggregation")
 
         word_entities = []
         word_group = None
@@ -333,9 +292,7 @@ class TritonPythonModel:
             elif entity["is_subword"]:
                 word_group.append(entity)
             else:
-                word_entities.append(
-                    self.aggregate_word(word_group, aggregation_strategy)
-                )
+                word_entities.append(self.aggregate_word(word_group, aggregation_strategy))
                 word_group = [entity]
         # Last item
         word_entities.append(self.aggregate_word(word_group, aggregation_strategy))

@@ -203,7 +203,6 @@ def main(commands: argparse.Namespace):
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
-         
         if commands.task == "text-generation":
             conf_class: Type[Configuration] = ConfigurationDec
         elif commands.task == "token-classification":

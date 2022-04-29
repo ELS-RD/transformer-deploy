@@ -21,7 +21,6 @@ import multiprocessing
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-import cupy as cp
 import numpy as np
 import torch
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
@@ -29,6 +28,13 @@ from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
+
+
+try:
+    # noinspection PyUnresolvedReferences
+    import cupy as cp
+except ImportError:
+    pass
 
 
 def create_model_for_provider(

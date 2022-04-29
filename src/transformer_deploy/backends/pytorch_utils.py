@@ -35,7 +35,11 @@ def convert_tensors(tensors: List[torch.Tensor]) -> List[ndarray]:
     :param tensors: A list of Pytorch tensors
     :return: A list of numpy arrays
     """
-    if any(isinstance(elem, torch.Tensor) for elem in tensors):
+    if isinstance(tensors, torch.Tensor):
+        return tensors.cpu().detach().numpy()
+    if isinstance(tensors, List) and any(
+        isinstance(elem, torch.Tensor) for elem in tensors
+    ):
         return [elem.cpu().detach().numpy() for elem in tensors]
     return tensors
 

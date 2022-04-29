@@ -80,9 +80,10 @@ def check_accuracy(
     :param tolerance: if difference in outputs is above threshold, an error will be raised
     """
     engine_output = convert_tensors(engine_output)
-    discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
-    assert discrepency < tolerance, (
-        f"{engine_name} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
+    pytorch_output = convert_tensors(pytorch_output)
+    discrepancy = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
+    assert discrepancy < tolerance, (
+        f"{engine_name} discrepancy is too high ({discrepancy:.2f} > {tolerance}):\n"
         f"Pythorch:\n{pytorch_output}\n"
         f"VS\n"
         f"{engine_name}:\n{engine_output}\n"

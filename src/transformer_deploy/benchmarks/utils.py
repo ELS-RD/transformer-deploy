@@ -116,7 +116,22 @@ def generate_multiple_inputs(
     return all_inputs_pytorch, all_inputs_onnx
 
 
-def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Union[np.ndarray, torch.Tensor]]) -> float:
+def to_numpy(tensors: List[Union[np.ndarray, torch.Tensor]]) -> np.ndarray:
+    """
+    Convert list of torch / numpy tensors to a numpy tensor
+    :param tensors: list of torch / numpy tensors
+    :return: numpy tensor
+    """
+    if isinstance(tensors[0], torch.Tensor):
+        pytorch_output = [t.detach().cpu().numpy() for t in tensors]
+    elif isinstance(tensors[0], np.ndarray):
+        pytorch_output = tensors
+    else:
+        raise Exception(f"unknown tensor type: {type(tensors[0])}")
+    return np.asarray(pytorch_output)
+
+
+def compare_outputs(pytorch_output: np.ndarray, engine_output: np.ndarray) -> float:
     """
     Compare 2 model outputs by computing the mean of absolute value difference between them.
 
@@ -124,10 +139,4 @@ def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Unio
     :param engine_output: other engine output
     :return: difference between outputs as a single float
     """
-    if isinstance(pytorch_output[0], torch.Tensor):
-        pytorch_output = [t.detach().cpu().numpy() for t in pytorch_output]
-    pt_output = np.asarray(pytorch_output)
-    if isinstance(engine_output[0], torch.Tensor):
-        engine_output = [t.detach().cpu().numpy() for t in engine_output]
-    eng_output = np.asarray(engine_output)
-    return np.mean(np.abs(pt_output - eng_output))
+    return np.mean(np.abs(pytorch_output - engine_output))

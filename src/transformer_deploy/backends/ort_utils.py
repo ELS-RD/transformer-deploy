@@ -19,11 +19,12 @@ All the tooling to ease ONNX Runtime usage.
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import cupy as cp
 import numpy as np
 import torch
-from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, SessionOptions
+from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
@@ -132,35 +133,26 @@ numpy_to_torch_dtype_dict = {
 torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
 
-def gess_output_shape(inputs: Dict[str, torch.Tensor], model_onnx: InferenceSession) -> Dict[str, Tuple[int]]:
-    """
-    Try to guess output tensor shape from input tensors and axis names saved in ONNX model.
-    Can only work if all output dim are fixed or linked to input axis.
-
-    :param inputs: input tensors
-    :param model_onnx: ONNX model
-    :return: a dict {axis name: nb dim}
-    """
-    axis: Dict[str, int] = dict()
-    for input_onnx in model_onnx.get_inputs():
-        tensor = inputs[input_onnx.name]
-        axis.update({axis_name: shape for shape, axis_name in zip(tensor.shape, input_onnx.shape)})
-    shapes = dict()
-    for output_onnx in model_onnx.get_outputs():
-        output_shape = list()
-        for shape in output_onnx.shape:  # type: Union[int, str]
-            if isinstance(shape, str):
-                shape = axis[shape]
-            output_shape.append(shape)
-        shapes[output_onnx.name] = tuple(output_shape)
-    return shapes
+# TODO add test + documentation
+def to_pytorch(ort_tensor: OrtValue, np_type: type) -> torch.Tensor:
+    if ort_tensor.device_name().lower() == "cuda":
+        fake_owner = 1
+        # size not used anywhere, so just put 0
+        memory = cp.cuda.UnownedMemory(ort_tensor.data_ptr(), 0, fake_owner)
+        memory_ptr = cp.cuda.MemoryPointer(memory, 0)
+        # make sure you interpret the array shape/dtype/strides correctly
+        cp_array = cp.ndarray(shape=ort_tensor.shape(), memptr=memory_ptr, dtype=np_type)
+        return torch.from_dlpack(cp_array.toDlpack())
+    else:
+        np_tensor = ort_tensor.numpy()
+        return torch.from_numpy(np_tensor)
 
 
 def inference_onnx_binding(
     model_onnx: InferenceSession,
     inputs: Dict[str, torch.Tensor],
     device: str,
-    output_shape: Optional[Union[Tuple[int], Dict[str, Tuple[int]]]] = None,
+    output_shape: Any = None,  # TODO delete this parameter
     device_id: int = 0,
 ) -> Dict[str, torch.Tensor]:
     """
@@ -194,26 +186,17 @@ def inference_onnx_binding(
             buffer_ptr=tensor.data_ptr(),
         )
         inputs[input_onnx.name] = tensor
-    outputs = dict()
-    if isinstance(output_shape, dict):
-        dict_shapes = output_shape
-    elif isinstance(output_shape, tuple):
-        dict_shapes = {"output": output_shape}
-    else:
-        dict_shapes = gess_output_shape(inputs=inputs, model_onnx=model_onnx)
 
-    for output_name, shape in dict_shapes.items():
-        tensor = torch.empty(shape, dtype=torch.float32, device=device).contiguous()
-        outputs[output_name] = tensor
+    for out in model_onnx.get_outputs():
         binding.bind_output(
-            name=output_name,
+            name=out.name,
             device_type=device,
             device_id=device_id,
-            element_type=np.float32,  # hard coded output type
-            shape=tuple(shape),
-            buffer_ptr=tensor.data_ptr(),
         )
     binding.synchronize_inputs()
     model_onnx.run_with_iobinding(binding)
-    binding.synchronize_outputs()
+    # WARNING: output type is hard coded
+    outputs = {
+        out.name: to_pytorch(t, np_type=np.float32) for out, t in zip(model_onnx.get_outputs(), binding.get_outputs())
+    }
     return outputs

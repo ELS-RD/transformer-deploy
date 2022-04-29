@@ -3,3 +3,4 @@ torch==1.11.0+cu113
 nvidia-tensorrt==8.2.2.1
 onnx_graphsurgeon
 polygraphy
+cupy-cuda113

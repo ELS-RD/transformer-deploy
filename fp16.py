@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 import onnx
 import torch
@@ -10,28 +10,34 @@ from transformer_deploy.backends.ort_utils import (
     create_model_for_provider,
     get_adjency_dict,
     get_list_fp32_nodes,
+    inference_onnx_binding,
 )
 
 model_name = "t5-small"
 tokenizer: T5TokenizerFast = AutoTokenizer.from_pretrained(model_name)
 
-enc_onnx = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvider")
-
-# https://github.com/microsoft/onnxruntime/issues/1455#issuecomment-979901463
-# add all intermediate outputs to onnx net
-# org_outputs = [x.name for x in enc_onnx.get_outputs()]
-
-
-model_onnx: ModelProto = onnx.load("test-enc.onnx")
-model_onnx_all_nodes = add_output_nodes(model=model_onnx)
-onnx_graph: Dict[str, Set[str]] = get_adjency_dict(model=model_onnx)
-ort_model_all_nodes = create_model_for_provider(model_onnx_all_nodes.SerializeToString(), "CUDAExecutionProvider")
+onnx_model: ModelProto = onnx.load("test-dec-no-cache.onnx")
+onnx_all_nodes = add_output_nodes(model=onnx_model)
+onnx_graph: Dict[str, Set[str]] = get_adjency_dict(model=onnx_model)
+ort_model = create_model_for_provider(onnx_all_nodes.SerializeToString(), "CUDAExecutionProvider")
+enc_ort_model = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvider")
 
 
+# TODO apply the process to the 2 subgraphs directly but not the graph whole if graph
 # use info from tokenizer size and max shape provided through the command line
 def get_random_input() -> Dict[str, torch.Tensor]:
-    return {"input_ids": torch.randint(low=0, high=32100, size=(4, 2000), dtype=torch.int32, device="cuda")}
+    inputs = {"input_ids": torch.randint(low=0, high=tokenizer.vocab_size, size=(4, 1000), dtype=torch.int32, device="cuda")}
+    encoder_hidden_states = inference_onnx_binding(
+        model_onnx=enc_ort_model,
+        inputs=inputs,
+        device="cuda",
+    )["output"]
+    inputs["encoder_hidden_states"] = encoder_hidden_states
+    return inputs
 
 
-keep_fp32 = get_list_fp32_nodes(onnx_graph=onnx_graph, model=ort_model_all_nodes, get_input=get_random_input, nb_try=2)
+keep_fp32 = get_list_fp32_nodes(onnx_graph=onnx_graph, model=ort_model, get_input=get_random_input, nb_try=200)
 print(keep_fp32)
+
+# thread sur FP16 marche pas
+# https://github.com/microsoft/onnxruntime/issues/11119

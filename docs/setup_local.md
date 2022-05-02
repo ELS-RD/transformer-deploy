@@ -65,7 +65,7 @@ pip install sentence-transformers
 To build your own version of the Docker image:
 
 ```shell
-make build_docker
+make docker_build
 ```
 
 --8<-- "resources/abbreviations.md"

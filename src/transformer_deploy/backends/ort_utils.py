@@ -15,19 +15,24 @@
 """
 All the tooling to ease ONNX Runtime usage.
 """
-
+import copy
 import logging
 import multiprocessing
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Set, Union
 
 import numpy as np
+import onnx
+import tensorrt as trt
 import torch
+from onnx import ModelProto, NodeProto
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
+from tensorrt import ILayer, INetworkDefinition, LayerType
 
 
 try:
@@ -49,7 +54,9 @@ def create_model_for_provider(
     :return: ONNX Runtime inference session
     """
     options = SessionOptions()
-    options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
+    # ENABLE_ALL is for CPU (NCHWc -> NCHW layout)
+    # https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
+    options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_EXTENDED
     if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
@@ -139,13 +146,16 @@ numpy_to_torch_dtype_dict = {
 torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
 
-# TODO add test + documentation + test if cloning can be made optional + remove typing arg (replaced by a mapping)
-def to_pytorch(ort_tensor: OrtValue, np_type: type) -> torch.Tensor:
+# TODO add test including different input and checking that tensor is not overriden
+# + remove typing arg (replaced by a mapping between ORT types and cupy ones)
+def to_pytorch(ort_tensor: OrtValue, np_type: type, clone_tensor: bool) -> torch.Tensor:
     """
     Convert OrtValue output by Onnx Runtime to Pytorch tensor.
-    Most of the process (but the last step) is done in a zero copy way.
+    The process can be done in a zero copy way (depending of clone parameter).
     :param ort_tensor: output from Onnx Runtime
-    :param np_type: type of the tensor
+    :param np_type: type of the tensor (numpy types)
+    :param clone_tensor Onnx Runtime owns the storage array and will write on the next inference.
+        By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """
     if ort_tensor.device_name().lower() == "cuda":
@@ -155,9 +165,11 @@ def to_pytorch(ort_tensor: OrtValue, np_type: type) -> torch.Tensor:
         memory_ptr = cp.cuda.MemoryPointer(memory, 0)
         # make sure you interpret the array shape/dtype/strides correctly
         cp_array = cp.ndarray(shape=ort_tensor.shape(), memptr=memory_ptr, dtype=np_type)
-        # cloning required to avoid ORT rewriting tensor storage array
-        # if new inference is done before tensor is discarded
-        return torch.from_dlpack(cp_array.toDlpack()).clone()
+        # cloning required otherwise ORT will recycle the storage array and put new values into it if new inf is done.
+        torch_tensor = torch.from_dlpack(cp_array.toDlpack())
+        if clone_tensor:
+            torch_tensor = torch_tensor.clone()
+        return torch_tensor
     else:
         np_tensor = ort_tensor.numpy()
         return torch.from_numpy(np_tensor)
@@ -167,22 +179,33 @@ def inference_onnx_binding(
     model_onnx: InferenceSession,
     inputs: Dict[str, torch.Tensor],
     device: str,
-    output_shape: Any = None,  # TODO delete this parameter
     device_id: int = 0,
+    binding: Optional[IOBinding] = None,
+    clone_tensor: bool = True,
 ) -> Dict[str, torch.Tensor]:
     """
     Performs inference on ONNX Runtime in an optimized way.
-    In particular, avoid some tensor copy from GPU to host by using Torch tensors directly.
+    In particular, it avoids any Onnx Runtime output tensor copy.
+    It means that Onnx Runtime is still owner of the array, and it will overwrite its content if you do another
+    inference. To avoid any issue, just set clone_tensor to True (default).
+    For best performance and lowest memory footprint, if you know what you are doing, set clone_tensor to True.
 
     :param model_onnx: ONNX model
     :param inputs: input torch tensor
     :param device: where to run the inference. One of [cpu, cuda]
-    :param output_shape: tensor output shape if known, otherwise will be guessed from axis names
     :param device_id: ID of the device where to run the inference, to be used when there are multiple GPUs, etc.
+    :param binding: previously generated binding IO, will be reset.
+    :param clone_tensor: clone Pytorch tensor to avoid its content being overwritten by Onnx Runtime
+        at the next inference call.
     :return: a dict {axis name: output tensor}
     """
-    assert device in ["cpu", "cuda"]
-    binding: IOBinding = model_onnx.io_binding()
+    assert isinstance(device, str)
+    assert device in ["cpu", "cuda"], f"unexpected inference device: '{device}'"
+    if binding is None:
+        binding: IOBinding = model_onnx.io_binding()
+    else:
+        binding.clear_binding_inputs()
+        binding.clear_binding_outputs()
     for input_onnx in model_onnx.get_inputs():
         if input_onnx.name not in inputs:  # some inputs may be optional
             continue
@@ -210,9 +233,117 @@ def inference_onnx_binding(
         )
     binding.synchronize_inputs()
     model_onnx.run_with_iobinding(binding)
-    # binding.synchronize_outputs()
+    binding.synchronize_outputs()
     # WARNING: output type is hard coded
     outputs = {
-        out.name: to_pytorch(t, np_type=np.float32) for out, t in zip(model_onnx.get_outputs(), binding.get_outputs())
+        out.name: to_pytorch(t, np_type=np.float32, clone_tensor=clone_tensor)
+        for out, t in zip(model_onnx.get_outputs(), binding.get_outputs())
     }
     return outputs
+
+
+def add_output_nodes(model: ModelProto) -> ModelProto:
+    """
+    Set each node as output node for debugging purpose.
+    :param model: ONNX model in protobuf format
+    :return: modified ONNX model
+    """
+    model = copy.deepcopy(model)
+    output_nodes = list()
+    for n in model.graph.node:
+        for output_name in n.output:
+            output_nodes.append(onnx.ValueInfoProto(name=output_name))
+    model.graph.output.extend(output_nodes)
+    return model
+
+
+def get_all_outputs(model: ModelProto, inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    """
+    Join ouput values from ONNX model with their names.
+    :param model: ONNX model
+    :param inputs: model input
+    :return: tensor outputs and their names
+    """
+    return inference_onnx_binding(
+        model_onnx=model, inputs=inputs, device=list(inputs.values())[0].device.type, clone_tensor=False
+    )
+
+
+def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, torch.Tensor]) -> List[str]:
+    """
+    Identify out of range values in model output.
+    :param graph: graph as adjency nodes dict
+    :param output_nodes: output of each node
+    :return: list of nodes producing outputs outside fp16 tensor
+    """
+    keep_fp32 = list()
+    for k, v in output_nodes.items():
+        if v.dtype != torch.float32:
+            continue
+        np_v = v.detach().cpu().numpy()
+        if np.max(np_v) > np.finfo(np.float16).max or np.min(np_v) < np.finfo(np.float16).min:
+            keep_fp32 += [n for n in graph[k]]
+    return keep_fp32
+
+
+def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
+    """
+    Generate a function to set precision of specific nodes to FP32 to keep tensorrt FP16 output close to FP32 nodes
+    :param keep_fp32: nodes to keep in FP32
+    :return: a function to set node precisions
+    """
+
+    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
+        for layer_index in range(network_definition.num_layers - 1):
+            layer: ILayer = network_definition.get_layer(layer_index)
+            # next layer should take FP16 as input
+            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
+
+            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
+                layer.precision = trt.DataType.FLOAT
+                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                # identity function is mainly used for casting
+                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
+                if next_layer.type != LayerType.IDENTITY:
+                    next_layer.precision = trt.DataType.FLOAT
+                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+
+        return network_definition
+
+    return f
+
+
+def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:
+    """
+    Convert ONNX model to adjency
+    :param model: ONNX model
+    :return: a dict of links from input to output nodes
+    """
+    adj_dict: Dict[str, Set[str]] = defaultdict(set)
+    for n in model.graph.node:  # type: NodeProto
+        assert len(n.output) == 1
+        output_node = n.output[0]
+        adj_dict[output_node].add(n.name)
+    return adj_dict
+
+
+def get_list_fp32_nodes(
+    model: InferenceSession,
+    onnx_graph: Dict[str, Set[str]],
+    get_input: Callable[[], Dict[str, torch.Tensor]],
+    nb_try: int,
+) -> List[str]:
+    """
+    Find the list of nodes to keep in FP32 to avoid out of range values
+    :param model: model to test
+    :param onnx_graph: a dict of links from input to output nodes
+    :param get_input: generate input to test the model. Output should change from call to call.
+    :param nb_try: nb of tests to perform. More is better and slower
+    :return: list of names of nodes to keep in FP32
+    """
+    keep_fp32_nodes = list()
+    for _ in range(nb_try):
+        outputs: Dict[str, torch.Tensor] = get_all_outputs(model=model, inputs=get_input())
+        keep_node_io = find_node_fp32(graph=onnx_graph, output_nodes=outputs)
+        keep_fp32_nodes.extend([n for n in keep_node_io if n not in keep_fp32_nodes])
+    return keep_fp32_nodes

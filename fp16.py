@@ -1,4 +1,4 @@
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 import onnx
 import torch
@@ -13,6 +13,7 @@ from transformer_deploy.backends.ort_utils import (
     inference_onnx_binding,
 )
 
+
 model_name = "t5-small"
 tokenizer: T5TokenizerFast = AutoTokenizer.from_pretrained(model_name)
 
@@ -26,7 +27,9 @@ enc_ort_model = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvide
 # TODO apply the process to the 2 subgraphs directly but not the graph whole if graph
 # use info from tokenizer size and max shape provided through the command line
 def get_random_input() -> Dict[str, torch.Tensor]:
-    inputs = {"input_ids": torch.randint(low=0, high=tokenizer.vocab_size, size=(4, 1000), dtype=torch.int32, device="cuda")}
+    inputs = {
+        "input_ids": torch.randint(low=0, high=tokenizer.vocab_size, size=(4, 1000), dtype=torch.int32, device="cuda")
+    }
     encoder_hidden_states = inference_onnx_binding(
         model_onnx=enc_ort_model,
         inputs=inputs,

@@ -16,11 +16,11 @@
 All the tooling to ease TensorRT usage.
 """
 
+from time import time
 from typing import Callable, Dict, List, OrderedDict, Tuple
 
 import tensorrt as trt
 import torch
-from time import time
 from tensorrt import ICudaEngine, IExecutionContext
 from tensorrt.tensorrt import (
     Builder,
@@ -125,8 +125,10 @@ def build_engine(
                 config.add_optimization_profile(profile)
                 if fp16:
                     network_definition = fix_fp16_network(network_definition)
-                
-                logger.log(msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING)
+
+                logger.log(
+                    msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING
+                )
                 t0 = time()
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)

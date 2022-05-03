@@ -19,10 +19,10 @@ from collections import OrderedDict
 from typing import Callable, Dict, List
 from typing import OrderedDict as Od
 from typing import Tuple
-from numpy import ndarray
 
 import onnx
 import torch
+from numpy import ndarray
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
 
@@ -37,9 +37,7 @@ def convert_tensors(tensors: List[torch.Tensor]) -> List[ndarray]:
     """
     if isinstance(tensors, torch.Tensor):
         return tensors.cpu().detach().numpy()
-    if isinstance(tensors, List) and any(
-        isinstance(elem, torch.Tensor) for elem in tensors
-    ):
+    if isinstance(tensors, List) and any(isinstance(elem, torch.Tensor) for elem in tensors):
         return [elem.cpu().detach().numpy() for elem in tensors]
     return tensors
 
@@ -146,9 +144,7 @@ def convert_to_onnx(
             opset_version=13,  # the ONNX version to use, >= 13 supports channel quantized model
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
-            output_names=[
-                "output"
-            ],  # output axis name, hard coded so only 1 output supported
+            output_names=["output"],  # output axis name, hard coded so only 1 output supported
             dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
             training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,
@@ -165,18 +161,12 @@ def convert_to_onnx(
     # ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374
     # We need the nb of dims to be fixed to reserve GPU memory when using ONNX Runtime io binding API
     # Below we reopen the model and override the dynamic shape by a fixed one
-    if isinstance(
-        model_pytorch, STransformerWrapper
-    ):  # for sentence-transformers model only
+    if isinstance(model_pytorch, STransformerWrapper):  # for sentence-transformers model only
         output = model_pytorch(**inputs_pytorch)
         assert len(output.shape) == 2, "unexpected output tensor shape (!=2)"
         nb_dim = output.shape[1]
         onnx_model = onnx.load(output_path)
-        assert (
-            len(onnx_model.graph.output) == 1
-        ), "unexpected number of output tensors (!=1)"
-        assert (
-            len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2
-        ), "unexpected ouput tensor shape (!=2)"
+        assert len(onnx_model.graph.output) == 1, "unexpected number of output tensors (!=1)"
+        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, "unexpected ouput tensor shape (!=2)"
         onnx_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value = nb_dim
         onnx.save(onnx_model, output_path)

@@ -19,9 +19,9 @@ This module contains code related to client interface.
 """
 
 import argparse
+import gc
 import logging
 import os
-import gc
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Type, Union
 
@@ -44,8 +44,8 @@ from transformer_deploy.backends.ort_utils import (
     optimize_onnx,
 )
 from transformer_deploy.backends.pytorch_utils import (
-    convert_to_onnx,
     convert_tensors,
+    convert_to_onnx,
     get_model_size,
     infer_classification_pytorch,
     infer_feature_extraction_pytorch,
@@ -165,9 +165,9 @@ def main(commands: argparse.Namespace):
         input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
-    
+
     logging.info(f"axis: {input_names}")
-    
+
     model_pytorch.eval()
     if run_on_cuda:
         model_pytorch.cuda()
@@ -244,12 +244,12 @@ def main(commands: argparse.Namespace):
             )
             timings[engine_name] = time_buffer
     model_pytorch.cpu()
-    
+
     logging.info("cleaning up")
     if run_on_cuda:
         torch.cuda.empty_cache()
     gc.collect()
-    
+
     inputs_export, _ = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
@@ -257,7 +257,7 @@ def main(commands: argparse.Namespace):
         device="cpu",
         nb_inputs_to_gen=commands.warmup,
     )
-    
+
     # create onnx model and compare results
     # do conversion after the model has been unloaded from GPU for larger models
     convert_to_onnx(

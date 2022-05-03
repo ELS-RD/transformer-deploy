@@ -21,7 +21,7 @@ from typing import Callable, Dict, List, Optional
 
 import tensorrt as trt
 import torch
-from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, Logger, Runtime
+from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, LayerType, Logger, Runtime
 from tensorrt.tensorrt import Builder, IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser
 
 
@@ -315,3 +315,31 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
         else:
             output_binding_idxs.append(binding_index)
     return input_binding_idxs, output_binding_idxs
+
+
+def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
+    """
+    Generate a function for TensorRT engine to set precision of specific nodes to FP32 to keep tensorrt FP16 output
+    close to FP32 nodes.
+    :param keep_fp32: nodes to keep in FP32
+    :return: a function to set node precisions
+    """
+
+    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
+        for layer_index in range(network_definition.num_layers - 1):
+            layer: ILayer = network_definition.get_layer(layer_index)
+            # next layer should take FP16 as input
+            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
+
+            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
+                layer.precision = trt.DataType.FLOAT
+                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+                # identity function is mainly used for casting
+                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
+                if next_layer.type != LayerType.IDENTITY:
+                    next_layer.precision = trt.DataType.FLOAT
+                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+
+        return network_definition
+
+    return f

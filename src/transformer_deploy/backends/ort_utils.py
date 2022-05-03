@@ -24,7 +24,6 @@ from typing import Callable, Dict, List, Optional, Set, Union
 
 import numpy as np
 import onnx
-import tensorrt as trt
 import torch
 from onnx import ModelProto, NodeProto
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
@@ -32,7 +31,6 @@ from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
-from tensorrt import ILayer, INetworkDefinition, LayerType
 
 
 try:
@@ -284,33 +282,6 @@ def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, torch.Ten
         if np.max(np_v) > np.finfo(np.float16).max or np.min(np_v) < np.finfo(np.float16).min:
             keep_fp32 += [n for n in graph[k]]
     return keep_fp32
-
-
-def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
-    """
-    Generate a function to set precision of specific nodes to FP32 to keep tensorrt FP16 output close to FP32 nodes
-    :param keep_fp32: nodes to keep in FP32
-    :return: a function to set node precisions
-    """
-
-    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
-        for layer_index in range(network_definition.num_layers - 1):
-            layer: ILayer = network_definition.get_layer(layer_index)
-            # next layer should take FP16 as input
-            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
-
-            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
-                layer.precision = trt.DataType.FLOAT
-                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-                # identity function is mainly used for casting
-                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
-                if next_layer.type != LayerType.IDENTITY:
-                    next_layer.precision = trt.DataType.FLOAT
-                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-
-        return network_definition
-
-    return f
 
 
 def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:

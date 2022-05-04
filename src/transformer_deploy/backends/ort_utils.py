@@ -20,19 +20,24 @@ import logging
 import multiprocessing
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import onnx
 import torch
 from onnx import ModelProto, NodeProto
+from onnx.shape_inference import infer_shapes
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
+from onnxruntime.transformers.float16 import convert_float_to_float16
 from onnxruntime.transformers.fusion_options import FusionOptions
+from onnxruntime.transformers.fusion_utils import FusionUtils
+from onnxruntime.transformers.onnx_model import OnnxModel
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
 
 
+# GPU inference only
 try:
     # noinspection PyUnresolvedReferences
     import cupy as cp
@@ -41,20 +46,26 @@ except ImportError:
 
 
 def create_model_for_provider(
-    path: str, provider_to_use: Union[str, List], nb_threads: int = multiprocessing.cpu_count(), nb_instances: int = 0
+    path: str,
+    provider_to_use: Union[str, List],
+    nb_threads: int = multiprocessing.cpu_count(),
+    nb_instances: int = 0,
+    optimization_level: GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
 ) -> InferenceSession:
     """
     Create an ONNX Runtime instance.
     :param path: path to ONNX file or serialized to string model
     :param provider_to_use: provider to use for inference
-    :param nb_threads: intra_op_num_threads to use
-    :param nb_instances: inter_op_num_threads to use
+    :param nb_threads: intra_op_num_threads to use. You may want to try different parameters,
+        more core does not always provide best performances.
+    :param nb_instances: inter_op_num_threads to use, to execute multiple subgraphs in parallel when possible.
+    :param optimization_level: expected level of ONNX Runtime optimization. For GPU and NLP, extended is the one
+        providing kernel fusion of element wise operations. Enable all level is for CPU inference.
+        see https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
     :return: ONNX Runtime inference session
     """
     options = SessionOptions()
-    # ENABLE_ALL is for CPU (NCHWc -> NCHW layout)
-    # https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
-    options.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+    options.graph_optimization_level = optimization_level
     if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
@@ -62,8 +73,6 @@ def create_model_for_provider(
         options.intra_op_num_threads = nb_threads
         if nb_instances > 1:
             options.inter_op_num_threads = nb_instances
-    options.inter_op_num_threads = 6
-    options.intra_op_num_threads = 6
     return InferenceSession(path, options, providers=provider_to_use)
 
 
@@ -233,10 +242,12 @@ def inference_onnx_binding(
     model_onnx.run_with_iobinding(binding)
     binding.synchronize_outputs()
     # WARNING: output type is hard coded
-    outputs = {
-        out.name: to_pytorch(t, np_type=np.float32, clone_tensor=clone_tensor)
-        for out, t in zip(model_onnx.get_outputs(), binding.get_outputs())
-    }
+    outputs = dict()
+    assert len(model_onnx.get_outputs()) == len(
+        binding.get_outputs()
+    ), f"{len(model_onnx.get_outputs())} != {len(binding.get_outputs())}"
+    for out, t in zip(model_onnx.get_outputs(), binding.get_outputs()):
+        outputs[out.name] = to_pytorch(t, np_type=np.float32, clone_tensor=clone_tensor)
     return outputs
 
 
@@ -251,23 +262,14 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
     for n in model.graph.node:
         for output_name in n.output:
             output_nodes.append(onnx.ValueInfoProto(name=output_name))
+    # clear output array (protobuff way...)
+    while model.graph.output:
+        model.graph.output.pop()
     model.graph.output.extend(output_nodes)
     return model
 
 
-def get_all_outputs(model: ModelProto, inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-    """
-    Join ouput values from ONNX model with their names.
-    :param model: ONNX model
-    :param inputs: model input
-    :return: tensor outputs and their names
-    """
-    return inference_onnx_binding(
-        model_onnx=model, inputs=inputs, device=list(inputs.values())[0].device.type, clone_tensor=False
-    )
-
-
-def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, torch.Tensor]) -> List[str]:
+def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor]) -> List[str]:
     """
     Identify out of range values in model output.
     :param graph: graph as adjency nodes dict
@@ -275,46 +277,94 @@ def find_node_fp32(graph: Dict[str, Set[str]], output_nodes: Dict[str, torch.Ten
     :return: list of nodes producing outputs outside fp16 tensor
     """
     keep_fp32 = list()
-    for k, v in output_nodes.items():
-        if v.dtype != torch.float32:
+    min_float16 = torch.finfo(torch.float16).min
+    max_float16 = torch.finfo(torch.float16).max
+    for k, tensor in output_nodes.items():
+        if tensor.dtype != torch.float32:
             continue
-        np_v = v.detach().cpu().numpy()
-        if np.max(np_v) > np.finfo(np.float16).max or np.min(np_v) < np.finfo(np.float16).min:
-            keep_fp32 += [n for n in graph[k]]
+        # out of FP16 range
+        if torch.max(tensor) > max_float16 or torch.min(tensor) < min_float16:
+            keep_fp32.append(graph[k])
     return keep_fp32
 
 
-def get_adjency_dict(model: ModelProto) -> Dict[str, Set[str]]:
+def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict[str, str]]:
     """
-    Convert ONNX model to adjency
-    :param model: ONNX model
-    :return: a dict of links from input to output nodes
+    Extract output->node and input->node mappings
+    :param onnx_model: ONNX model
+    :return: 2 mappings, (i->node, o->node)
     """
-    adj_dict: Dict[str, Set[str]] = defaultdict(set)
-    for n in model.graph.node:  # type: NodeProto
-        assert len(n.output) == 1
-        output_node = n.output[0]
-        adj_dict[output_node].add(n.name)
-    return adj_dict
+    output_mapping: Dict[str, str] = dict()
+    input_mapping: Dict[str, str] = dict()
+    for node in onnx_model.graph.node:  # type: NodeProto
+        assert len(node.output) == 1
+        output_node = node.output[0]
+        output_mapping[output_node] = node.name
+        for i in node.input:
+            input_mapping[i] = node.name
+
+    return input_mapping, output_mapping
 
 
 def get_list_fp32_nodes(
-    model: InferenceSession,
-    onnx_graph: Dict[str, Set[str]],
+    ort_model: InferenceSession,
+    onnx_model: ModelProto,
     get_input: Callable[[], Dict[str, torch.Tensor]],
     nb_try: int,
 ) -> List[str]:
     """
     Find the list of nodes to keep in FP32 to avoid out of range values
-    :param model: model to test
-    :param onnx_graph: a dict of links from input to output nodes
+    :param ort_model: ONNX Runtime inference engine
+    :param onnx_model: ONNX model
     :param get_input: generate input to test the model. Output should change from call to call.
     :param nb_try: nb of tests to perform. More is better and slower
     :return: list of names of nodes to keep in FP32
     """
+    device = "cuda" if ort_model.get_providers()[0] == "CUDAExecutionProvider" else "cpu"
+
+    input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
+    # list all nodes which have an output out of the FP16 range
     keep_fp32_nodes = list()
     for _ in range(nb_try):
-        outputs: Dict[str, torch.Tensor] = get_all_outputs(model=model, inputs=get_input())
-        keep_node_io = find_node_fp32(graph=onnx_graph, output_nodes=outputs)
-        keep_fp32_nodes.extend([n for n in keep_node_io if n not in keep_fp32_nodes])
+        inputs = get_input()
+        outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
+            model_onnx=ort_model, inputs=inputs, device=device, clone_tensor=True
+        )
+        keep_node_io = find_node_fp32(graph=output_mapping, output_nodes=outputs)
+        keep_fp32_nodes += [n for n in keep_node_io if n not in keep_fp32_nodes]
+
+    # I/O names that can't be found in the graph
+    nodes_to_skip = (
+        [n.name for n in onnx_model.graph.input]
+        + [n.name for n in onnx_model.graph.initializer]
+        + [n.name for n in onnx_model.graph.output]
+    )
+
+    # for each node to keep in FP32, we add its children which will receive a FP32 value as input
+    map_children = defaultdict(list)
+    for node in onnx_model.graph.node:
+        for o in node.output:
+            if o in nodes_to_skip:
+                continue
+            child = input_mapping[o]
+            map_children[node.name].append(child)
+    keep_fp32_nodes += [c for k in keep_fp32_nodes if k in map_children for c in map_children[k]]
     return keep_fp32_nodes
+
+
+def convert_fp16(onnx_model: ModelProto, nodes_to_exclude: List[str]) -> ModelProto:
+    """
+    Convert ONNX model in FP16, and still being able to exclude a list of nodes.
+    :param onnx_model: original FP32 model
+    :param nodes_to_exclude: nodes that should stay in FP32
+    :return: mostly FP16 model
+    """
+    # add value info related to each node, required for the conversion
+    model_fp16 = infer_shapes(onnx_model)
+    model_fp16 = convert_float_to_float16(model=model_fp16, keep_io_types=True, node_block_list=nodes_to_exclude)
+    # clean casting nodes before returning the model
+    wrapped_fp16_model = OnnxModel(model_fp16)
+    fusion_utils = FusionUtils(wrapped_fp16_model)
+    fusion_utils.remove_cascaded_cast_nodes()
+    fusion_utils.remove_useless_cast_nodes()
+    return wrapped_fp16_model.model

@@ -37,6 +37,10 @@ except ImportError:
 from transformers import AutoConfig, AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType
 
 
+# code adapted from
+# https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/token_classification.py
+
+
 class AggregationStrategy(Enum):
     """All the valid aggregation strategies for TokenClassificationPipeline"""
 

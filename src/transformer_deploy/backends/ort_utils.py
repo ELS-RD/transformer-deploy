@@ -306,29 +306,32 @@ def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict
     return input_mapping, output_mapping
 
 
-def get_list_fp32_nodes(
-    ort_model: InferenceSession,
-    onnx_model: ModelProto,
+def get_keep_fp32_nodes(
+    onnx_model_path: str,
     get_input: Callable[[], Dict[str, torch.Tensor]],
     nb_try: int,
+    device: str = "cuda",
 ) -> List[str]:
     """
     Find the list of nodes to keep in FP32 to avoid out of range values
-    :param ort_model: ONNX Runtime inference engine
-    :param onnx_model: ONNX model
-    :param get_input: generate input to test the model. Output should change from call to call.
-    :param nb_try: nb of tests to perform. More is better and slower
+    :param onnx_model_path: ONNX model path
+    :param get_input: generate input to test the model. Output should change from call to call
+    :param nb_try: nb of tests to perform. More provides more accurate/conservative results but is slower to execute
+    :param device: where to run the inference
     :return: list of names of nodes to keep in FP32
     """
-    device = "cuda" if ort_model.get_providers()[0] == "CUDAExecutionProvider" else "cpu"
-
+    onnx_model: ModelProto = onnx.load(onnx_model_path)
+    onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
+    provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
+    ort_model_fp32_all_nodes = create_model_for_provider(onnx_model_fp32_all_nodes.SerializeToString(), provider)
+    ort_binding = ort_model_fp32_all_nodes.io_binding()
     input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
     # list all nodes which have an output out of the FP16 range
     keep_fp32_nodes = list()
     for _ in range(nb_try):
         inputs = get_input()
         outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
-            model_onnx=ort_model, inputs=inputs, device=device, clone_tensor=True
+            model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device=device, binding=ort_binding, clone_tensor=False
         )
         keep_node_io = find_node_fp32(graph=output_mapping, output_nodes=outputs)
         keep_fp32_nodes += [n for n in keep_node_io if n not in keep_fp32_nodes]
@@ -336,11 +339,11 @@ def get_list_fp32_nodes(
     # I/O names that can't be found in the graph
     nodes_to_skip = (
         [n.name for n in onnx_model.graph.input]
-        + [n.name for n in onnx_model.graph.initializer]
         + [n.name for n in onnx_model.graph.output]
+        + [n.name for n in onnx_model.graph.initializer]
     )
 
-    # for each node to keep in FP32, we add its children which will receive a FP32 value as input
+    # for each node to keep in FP32, we keep its children in FP32 too as they will receive FP32 values as input
     map_children = defaultdict(list)
     for node in onnx_model.graph.node:
         for o in node.output:
@@ -367,4 +370,5 @@ def convert_fp16(onnx_model: ModelProto, nodes_to_exclude: List[str]) -> ModelPr
     fusion_utils = FusionUtils(wrapped_fp16_model)
     fusion_utils.remove_cascaded_cast_nodes()
     fusion_utils.remove_useless_cast_nodes()
+    wrapped_fp16_model.topological_sort()
     return wrapped_fp16_model.model

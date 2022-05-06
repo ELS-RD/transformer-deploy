@@ -49,7 +49,7 @@ def get_random_input() -> Dict[str, torch.Tensor]:
         inputs[new_k] = v
     complement = torch.randint(low=0, high=tokenizer.vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
     inputs["input_ids"] = complement  # torch.concat(tensors=[input_ids, complement], dim=1)
-    inputs["enable_cache"] = torch.tensor([True], device="cuda", dtype=torch.bool)
+
     return inputs
 
 
@@ -60,22 +60,24 @@ model_fp16 = convert_fp16(onnx_model=model_fp16, nodes_to_exclude=keep_fp32)
 dec_cache_fp16_ort_model = create_model_for_provider(model_fp16.SerializeToString(), "CUDAExecutionProvider")
 
 dec_cache_fp_32_ort_model = create_model_for_provider("test-dec-cache.onnx", "CUDAExecutionProvider")
-dec_if_fp_16_ort_model = create_model_for_provider("test-dec-if.onnx", "CUDAExecutionProvider")
+
 
 fp_16_timings = list()
-fp_16_timings_if = list()
 fp_32_timings = list()
 nb_try = 10
 for _ in range(nb_try):
     random_input = get_random_input()
+    random_input_fp16 = {k: v.type(dtype=torch.float16) if v.dtype == torch.float32 else v for k, v in random_input.items()}
+
     torch.cuda.synchronize()
     start = time()
     res_fp16 = inference_onnx_binding(
         model_onnx=dec_cache_fp16_ort_model,
-        inputs=random_input,
+        inputs=random_input_fp16,
         device="cuda",
         clone_tensor=False,
     )["logits"]
+
     fp_16_timings.append(time() - start)
     torch.cuda.synchronize()
     start = time()
@@ -86,25 +88,13 @@ for _ in range(nb_try):
         clone_tensor=False,
     )["logits"]
     fp_32_timings.append(time() - start)
-    # assert np.allclose(a=res_fp32.detach().cpu().numpy(), b=res_fp16.detach().cpu().numpy(), atol=5e-1)
-    torch.cuda.synchronize()
-    start = time()
-    res_if_fp16 = inference_onnx_binding(
-        model_onnx=dec_if_fp_16_ort_model,
-        inputs=random_input,
-        device="cuda",
-        clone_tensor=False,
-    )["logits"]
-    fp_16_timings_if.append(time() - start)
-    # assert np.allclose(a=res_fp32.detach().cpu().numpy(), b=res_if_fp16.detach().cpu().numpy(), atol=5e-1)
+    assert np.allclose(a=res_fp32.detach().cpu().numpy(), b=res_fp16.detach().cpu().numpy(), atol=5e-1)
 
 
 axis = range(nb_try)
 plt.scatter(axis, fp_32_timings, marker="o", color="red", label="fp32", s=1)
 plt.scatter(axis, fp_16_timings, marker="o", color="purple", label="fp16", s=1)
-plt.scatter(axis, fp_16_timings_if, marker="o", color="green", label="fp16 if", s=1)
 plt.axhline(y=np.mean(fp_32_timings), color="red", linestyle="-")
 plt.axhline(y=np.mean(fp_16_timings), color="purple", linestyle="-")
-plt.axhline(y=np.mean(fp_16_timings_if), color="green", linestyle="-")
 plt.legend()
 plt.show()

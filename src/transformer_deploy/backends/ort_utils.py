@@ -51,6 +51,7 @@ def create_model_for_provider(
     nb_threads: int = multiprocessing.cpu_count(),
     nb_instances: int = 0,
     optimization_level: GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
+    enable_profiling: bool = False
 ) -> InferenceSession:
     """
     Create an ONNX Runtime instance.
@@ -62,10 +63,12 @@ def create_model_for_provider(
     :param optimization_level: expected level of ONNX Runtime optimization. For GPU and NLP, extended is the one
         providing kernel fusion of element wise operations. Enable all level is for CPU inference.
         see https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
+    :param enable_profiling: let Onnx Runtime log each kernel time.
     :return: ONNX Runtime inference session
     """
     options = SessionOptions()
     options.graph_optimization_level = optimization_level
+    options.enable_profiling = enable_profiling
     if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
@@ -152,20 +155,28 @@ numpy_to_torch_dtype_dict = {
 
 torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
+ort_to_numpy_dtype_dict = {
+    "tensor(bool)": np.uint8,  # bool not supported by DlPack! https://github.com/dmlc/dlpack/issues/75
+    "tensor(float16)": np.float16,
+    "tensor(float)": np.float32,
+    "tensor(float64)": np.float64,
+    'tensor(int32)': np.int32,
+    'tensor(int64)': np.int64,
+}
+
 
 # TODO add test including different input and checking that tensor is not overriden
-# + remove typing arg (replaced by a mapping between ORT types and cupy ones)
-def to_pytorch(ort_tensor: OrtValue, np_type: type, clone_tensor: bool) -> torch.Tensor:
+def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
     """
     Convert OrtValue output by Onnx Runtime to Pytorch tensor.
     The process can be done in a zero copy way (depending of clone parameter).
     :param ort_tensor: output from Onnx Runtime
-    :param np_type: type of the tensor (numpy types)
     :param clone_tensor Onnx Runtime owns the storage array and will write on the next inference.
         By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """
     if ort_tensor.device_name().lower() == "cuda":
+        np_type = ort_to_numpy_dtype_dict[ort_tensor.data_type()]
         fake_owner = 1
         # size not used anywhere, so just put 0
         memory = cp.cuda.UnownedMemory(ort_tensor.data_ptr(), 0, fake_owner)
@@ -241,13 +252,12 @@ def inference_onnx_binding(
     binding.synchronize_inputs()
     model_onnx.run_with_iobinding(binding)
     binding.synchronize_outputs()
-    # WARNING: output type is hard coded
     outputs = dict()
     assert len(model_onnx.get_outputs()) == len(
         binding.get_outputs()
     ), f"{len(model_onnx.get_outputs())} != {len(binding.get_outputs())}"
     for out, t in zip(model_onnx.get_outputs(), binding.get_outputs()):
-        outputs[out.name] = to_pytorch(t, np_type=np.float32, clone_tensor=clone_tensor)
+        outputs[out.name] = to_pytorch(t, clone_tensor=clone_tensor)
     return outputs
 
 
@@ -364,7 +374,7 @@ def convert_fp16(onnx_model: ModelProto, nodes_to_exclude: List[str]) -> ModelPr
     """
     # add value info related to each node, required for the conversion
     model_fp16 = infer_shapes(onnx_model)
-    model_fp16 = convert_float_to_float16(model=model_fp16, keep_io_types=True, node_block_list=nodes_to_exclude)
+    model_fp16 = convert_float_to_float16(model=model_fp16, keep_io_types=False, node_block_list=nodes_to_exclude)
     # clean casting nodes before returning the model
     wrapped_fp16_model = OnnxModel(model_fp16)
     fusion_utils = FusionUtils(wrapped_fp16_model)

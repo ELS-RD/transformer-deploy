@@ -67,7 +67,9 @@ fp_32_timings = list()
 nb_try = 10
 for _ in range(nb_try):
     random_input = get_random_input()
-    random_input_fp16 = {k: v.type(dtype=torch.float16) if v.dtype == torch.float32 else v for k, v in random_input.items()}
+    random_input_fp16 = {
+        k: v.type(dtype=torch.float16) if v.dtype == torch.float32 else v for k, v in random_input.items()
+    }
 
     torch.cuda.synchronize()
     start = time()

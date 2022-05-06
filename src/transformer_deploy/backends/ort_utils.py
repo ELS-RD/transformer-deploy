@@ -51,7 +51,7 @@ def create_model_for_provider(
     nb_threads: int = multiprocessing.cpu_count(),
     nb_instances: int = 0,
     optimization_level: GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
-    enable_profiling: bool = False
+    enable_profiling: bool = False,
 ) -> InferenceSession:
     """
     Create an ONNX Runtime instance.
@@ -160,8 +160,8 @@ ort_to_numpy_dtype_dict = {
     "tensor(float16)": np.float16,
     "tensor(float)": np.float32,
     "tensor(float64)": np.float64,
-    'tensor(int32)': np.int32,
-    'tensor(int64)': np.int64,
+    "tensor(int32)": np.int32,
+    "tensor(int64)": np.int64,
 }
 
 

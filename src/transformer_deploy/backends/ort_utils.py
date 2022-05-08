@@ -52,6 +52,7 @@ def create_model_for_provider(
     nb_instances: int = 0,
     optimization_level: GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
     enable_profiling: bool = False,
+    log_severity: int = 2,
 ) -> InferenceSession:
     """
     Create an ONNX Runtime instance.
@@ -64,11 +65,13 @@ def create_model_for_provider(
         providing kernel fusion of element wise operations. Enable all level is for CPU inference.
         see https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
     :param enable_profiling: let Onnx Runtime log each kernel time.
+    :param log_severity: Log severity level. 0:Verbose, 1:Info, 2:Warning. 3:Error, 4:Fatal.
     :return: ONNX Runtime inference session
     """
     options = SessionOptions()
     options.graph_optimization_level = optimization_level
     options.enable_profiling = enable_profiling
+    options.log_severity_level = log_severity
     if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:

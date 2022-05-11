@@ -173,7 +173,7 @@ def build_engine(
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
-                # duplicate default shape
+                # duplicate default shape (one for each input)
                 if len(input_shapes) == 1 and input_shapes[0].input_name is None:
                     names = [network_def.get_input(num_input).name for num_input in range(network_def.num_inputs)]
                     input_shapes = input_shapes[0].generate_multiple_shapes(input_names=names)
@@ -186,6 +186,14 @@ def build_engine(
                         opt=shape.optimal_shape,
                         max=shape.max_shape,
                     )
+                if "shape_tensors" in kwargs:
+                    for shape in kwargs["shape_tensors"]:
+                        profile.set_shape_input(
+                            input=shape.input_name,
+                            min=shape.min_shape,
+                            opt=shape.optimal_shape,
+                            max=shape.max_shape,
+                        )
                 config.add_optimization_profile(profile)
                 if fp16:
                     network_def = fp16_fix(network_def)
@@ -212,7 +220,7 @@ def get_output_tensors(
     # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
         context.set_binding_shape(binding_index, tuple(host_input.shape))
-    assert context.all_binding_shapes_specified
+    # assert context.all_binding_shapes_specified
     device_outputs: List[torch.Tensor] = []
     for binding_index in output_binding_idxs:
         # TensorRT computes output shape based on input shape provided above
@@ -237,13 +245,20 @@ def infer_tensorrt(
     :param output_binding_idxs: output tensor indexes
     :return: output tensor
     """
+
     input_tensors: List[torch.Tensor] = list()
-    for tensor in host_inputs.values():
+    for i in range(context.engine.num_bindings):
+        if not context.engine.binding_is_input(index=i):
+            continue
+        tensor_name = context.engine.get_binding_name(i)
+        assert tensor_name in host_inputs, f"missing input: {tensor_name}"
+        tensor = host_inputs[tensor_name]
         assert isinstance(tensor, torch.Tensor), f"unexpected tensor class: {type(tensor)}"
         # warning: small changes in output if int64 is used instead of int32
         if tensor.dtype in [torch.int64, torch.long]:
             tensor = tensor.type(torch.int32)
-        tensor = tensor.to("cuda")
+        if tensor.device.type != "cuda":
+            tensor = tensor.to("cuda")
         input_tensors.append(tensor)
     # calculate input shape, bind it, allocate GPU memory for the output
     output_tensors: List[torch.Tensor] = get_output_tensors(
@@ -326,19 +341,17 @@ def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinit
     """
 
     def f(network_definition: INetworkDefinition) -> INetworkDefinition:
-        for layer_index in range(network_definition.num_layers - 1):
+        for layer_index in range(network_definition.num_layers):
             layer: ILayer = network_definition.get_layer(layer_index)
-            # next layer should take FP16 as input
-            next_layer: ILayer = network_definition.get_layer(layer_index + 1)
+            # identity function is mainly used for casting
+            # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
+            # if layer.type == LayerType.IDENTITY:
+            #     continue
 
-            if layer.name in keep_fp32 and next_layer.type != LayerType.IDENTITY:
+            if layer.name in keep_fp32:
                 layer.precision = trt.DataType.FLOAT
+                assert layer.num_outputs == 1, f"unexpected # output: {layer.num_outputs}"
                 layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
-                # identity function is mainly used for casting
-                # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
-                if next_layer.type != LayerType.IDENTITY:
-                    next_layer.precision = trt.DataType.FLOAT
-                    # next_layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
 
         return network_definition
 

@@ -349,7 +349,7 @@ def get_keep_fp32_nodes(
     # do not load weights on LLM (>2Gb), we only need to modify the computation graph
     onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
     onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
-    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=onnx_model_path + "all_nodes_", save_as_external_data=False)
+    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=onnx_model_path + "_all_nodes", save_as_external_data=False)
     provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
     ort_model_fp32_all_nodes = create_model_for_provider(onnx_model_path, provider)
     ort_binding = ort_model_fp32_all_nodes.io_binding()
@@ -391,7 +391,7 @@ def convert_fp16(onnx_model: str, nodes_to_exclude: List[str]) -> ModelProto:
     :return: mostly FP16 model
     """
     # add value info related to each node, required for the conversion
-    output_path = onnx_model + "shape_inference"
+    output_path = onnx_model + "_shape_inference"
     infer_shapes_path(model_path=onnx_model, output_path=output_path)
     model_fp16 = onnx.load_model(output_path)
     model_fp16 = convert_float_to_float16(model=model_fp16, keep_io_types=False, node_block_list=nodes_to_exclude)

@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from time import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import onnx
@@ -67,9 +67,6 @@ enc_onnx_out = inference_onnx_binding(
 )["output"]
 
 are_equal(a=enc_onnx_out, b=out_enc.last_hidden_state)
-
-
-from typing import Tuple
 
 
 class ExportT5(torch.nn.Module):

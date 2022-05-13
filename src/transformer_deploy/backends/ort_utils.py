@@ -26,7 +26,7 @@ import numpy as np
 import onnx
 import torch
 from onnx import ModelProto, NodeProto
-from onnx.shape_inference import infer_shapes
+from onnx.shape_inference import infer_shapes_path
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
@@ -319,6 +319,19 @@ def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict
     return input_mapping, output_mapping
 
 
+def use_external_data(path: str) -> bool:
+    """
+    Check if a model uses external data
+    :param model: Onnx model
+    :return: True if any initalizer (model weight) is stored in an external file
+    """
+    model = onnx.load_model(f=path, load_external_data=False)
+    for i in model.graph.initializer:
+        if i.HasField("data_location") and i.data_location == onnx.TensorProto.EXTERNAL:
+            return True
+    return False
+
+
 def get_keep_fp32_nodes(
     onnx_model_path: str,
     get_input: Callable[[], Dict[str, torch.Tensor]],
@@ -333,10 +346,12 @@ def get_keep_fp32_nodes(
     :param device: where to run the inference
     :return: list of names of nodes to keep in FP32
     """
-    onnx_model: ModelProto = onnx.load(onnx_model_path)
+    # do not load weights on LLM (>2Gb), we only need to modify the computation graph
+    onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
     onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
+    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=onnx_model_path + "all_nodes_", save_as_external_data=False)
     provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
-    ort_model_fp32_all_nodes = create_model_for_provider(onnx_model_fp32_all_nodes.SerializeToString(), provider)
+    ort_model_fp32_all_nodes = create_model_for_provider(onnx_model_path, provider)
     ort_binding = ort_model_fp32_all_nodes.io_binding()
     input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
     # list all nodes which have an output out of the FP16 range
@@ -368,7 +383,7 @@ def get_keep_fp32_nodes(
     return keep_fp32_nodes
 
 
-def convert_fp16(onnx_model: ModelProto, nodes_to_exclude: List[str]) -> ModelProto:
+def convert_fp16(onnx_model: str, nodes_to_exclude: List[str]) -> ModelProto:
     """
     Convert ONNX model in FP16, and still being able to exclude a list of nodes.
     :param onnx_model: original FP32 model
@@ -376,7 +391,9 @@ def convert_fp16(onnx_model: ModelProto, nodes_to_exclude: List[str]) -> ModelPr
     :return: mostly FP16 model
     """
     # add value info related to each node, required for the conversion
-    model_fp16 = infer_shapes(onnx_model)
+    output_path = onnx_model + "shape_inference"
+    infer_shapes_path(model_path=onnx_model, output_path=output_path)
+    model_fp16 = onnx.load_model(output_path)
     model_fp16 = convert_float_to_float16(model=model_fp16, keep_io_types=False, node_block_list=nodes_to_exclude)
     # clean casting nodes before returning the model
     wrapped_fp16_model = OnnxModel(model_fp16)

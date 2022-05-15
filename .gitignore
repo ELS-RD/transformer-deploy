@@ -218,3 +218,4 @@ cython_debug/
 TensorRT/
 triton_models/
 *.whl
+.vscode

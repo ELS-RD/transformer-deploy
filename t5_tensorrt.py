@@ -30,6 +30,7 @@ from transformer_deploy.backends.ort_utils import create_model_for_provider, inf
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
 from transformer_deploy.backends.trt_utils import TensorRTShape, build_engine, load_engine, save_engine
 
+
 # TODO pre allocate the largest possible past states and reuse it with tensorrt https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#reusing-input-buffers
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#empty-tensors
 model_name = "t5-small"
@@ -87,7 +88,7 @@ class ExportT5(torch.nn.Module):
             input_ids=input_ids, encoder_hidden_states=encoder_hidden_states, past_key_values=past_key_values
         )
         # Rescale output before projecting on vocab
-        out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (model.model_dim**-0.5)
+        out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (model.model_dim ** -0.5)
         out_dec["last_hidden_state"] = self.lm_head(out_dec["last_hidden_state"])
         out_dec["past_key_values"] = list(out_dec["past_key_values"])
         for i, layer_out in enumerate(out_dec["past_key_values"]):  # type: int, Tuple
@@ -420,7 +421,7 @@ engine: ICudaEngine = build_engine(
     runtime=runtime,
     onnx_file_path="test-dec-if.onnx",
     logger=trt_logger,
-    workspace_size=20000 * 1024**2,
+    workspace_size=20000 * 1024 ** 2,
     fp16=False,  # for tests only
     int8=False,
     input_shapes=input_shapes,

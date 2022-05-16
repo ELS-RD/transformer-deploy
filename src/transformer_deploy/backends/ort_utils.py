@@ -356,8 +356,8 @@ def get_keep_fp32_nodes(
     input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
     # list all nodes which have an output out of the FP16 range
     keep_fp32_nodes = list()
-    for _ in range(nb_try):
-        inputs = get_input()
+    for idx in range(nb_try):
+        inputs = get_input(idx)
         outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
             model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device=device, binding=ort_binding, clone_tensor=False
         )

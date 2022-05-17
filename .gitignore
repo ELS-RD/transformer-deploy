@@ -219,3 +219,5 @@ TensorRT/
 triton_models/
 *.whl
 .vscode
+to_delete/
+test-*/

@@ -69,17 +69,10 @@ nltk==3.6.7
 notebook==6.4.8
 numba==0.55.1
 numpy==1.21.5
-nvidia-cublas-cu11==2021.12.3
-nvidia-cublas-cu116==11.8.1.74
-nvidia-cuda-runtime-cu11==2021.12.20
-nvidia-cuda-runtime-cu116==11.6.55
-nvidia-cudnn-cu11==2022.1.13
-nvidia-cudnn-cu115==8.3.2.44
 nvidia-pyindex==1.0.9
 nvidia-tensorrt==8.2.2.1
 onnx==1.10.2
 onnx-graphsurgeon==0.3.14
-onnxruntime-gpu==1.9.0
 packaging==21.3
 pandocfilters==1.5.0
 parso==0.8.3
@@ -134,7 +127,6 @@ threadpoolctl==3.1.0
 tokenize-rt==4.2.1
 tokenizers==0.11.4
 tomli==2.0.1
-torch==1.10.2+cu113
 torchvision==0.11.3
 tornado==6.1
 tqdm==4.62.3

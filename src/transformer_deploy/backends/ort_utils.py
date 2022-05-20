@@ -292,11 +292,16 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
     keep_fp32 = list()
     min_float16 = torch.finfo(torch.float16).min
     max_float16 = torch.finfo(torch.float16).max
+    resolution = 5.96e-08  # torch.finfo(torch.float16).eps  # minimum value that can be represented by FP16
     for k, tensor in output_nodes.items():
         if tensor.dtype != torch.float32:
             continue
         # out of FP16 range
-        if torch.max(tensor) > max_float16 or torch.min(tensor) < min_float16:
+        if (
+            torch.any(tensor > max_float16)
+            or torch.any(tensor < min_float16)
+            or (torch.any(torch.abs(tensor[tensor != 0]) < resolution))
+        ):
             keep_fp32.append(graph[k])
     return keep_fp32
 
@@ -364,7 +369,6 @@ def get_keep_fp32_nodes(
             model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device=device, binding=ort_binding, clone_tensor=False
         )
         keep_node_io = find_node_fp32(graph=output_mapping, output_nodes=outputs)
-        # keep_fp32_nodes += [n for n in keep_node_io if n not in keep_fp32_nodes]
 
         nodes_to_add = [n for n in keep_node_io if n not in keep_fp32_nodes]
         keep_fp32_nodes += nodes_to_add

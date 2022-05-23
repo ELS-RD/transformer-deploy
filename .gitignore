@@ -221,3 +221,4 @@ triton_models/
 .vscode
 to_delete/
 test-*/
+.history/

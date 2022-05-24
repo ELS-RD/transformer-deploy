@@ -26,7 +26,7 @@
         
           
           
-          <meta name="theme-color" content="#ffffff">
+          <meta name="theme-color" content="#000000">
         
       
     
@@ -57,7 +57,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="white" data-md-color-accent="deep-orange">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="deep-orange">
   
     
     
@@ -1586,7 +1586,7 @@ TensorRTShape        </code>
 
 
 <h2 id="src.transformer_deploy.backends.trt_utils.build_engine" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">build_engine</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span> <span class="n">onnx_file_path</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">workspace_size</span><span class="p">,</span> <span class="n">fp16</span><span class="p">,</span> <span class="n">int8</span><span class="p">,</span> <span class="n">fp16_fix</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">fix_fp16_network</span> <span class="n">at</span> <span class="mh">0x7fe0424540d0</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">build_engine</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span> <span class="n">onnx_file_path</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">workspace_size</span><span class="p">,</span> <span class="n">fp16</span><span class="p">,</span> <span class="n">int8</span><span class="p">,</span> <span class="n">fp16_fix</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">fix_fp16_network</span> <span class="n">at</span> <span class="mh">0x7f6f4129a0d0</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 
 <a href="#src.transformer_deploy.backends.trt_utils.build_engine" class="headerlink" title="Permanent link">#</a></h2>
@@ -1655,7 +1655,7 @@ input tensors have the same shape</li>
         <td><code>fp16_fix</code></td>
         <td><code>Callable[[tensorrt.tensorrt.INetworkDefinition], tensorrt.tensorrt.INetworkDefinition]</code></td>
         <td><p>a function to set FP32 precision on some nodes to fix FP16 overflow</p></td>
-        <td><code>&lt;function fix_fp16_network at 0x7fe0424540d0&gt;</code></td>
+        <td><code>&lt;function fix_fp16_network at 0x7f6f4129a0d0&gt;</code></td>
       </tr>
   </tbody>
 </table>

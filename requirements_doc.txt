@@ -5,3 +5,4 @@ mkdocs-include-markdown-plugin
 mkdocs-gen-files
 mkdocs-literate-nav
 mkdocs-jupyter
+seaborn

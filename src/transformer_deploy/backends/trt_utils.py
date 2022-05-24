@@ -15,24 +15,65 @@
 """
 All the tooling to ease TensorRT usage.
 """
-
-from typing import Callable, Dict, List, OrderedDict, Tuple
+import dataclasses
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional
 
 import tensorrt as trt
 import torch
-from tensorrt import ICudaEngine, IExecutionContext
-from tensorrt.tensorrt import (
-    Builder,
-    IBuilderConfig,
-    IElementWiseLayer,
-    ILayer,
-    INetworkDefinition,
-    IOptimizationProfile,
-    IReduceLayer,
-    Logger,
-    OnnxParser,
-    Runtime,
-)
+from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, Logger, Runtime
+from tensorrt.tensorrt import Builder, IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser
+
+
+@dataclass
+class TensorRTShape:
+    """
+    Store input shapes for TensorRT build.
+    3 shapes per input tensor are required (as tuple of integers):
+
+    * minimum input shape
+    * optimal size used for the benchmarks during building
+    * maximum input shape
+
+    Set input name to None for default shape.
+    """
+
+    min_shape: List[int]
+    optimal_shape: List[int]
+    max_shape: List[int]
+    input_name: Optional[str]
+
+    def check_validity(self) -> None:
+        """
+        Basic checks of provided shapes
+        """
+        assert len(self.min_shape) == len(self.optimal_shape) == len(self.max_shape)
+        assert len(self.min_shape) > 0
+        assert self.min_shape[0] > 0 and self.optimal_shape[0] > 0 and self.max_shape[0] > 0
+        assert self.input_name is not None
+
+    def make_copy(self, input_name: str) -> "TensorRTShape":
+        """
+        Make a copy of the current instance, with a different input name.
+        :param input_name: new input name to use
+        :return: a copy of the current shape with a different name
+        """
+        instance_copy = dataclasses.replace(self)
+        instance_copy.input_name = input_name
+        return instance_copy
+
+    def generate_multiple_shapes(self, input_names: List[str]) -> List["TensorRTShape"]:
+        """
+        Generate multiple shapes when only a single default one is defined.
+        :param input_names: input names used by the model
+        :return: a list of shapes
+        """
+        assert self.input_name is None, f"input name is not None: {self.input_name}"
+        result = list()
+        for name in input_names:
+            shape = self.make_copy(input_name=name)
+            result.append(shape)
+        return result
 
 
 def fix_fp16_network(network_definition: INetworkDefinition) -> INetworkDefinition:
@@ -65,35 +106,55 @@ def build_engine(
     runtime: Runtime,
     onnx_file_path: str,
     logger: Logger,
-    min_shape: Tuple[int, int],
-    optimal_shape: Tuple[int, int],
-    max_shape: Tuple[int, int],
     workspace_size: int,
     fp16: bool,
     int8: bool,
+    fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
+    **kwargs,
 ) -> ICudaEngine:
     """
     Convert ONNX file to TensorRT engine.
     It supports dynamic shape, however it's advised to keep sequence length fix as it hurts performance otherwise.
-    Dynamic batch size don't hurt performance and is highly advised.
+    Dynamic batch size doesn't hurt performance and is highly advised.
+    Batch size can provided through different ways:
+
+    * **min_shape**, **optimal_shape**, **max_shape**: for simple case, 3 tuples of int when all
+    input tensors have the same shape
+    * **input_shapes**: a list of TensorRTShape with names if there are several input tensors with different shapes
+
+    **TIP**: minimum batch size should be 1 in most cases.
+
     :param runtime: global variable shared accross inference call / model building
     :param onnx_file_path: path to the ONNX file
     :param logger: specific logger to TensorRT
-    :param min_shape: the minimal shape of input tensors. It's advised to set first dimension (batch size) to 1
-    :param optimal_shape: input tensor shape used for optimizations
-    :param max_shape: maximal input tensor shape
-    :param workspace_size: GPU memory to use during the building, more is always better. If there is not enough memory,
-    some optimization may fail, and the whole conversion process will crash.
+    :param workspace_size: GPU memory to use during the building, more is always better.
+        If there is not enough memory, some optimization may fail, and the whole conversion process will crash.
     :param fp16: enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.
     :param int8: enable INT-8 quantization, best performance but model should have been quantized.
+    :param fp16_fix: a function to set FP32 precision on some nodes to fix FP16 overflow
     :return: TensorRT engine to use during inference
     """
+    # default input shape
+    if "min_shape" in kwargs and "optimal_shape" in kwargs and "max_shape" in kwargs:
+        default_shape = TensorRTShape(
+            min_shape=kwargs["min_shape"],
+            optimal_shape=kwargs["optimal_shape"],
+            max_shape=kwargs["max_shape"],
+            input_name=None,
+        )
+        input_shapes = [default_shape]
+    else:
+        assert "input_shapes" in kwargs, "missing input shapes"
+        input_shapes: List[TensorRTShape] = kwargs["input_shapes"]
+
     with trt.Builder(logger) as builder:  # type: Builder
         with builder.create_network(
             flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
-        ) as network_definition:  # type: INetworkDefinition
-            with trt.OnnxParser(network_definition, logger) as parser:  # type: OnnxParser
-                builder.max_batch_size = max_shape[0]  # max batch size
+        ) as network_def:  # type: INetworkDefinition
+            with trt.OnnxParser(network_def, logger) as parser:  # type: OnnxParser
+                # The maximum batch size which can be used at execution time,
+                # and also the batch size for which the ICudaEngine will be optimized.
+                builder.max_batch_size = max([s.max_shape[0] for s in input_shapes])
                 config: IBuilderConfig = builder.create_builder_config()
                 config.max_workspace_size = workspace_size
                 # to enable complete trt inspector debugging, only for TensorRT >= 8.2
@@ -112,17 +173,31 @@ def build_engine(
                 with open(onnx_file_path, "rb") as f:
                     parser.parse(f.read())
                 profile: IOptimizationProfile = builder.create_optimization_profile()
-                for num_input in range(network_definition.num_inputs):
+                # duplicate default shape (one for each input)
+                if len(input_shapes) == 1 and input_shapes[0].input_name is None:
+                    names = [network_def.get_input(num_input).name for num_input in range(network_def.num_inputs)]
+                    input_shapes = input_shapes[0].generate_multiple_shapes(input_names=names)
+
+                for shape in input_shapes:
+                    shape.check_validity()
                     profile.set_shape(
-                        input=network_definition.get_input(num_input).name,
-                        min=min_shape,
-                        opt=optimal_shape,
-                        max=max_shape,
+                        input=shape.input_name,
+                        min=shape.min_shape,
+                        opt=shape.optimal_shape,
+                        max=shape.max_shape,
                     )
+                if "shape_tensors" in kwargs:
+                    for shape in kwargs["shape_tensors"]:
+                        profile.set_shape_input(
+                            input=shape.input_name,
+                            min=shape.min_shape,
+                            opt=shape.optimal_shape,
+                            max=shape.max_shape,
+                        )
                 config.add_optimization_profile(profile)
                 if fp16:
-                    network_definition = fix_fp16_network(network_definition)
-                trt_engine = builder.build_serialized_network(network_definition, config)
+                    network_def = fp16_fix(network_def)
+                trt_engine = builder.build_serialized_network(network_def, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
@@ -145,7 +220,7 @@ def get_output_tensors(
     # explicitly set dynamic input shapes, so dynamic output shapes can be computed internally
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
         context.set_binding_shape(binding_index, tuple(host_input.shape))
-    assert context.all_binding_shapes_specified
+    # assert context.all_binding_shapes_specified
     device_outputs: List[torch.Tensor] = []
     for binding_index in output_binding_idxs:
         # TensorRT computes output shape based on input shape provided above
@@ -158,7 +233,7 @@ def get_output_tensors(
 
 def infer_tensorrt(
     context: IExecutionContext,
-    host_inputs: OrderedDict[str, torch.Tensor],
+    host_inputs: Dict[str, torch.Tensor],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
 ) -> List[torch.Tensor]:
@@ -170,12 +245,20 @@ def infer_tensorrt(
     :param output_binding_idxs: output tensor indexes
     :return: output tensor
     """
+
     input_tensors: List[torch.Tensor] = list()
-    for tensor in host_inputs.values():
-        assert isinstance(tensor, torch.Tensor), f"unexpected tensor type: {tensor.dtype}"
+    for i in range(context.engine.num_bindings):
+        if not context.engine.binding_is_input(index=i):
+            continue
+        tensor_name = context.engine.get_binding_name(i)
+        assert tensor_name in host_inputs, f"missing input: {tensor_name}"
+        tensor = host_inputs[tensor_name]
+        assert isinstance(tensor, torch.Tensor), f"unexpected tensor class: {type(tensor)}"
         # warning: small changes in output if int64 is used instead of int32
-        tensor = tensor.type(torch.int32)
-        tensor = tensor.to("cuda")
+        if tensor.dtype in [torch.int64, torch.long]:
+            tensor = tensor.type(torch.int32)
+        if tensor.device.type != "cuda":
+            tensor = tensor.to("cuda")
         input_tensors.append(tensor)
     # calculate input shape, bind it, allocate GPU memory for the output
     output_tensors: List[torch.Tensor] = get_output_tensors(
@@ -213,7 +296,7 @@ def load_engine(
                 host_inputs=inputs,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
-            )
+            )[0]
 
         return tensorrt_model
 
@@ -247,3 +330,29 @@ def get_binding_idxs(engine: trt.ICudaEngine, profile_index: int):
         else:
             output_binding_idxs.append(binding_index)
     return input_binding_idxs, output_binding_idxs
+
+
+def get_fix_fp16_network_func(keep_fp32: List[str]) -> Callable[[INetworkDefinition], INetworkDefinition]:
+    """
+    Generate a function for TensorRT engine to set precision of specific nodes to FP32 to keep tensorrt FP16 output
+    close to FP32 nodes.
+    :param keep_fp32: nodes to keep in FP32
+    :return: a function to set node precisions
+    """
+
+    def f(network_definition: INetworkDefinition) -> INetworkDefinition:
+        for layer_index in range(network_definition.num_layers):
+            layer: ILayer = network_definition.get_layer(layer_index)
+            # identity function is mainly used for casting
+            # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Graph/Layers.html#iidentitylayer
+            # if layer.type == LayerType.IDENTITY:
+            #     continue
+
+            if layer.name in keep_fp32:
+                layer.precision = trt.DataType.FLOAT
+                assert layer.num_outputs == 1, f"unexpected # output: {layer.num_outputs}"
+                layer.set_output_type(index=0, dtype=trt.DataType.FLOAT)
+
+        return network_definition
+
+    return f

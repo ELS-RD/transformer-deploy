@@ -80,6 +80,6 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
   --header "Inference-Header-Content-Length: 161"
 ```
 
-> check [`demo`](./demo/infinity) folder to discover more performant ways to query the server from Python or elsewhere.
+> check [`demo`](https://github.com/ELS-RD/transformer-deploy/tree/main/demo/infinity) folder to discover more performant ways to query the server from Python or elsewhere.
 
 --8<-- "resources/abbreviations.md"

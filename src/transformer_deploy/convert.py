@@ -54,6 +54,7 @@ from transformer_deploy.benchmarks.utils import (
     generate_multiple_inputs,
     print_timings,
     setup_logging,
+    to_numpy,
     track_infer_time,
 )
 from transformer_deploy.triton.configuration import Configuration, EngineType
@@ -77,14 +78,16 @@ def check_accuracy(
     :param engine_output: output from the engine
     :param tolerance: if difference in outputs is above threshold, an error will be raised
     """
+    pytorch_output = to_numpy(pytorch_output)
+    engine_output = to_numpy(engine_output)
     discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
-    assert discrepency < tolerance, (
-        f"{engine_name} discrepency is too high ({discrepency:.2f} > {tolerance}):\n"
+    assert discrepency <= tolerance, (
+        f"{engine_name} discrepency is too high ({discrepency:.2f} >= {tolerance}):\n"
         f"Pythorch:\n{pytorch_output}\n"
         f"VS\n"
-        f"{engine_name}:\n{engine_output}\n"
+        f"Engine:\n{engine_output}\n"
         f"Diff:\n"
-        f"{np.asarray(pytorch_output) - np.asarray(engine_output)}\n"
+        f"{torch.asarray(pytorch_output) - torch.asarray(engine_output)}\n"
         "Tolerance can be increased with --atol parameter."
     )
 
@@ -106,7 +109,7 @@ def launch_inference(
     for batch_input in inputs:
         output = infer(batch_input)
         outputs.append(output)
-    time_buffer: List[float] = list()
+    time_buffer: List[int] = list()
     for _ in range(nb_measures):
         with track_infer_time(time_buffer):
             _ = infer(inputs[0])
@@ -256,7 +259,6 @@ def main(commands: argparse.Namespace):
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
-
         trt_logger: Logger = trt.Logger(trt.Logger.INFO if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
         engine: ICudaEngine = build_engine(
@@ -283,7 +285,7 @@ def main(commands: argparse.Namespace):
         check_accuracy(
             engine_name=engine_name,
             pytorch_output=pytorch_output,
-            engine_output=tensorrt_output[0],  # TRT output are wrapped in List
+            engine_output=tensorrt_output,
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer

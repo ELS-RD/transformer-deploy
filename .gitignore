@@ -217,3 +217,8 @@ cython_debug/
 .idea/
 TensorRT/
 triton_models/
+*.whl
+.vscode
+to_delete/
+test-*/
+.history/

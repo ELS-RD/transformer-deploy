@@ -15,17 +15,11 @@
 """
 Utils related to Pytorch inference.
 """
-from collections import OrderedDict
-from typing import Callable, Dict
-from typing import OrderedDict as Od
-from typing import Tuple
+from typing import Callable, Dict, Tuple
 
-import onnx
 import torch
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
-
-from transformer_deploy.backends.st_utils import STransformerWrapper
 
 
 def infer_classification_pytorch(
@@ -78,16 +72,22 @@ def get_model_size(path: str) -> Tuple[int, int]:
     return num_attention_heads, hidden_size
 
 
+# TODO manage encoder / decoder architecture + cache
 def convert_to_onnx(
-    model_pytorch: PreTrainedModel,
+    model_pytorch: torch.nn.Module,
     output_path: str,
-    inputs_pytorch: Od[str, torch.Tensor],
+    inputs_pytorch: Dict[str, torch.Tensor],
     quantization: bool,
     var_output_seq: bool,
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
-    ONNX opset 12 used for non quantized models, and 13 otherwise.
+    Pytorch sometimes fails to infer output tensor shape of models
+    In ONNX graph, some axis name may be marked like "Divoutput_dim_1" which is a generated name,
+    and there may be a warning:
+    ** "WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape inference
+    for the exported graph. Please consider adding it in symbolic function." **
+    ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374
     :param model_pytorch: Pytorch model (transformers)
     :param output_path: where to save ONNX file
     :param inputs_pytorch: Tensor, can be dummy data, shape is not important as we declare all axes as dynamic.
@@ -110,18 +110,27 @@ def convert_to_onnx(
 
         TensorQuantizer.use_fb_fake_quant = True
     if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
+        use_cache = getattr(model_pytorch.config, "use_cache")
         setattr(model_pytorch.config, "use_cache", False)
 
     # dynamic axis == variable length axis
-    dynamic_axis = OrderedDict()
+    dynamic_axis = dict()
     for k in inputs_pytorch.keys():
-        dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
+        if var_output_seq:
+            # seq axis name is fixed to be matched with output seq axis name (for output shape prediction)
+            dynamic_axis[k] = {0: "batch_size", 1: "sequence"}
+        else:
+            # if there is no specific requirement, each axis name is unique, fix some issue on T5 model
+            dynamic_axis[k] = {0: "batch_size", 1: f"sequence-{k}"}
     dynamic_axis["output"] = {0: "batch_size"}
     if var_output_seq:
         dynamic_axis["output"][1] = "sequence"
     # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
     for k, v in inputs_pytorch.items():
-        inputs_pytorch[k] = v.type(torch.int32)
+        if not isinstance(v, torch.Tensor):
+            continue
+        if v.dtype in [torch.long, torch.int64]:
+            inputs_pytorch[k] = v.type(torch.int32)
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize
@@ -138,21 +147,4 @@ def convert_to_onnx(
     if quantization:
         TensorQuantizer.use_fb_fake_quant = False
     if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):
-        setattr(model_pytorch.config, "use_cache", True)
-
-    # Pytorch fails to infer output tensor shape of models based on torch.Sequential (used by sentence-transformers)
-    # In ONNX graph it marked the dim as "Divoutput_dim_1" which is a generated name, and there is also warnings:
-    # ** "WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape inference
-    # for the exported graph. Please consider adding it in symbolic function." **
-    # ex.: https://discuss.pytorch.org/t/bidirectional-lstm-and-onnx-runtime-warnings/136374
-    # We need the nb of dims to be fixed to reserve GPU memory when using ONNX Runtime io binding API
-    # Below we reopen the model and override the dynamic shape by a fixed one
-    if isinstance(model_pytorch, STransformerWrapper):  # for sentence-transformers model only
-        output = model_pytorch(**inputs_pytorch)
-        assert len(output.shape) == 2, "unexpected output tensor shape (!=2)"
-        nb_dim = output.shape[1]
-        onnx_model = onnx.load(output_path)
-        assert len(onnx_model.graph.output) == 1, "unexpected number of output tensors (!=1)"
-        assert len(onnx_model.graph.output[0].type.tensor_type.shape.dim) == 2, "unexpected ouput tensor shape (!=2)"
-        onnx_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value = nb_dim
-        onnx.save(onnx_model, output_path)
+        setattr(model_pytorch.config, "use_cache", use_cache)

@@ -30,6 +30,7 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
+    AutoModelForTokenClassification,
     AutoTokenizer,
     PretrainedConfig,
     PreTrainedModel,
@@ -60,6 +61,7 @@ from transformer_deploy.benchmarks.utils import (
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
+from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
 
 
@@ -119,7 +121,7 @@ def launch_inference(
 def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
     triton_output_shape = list(output.shape)
     triton_output_shape[0] = -1  # dynamic batch size
-    if task == "text-generation":
+    if task in ["text-generation", "token-classification"]:
         triton_output_shape[1] = -1  # dynamic sequence size
     return triton_output_shape
 
@@ -159,6 +161,8 @@ def main(commands: argparse.Namespace):
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
     elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
+    elif commands.task == "token-classification":
+        model_pytorch = AutoModelForTokenClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "text-generation":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
@@ -184,13 +188,13 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
-        var_output_seq=commands.task == "text-generation",
+        var_output_seq=commands.task in ["text-generation", "token-classification"],
     )
 
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
-        if task in ["classification", "text-generation"]:
+        if task in ["classification", "text-generation", "token-classification"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
@@ -202,7 +206,13 @@ def main(commands: argparse.Namespace):
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
         )
-        conf_class: Type[Configuration] = ConfigurationDec if commands.task == "text-generation" else ConfigurationEnc
+        if commands.task == "text-generation":
+            conf_class: Type[Configuration] = ConfigurationDec
+        elif commands.task == "token-classification":
+            conf_class: Type[Configuration] = ConfigurationTokenClassifier
+        else:
+            conf_class = ConfigurationEnc
+
         triton_conf = conf_class(
             model_name_base=commands.name,
             dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),

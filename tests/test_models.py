@@ -196,3 +196,26 @@ def test_gpt2_gpu():
     ]
     args = parse_args(commands=commands)
     main(commands=args)
+
+
+def test_bert_ner_cpu():
+    commands = [
+        "--model",
+        "kamalkraj/bert-base-cased-ner-conll2003",
+        "--task",
+        "token-classification",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)

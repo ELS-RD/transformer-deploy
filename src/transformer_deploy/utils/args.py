@@ -34,7 +34,7 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
     parser.add_argument(
         "--task",
         default="classification",
-        choices=["classification", "embedding", "text-generation"],
+        choices=["classification", "embedding", "text-generation", "token-classification"],
         help="task to manage. embeddings is for sentence-transformers models",
     )
     parser.add_argument(

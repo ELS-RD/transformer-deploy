@@ -135,6 +135,74 @@ Model output is at the end of the Json (`data` field).
 
 To get very low latency inference in your Python code (no inference server): [click here](https://els-rd.github.io/transformer-deploy/python/)
 
+### Token-classification (NER) (encoder model)
+
+Token classification assigns a label to individual tokens in a sentence.
+One of the most common token classification tasks is Named Entity Recognition (NER). 
+NER attempts to find a label for each entity in a sentence, such as a person, location, or organization.
+
+#### Optimize existing model
+
+This will optimize models, generate Triton configuration and Triton folder layout in a single command:
+
+```shell
+docker run -it --rm --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  bash -c "cd /project && \
+    convert_model -m \"kamalkraj/bert-base-cased-ner-conll2003\" \
+    --backend tensorrt onnx \
+    --seq-len 16 128 128 \
+    --task token-classification"
+
+# output:  
+# ...
+# Inference done on Tesla T4
+# latencies:
+# [Pytorch (FP32)] mean=8.24ms, sd=0.46ms, min=7.66ms, max=13.91ms, median=8.20ms, 95p=8.38ms, 99p=10.01ms
+# [Pytorch (FP16)] mean=6.87ms, sd=0.44ms, min=6.69ms, max=13.05ms, median=6.78ms, 95p=7.33ms, 99p=8.86ms
+# [TensorRT (FP16)] mean=2.33ms, sd=0.32ms, min=2.19ms, max=4.18ms, median=2.24ms, 95p=3.00ms, 99p=4.04ms
+# [ONNX Runtime (FP32)] mean=8.08ms, sd=0.33ms, min=7.78ms, max=10.61ms, median=8.06ms, 95p=8.18ms, 99p=10.55ms
+# [ONNX Runtime (optimized)] mean=2.57ms, sd=0.04ms, min=2.38ms, max=2.83ms, median=2.56ms, 95p=2.68ms, 99p=2.73ms
+# Each infence engine output is within 0.3 tolerance compared to Pytorch output
+```
+
+It will output mean latency and other statistics.  
+Usually `Nvidia TensorRT` is the fastest option and `ONNX Runtime` is usually a strong second option.  
+On ONNX Runtime, `optimized` means that kernel fusion and mixed precision are enabled.  
+`Pytorch` is never competitive on transformer inference, including mixed precision, whatever the model size.  
+
+#### Run Nvidia Triton inference server
+
+Note that we install `transformers` at run time.  
+For production, it's advised to build your own 3-line Docker image with `transformers` pre-installed.
+
+```shell
+docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  bash -c "pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
+  tritonserver --model-repository=/models"
+
+# output:
+# ...
+# I0207 09:58:32.738831 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001
+# I0207 09:58:32.739875 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000
+# I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
+```
+
+#### Query inference 
+
+Query ONNX models (replace `transformer_onnx_inference` by `transformer_tensorrt_inference` to query TensorRT engine):
+
+```shell
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
+  --data-binary "@demo/infinity/query_body.bin" \
+  --header "Inference-Header-Content-Length: 161"
+
+# output:
+# {"model_name":"transformer_onnx_inference","model_version":"1","outputs":[{"name":"output","datatype":"BYTES","shape":[],"data":["[{\"entity_group\": \"ORG\", \"score\": 0.9848777055740356, \"word\": \"Infinity\", \"start\": 45, \"end\": 53}]"]}]}
+```
+
+
 ### Feature extraction / dense embeddings
 
 Feature extraction in NLP is the task to convert text to dense embeddings.  

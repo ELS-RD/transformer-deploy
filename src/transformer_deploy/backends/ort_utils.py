@@ -174,7 +174,7 @@ def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
     Convert OrtValue output by Onnx Runtime to Pytorch tensor.
     The process can be done in a zero copy way (depending of clone parameter).
     :param ort_tensor: output from Onnx Runtime
-    :param clone_tensor Onnx Runtime owns the storage array and will write on the next inference.
+    :param clone_tensor: Onnx Runtime owns the storage array and will write on the next inference.
         By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """

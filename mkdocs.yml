@@ -9,8 +9,8 @@ theme:
   name: material
   custom_dir: docs/overrides
   palette:
-    scheme: slate
-    primary: white
+    scheme: default
+    primary: black
     accent: deep orange
 #      toggle:
 #        icon: material/weather-night

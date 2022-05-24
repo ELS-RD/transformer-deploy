@@ -88,6 +88,7 @@ nav:
         - End to end demo: quantization/quantization.ipynb
     - "From optimization to deployment: end to end demo": demo.md
     - "Accelerate text generation with GPT-2": gpt2.ipynb
+    - "Accelerate text generation with T5": t5.ipynb
     - Benchmarks run on AWS GPU instances: benchmarks.md
     - FAQ: faq.md
     - API: reference/

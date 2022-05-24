@@ -2,7 +2,6 @@
 
 [![Documentation](https://img.shields.io/website?label=documentation&style=for-the-badge&up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2F)](https://els-rd.github.io/transformer-deploy/) [![tests](https://img.shields.io/github/workflow/status/ELS-RD/transformer-deploy/tests/main?label=tests&style=for-the-badge)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-360/) [![Twitter Follow](https://img.shields.io/twitter/follow/pommedeterre33?color=orange&style=for-the-badge)](https://twitter.com/pommedeterre33)
 
-
 ### Optimize and deploy in **production** 🤗 Hugging Face Transformer models in a single command line.  
 
 => Up to 10X faster inference! <=
@@ -118,7 +117,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 # I0207 09:58:32.782066 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
 ```
 
-#### Query inference 
+#### Query inference
 
 Query ONNX models (replace `transformer_onnx_inference` by `transformer_tensorrt_inference` to query TensorRT engine):
 
@@ -226,6 +225,11 @@ docker run -it --rm --gpus all \
 # Each infence engine output is within 0.3 tolerance compared to Pytorch output
 ```
 
+Two detailed notebooks are available:
+
+* GPT-2: <https://github.com/ELS-RD/transformer-deploy/blob/main/demo/generative-model/gpt2.ipynb>
+* T5: <https://github.com/ELS-RD/transformer-deploy/blob/main/demo/generative-model/t5.ipynb>
+
 #### Run Nvidia Triton inference server
 
 To run decoding algorithm server side, we need to install `Pytorch` on `Triton` docker image.
@@ -243,7 +247,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g
 # I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
 ```
 
-#### Query inference 
+#### Query inference
 
 Replace `transformer_onnx_generate` by `transformer_tensorrt_generate` to query `TensorRT` engine.
 

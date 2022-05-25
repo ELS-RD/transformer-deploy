@@ -174,8 +174,10 @@ def build_engine(
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
+                logger.log(msg="parsing TensorRT model", severity=trt.ILogger.INFO)
                 with open(onnx_file_path, "rb") as f:
-                    # https://github.com/onnx/onnx-tensorrt/issues/818 -> path to make ext data work
+                    # file path needed for models with external dataformat
+                    # https://github.com/onnx/onnx-tensorrt/issues/818
                     parser.parse(model=f.read(), path=onnx_file_path)
                 profile: IOptimizationProfile = builder.create_optimization_profile()
                 # duplicate default shape (one for each input)

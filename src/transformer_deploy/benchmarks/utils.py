@@ -18,14 +18,11 @@ Shared functions related to benchmarks.
 
 import logging
 import time
-from collections import OrderedDict
 from contextlib import contextmanager
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-
-from transformer_deploy.backends.pytorch_utils import convert_tensors
 
 
 def print_timings(name: str, timings: List[float]) -> None:
@@ -85,7 +82,7 @@ def generate_input(
     """
     assert device in ["cpu", "cuda"]
     shape = (batch_size, seq_len)
-    inputs_pytorch: OrderedDict[str, torch.Tensor] = OrderedDict()
+    inputs_pytorch: Dict[str, torch.Tensor] = dict()
     for name in input_names:
         inputs_pytorch[name] = torch.ones(size=shape, dtype=torch.int32, device=device)
     inputs_onnx: Dict[str, np.ndarray] = {
@@ -118,7 +115,22 @@ def generate_multiple_inputs(
     return all_inputs_pytorch, all_inputs_onnx
 
 
-def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Union[np.ndarray, torch.Tensor]]) -> float:
+def to_numpy(tensors: List[Union[np.ndarray, torch.Tensor]]) -> np.ndarray:
+    """
+    Convert list of torch / numpy tensors to a numpy tensor
+    :param tensors: list of torch / numpy tensors
+    :return: numpy tensor
+    """
+    if isinstance(tensors[0], torch.Tensor):
+        pytorch_output = [t.detach().cpu().numpy() for t in tensors]
+    elif isinstance(tensors[0], np.ndarray):
+        pytorch_output = tensors
+    else:
+        raise Exception(f"unknown tensor type: {type(tensors[0])}")
+    return np.asarray(pytorch_output)
+
+
+def compare_outputs(pytorch_output: np.ndarray, engine_output: np.ndarray) -> float:
     """
     Compare 2 model outputs by computing the mean of absolute value difference between them.
 
@@ -126,8 +138,4 @@ def compare_outputs(pytorch_output: List[torch.Tensor], engine_output: List[Unio
     :param engine_output: other engine output
     :return: difference between outputs as a single float
     """
-    pytorch_output = convert_tensors(pytorch_output)
-    pt_output = np.asarray(pytorch_output)
-    engine_output = convert_tensors(engine_output)
-    eng_output = np.asarray(engine_output)
-    return np.mean(np.abs(pt_output - eng_output))
+    return np.mean(np.abs(pytorch_output - engine_output))

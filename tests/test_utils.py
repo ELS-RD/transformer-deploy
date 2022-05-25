@@ -17,7 +17,8 @@ import numpy as np
 import torch
 
 from transformer_deploy.backends.pytorch_utils import get_model_size
-from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs
+from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs, to_numpy
+from transformer_deploy.convert import check_accuracy
 
 
 def generate_fake_outputs(
@@ -41,7 +42,8 @@ def test_gap():
     for t1_type, t2_type in pairs:
         t1 = generate_fake_outputs(shape=shape, nb=1, factor=0.1, tensor_type=t1_type)
         t2 = generate_fake_outputs(shape=shape, nb=1, factor=0.2, tensor_type=t2_type)
-        assert np.isclose(a=compare_outputs(pytorch_output=t1, engine_output=t2), b=0.15, atol=1e-3)
+        assert np.isclose(a=compare_outputs(pytorch_output=to_numpy(t1), engine_output=to_numpy(t2)), b=0.15, atol=1e-3)
+        check_accuracy(engine_name=f"test [{t1_type}/{t2_type}]", pytorch_output=t1, engine_output=t2, tolerance=0.16)
 
 
 def test_generate_input():

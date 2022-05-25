@@ -178,7 +178,7 @@ def main(commands: argparse.Namespace):
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # take optimial size
-    inputs_pytorch, _ = generate_multiple_inputs(
+    inputs_pytorch = generate_multiple_inputs(
         batch_size=tensor_shapes[1][0],
         seq_len=tensor_shapes[1][1],
         input_names=input_names,

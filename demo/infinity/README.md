@@ -58,7 +58,7 @@ and Pytorch the simplest approach (at least it's the most well known tool).
 ```shell
 # add -v $PWD/src:/opt/tritonserver/src to apply source code modification to the container
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \

@@ -17,6 +17,7 @@ All the tooling to ease TensorRT usage.
 """
 import dataclasses
 from dataclasses import dataclass
+from time import time
 from typing import Callable, Dict, List, Optional
 
 import tensorrt as trt
@@ -166,7 +167,7 @@ def build_engine(
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
-                logger.log(msg="parsing trt model", severity=trt.ILogger.WARNING)
+                logger.log(msg="parsing trt model", severity=trt.ILogger.INFO)
                 with open(onnx_file_path, "rb") as f:
                     # File path needed for models with external dataformat
                     parser.parse(model=f.read(), path=onnx_file_path)
@@ -194,17 +195,15 @@ def build_engine(
                         )
                 config.add_optimization_profile(profile)
                 if fp16:
-                    network_def = fp16_fix(network_def)
-                trt_engine = builder.build_serialized_network(network_def, config)
-                    network_definition = fix_fp16_network(network_definition)
+                    network_definition = fix_fp16_network(network_def)
 
                 logger.log(
                     msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING
                 )
-                t0 = time()
+                start = time()
                 trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
-                logger.log(msg=f"building engine took {time() - t0:4.1f} seconds", severity=trt.ILogger.WARNING)
+                logger.log(msg=f"building engine took {time() - start:4.1f} seconds", severity=trt.ILogger.WARNING)
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 

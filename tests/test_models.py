@@ -197,6 +197,7 @@ def test_gpt2_gpu():
     args = parse_args(commands=commands)
     main(commands=args)
 
+
 @pytest.mark.gpu
 def test_gpt2_medium_gpu():
     commands = [

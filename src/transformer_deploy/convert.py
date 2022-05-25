@@ -45,7 +45,6 @@ from transformer_deploy.backends.ort_utils import (
     optimize_onnx,
 )
 from transformer_deploy.backends.pytorch_utils import (
-    convert_tensors,
     convert_to_onnx,
     get_model_size,
     infer_classification_pytorch,
@@ -129,7 +128,7 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 
 
 def main(commands: argparse.Namespace):
-    setup_logging(level=logging.DEBUG if commands.verbose else logging.INFO)
+    setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
     logging.info("running with commands: %s", commands)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
@@ -316,6 +315,7 @@ def main(commands: argparse.Namespace):
         )
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
+        gc.collect()
         triton_conf.create_configs(
             tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
         )
@@ -363,6 +363,7 @@ def main(commands: argparse.Namespace):
             )
             timings[benchmark_name] = time_buffer
             del ort_model
+            gc.collect()
 
         triton_conf.create_configs(
             tokenizer=tokenizer,

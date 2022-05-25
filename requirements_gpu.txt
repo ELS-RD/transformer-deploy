@@ -1,11 +1,6 @@
-onnxruntime-gpu==1.9.0
-torch==1.10.2+cu113
-nvidia-tensorrt==8.2.2.1
-onnx_graphsurgeon==0.3.14
-polygraphy==0.35.1
-nvidia-cublas-cu11==2021.12.3
-nvidia-cublas-cu116==11.8.1.74
-nvidia-cuda-runtime-cu11==2021.12.20
-nvidia-cuda-runtime-cu116==11.6.55
-nvidia-cudnn-cu11==2022.1.13
-nvidia-cudnn-cu115==8.3.2.44
+onnxruntime-gpu
+torch==1.11.0+cu113
+nvidia-tensorrt==8.2.4.2
+onnx_graphsurgeon
+polygraphy
+cupy-cuda113

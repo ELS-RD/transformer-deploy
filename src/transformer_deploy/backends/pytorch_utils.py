@@ -18,22 +18,8 @@ Utils related to Pytorch inference.
 from typing import Callable, Dict, Tuple
 
 import torch
-from numpy import ndarray
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
-
-
-def convert_tensors(tensors: List[torch.Tensor]) -> List[ndarray]:
-    """
-    Converts a list of tensors to CPU.
-    :param tensors: A list of Pytorch tensors
-    :return: A list of numpy arrays
-    """
-    if isinstance(tensors, torch.Tensor):
-        return tensors.cpu().detach().numpy()
-    if isinstance(tensors, List) and any(isinstance(elem, torch.Tensor) for elem in tensors):
-        return [elem.cpu().detach().numpy() for elem in tensors]
-    return tensors
 
 
 def infer_classification_pytorch(

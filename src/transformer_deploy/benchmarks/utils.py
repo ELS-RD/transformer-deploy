@@ -19,7 +19,7 @@ Shared functions related to benchmarks.
 import logging
 import time
 from contextlib import contextmanager
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -71,29 +71,26 @@ def track_infer_time(buffer: List[int]) -> None:
 
 def generate_input(
     seq_len: int, batch_size: int, input_names: List[str], device: str = "cuda"
-) -> Tuple[Dict[str, torch.Tensor], Dict[str, np.ndarray]]:
+) -> Dict[str, torch.Tensor]:
     """
     Generate dummy inputs.
     :param seq_len: number of token per input.
     :param batch_size: first dimension of the tensor
     :param input_names: tensor input names to generate
     :param device: where to store tensors (Pytorch only). One of [cpu, cuda]
-    :return: a tuple of tensors, Pytorch and numpy
+    :return: Pytorch tensors
     """
     assert device in ["cpu", "cuda"]
     shape = (batch_size, seq_len)
-    inputs_pytorch: Dict[str, torch.Tensor] = dict()
-    for name in input_names:
-        inputs_pytorch[name] = torch.ones(size=shape, dtype=torch.int32, device=device)
-    inputs_onnx: Dict[str, np.ndarray] = {
-        k: np.ascontiguousarray(v.detach().cpu().numpy()) for k, v in inputs_pytorch.items()
+    inputs_pytorch: Dict[str, torch.Tensor] = {
+        name: torch.ones(size=shape, dtype=torch.int32, device=device) for name in input_names
     }
-    return inputs_pytorch, inputs_onnx
+    return inputs_pytorch
 
 
 def generate_multiple_inputs(
     seq_len: int, batch_size: int, input_names: List[str], nb_inputs_to_gen: int, device: str
-) -> Tuple[List[Dict[str, torch.Tensor]], List[Dict[str, np.ndarray]]]:
+) -> List[Dict[str, torch.Tensor]]:
     """
     Generate multiple random inputs.
 
@@ -105,14 +102,10 @@ def generate_multiple_inputs(
     :return: generated sequences
     """
     all_inputs_pytorch: List[Dict[str, torch.Tensor]] = list()
-    all_inputs_onnx: List[Dict[str, np.ndarray]] = list()
     for _ in range(nb_inputs_to_gen):
-        inputs_pytorch, inputs_onnx = generate_input(
-            seq_len=seq_len, batch_size=batch_size, input_names=input_names, device=device
-        )
+        inputs_pytorch = generate_input(seq_len=seq_len, batch_size=batch_size, input_names=input_names, device=device)
         all_inputs_pytorch.append(inputs_pytorch)
-        all_inputs_onnx.append(inputs_onnx)
-    return all_inputs_pytorch, all_inputs_onnx
+    return all_inputs_pytorch
 
 
 def to_numpy(tensors: List[Union[np.ndarray, torch.Tensor]]) -> np.ndarray:

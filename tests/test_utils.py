@@ -47,24 +47,20 @@ def test_gap():
 
 
 def test_generate_input():
-    inputs_pytorch, inputs_onnx = generate_input(
-        seq_len=16, batch_size=4, input_names=["input_ids", "attention_mask"], device="cpu"
-    )
+    inputs_pytorch = generate_input(seq_len=16, batch_size=4, input_names=["input_ids", "attention_mask"], device="cpu")
     assert set(inputs_pytorch.keys()) == {"input_ids", "attention_mask"}
     assert inputs_pytorch["input_ids"].shape == torch.Size([4, 16])
-    assert inputs_onnx["input_ids"].shape == (4, 16)
-    inputs_pytorch, inputs_onnx = generate_input(
+    inputs_pytorch = generate_input(
         seq_len=1, batch_size=1, input_names=["input_ids", "attention_mask", "token_type_ids"], device="cpu"
     )
     assert set(inputs_pytorch.keys()) == {"input_ids", "attention_mask", "token_type_ids"}
 
 
 def test_multiple_generate_input():
-    multiple_inputs_pytorch, multiple_inputs_onnx = generate_multiple_inputs(
+    multiple_inputs_pytorch = generate_multiple_inputs(
         seq_len=16, batch_size=4, input_names=["input_ids", "attention_mask"], nb_inputs_to_gen=4, device="cpu"
     )
     assert len(multiple_inputs_pytorch) == 4
-    assert len(multiple_inputs_onnx) == 4
     assert set(multiple_inputs_pytorch[0].keys()) == {"input_ids", "attention_mask"}
 
 

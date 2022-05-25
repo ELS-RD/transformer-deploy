@@ -300,7 +300,7 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
         if (
             torch.any(tensor > max_float16)
             or torch.any(tensor < min_float16)
-            or (torch.any(tensor < resolution & tensor > -resolution & tensor != 0))  # limited memory footprint
+            or (torch.any((tensor < resolution) & (tensor > -resolution) & (tensor != 0)))  # limited memory footprint
         ):
             keep_fp32.append(graph[k])
     return keep_fp32

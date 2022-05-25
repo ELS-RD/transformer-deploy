@@ -111,6 +111,7 @@ def build_engine(
     fp16: bool,
     int8: bool,
     fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
+    profiling: bool = False,
     **kwargs,
 ) -> ICudaEngine:
     """
@@ -133,6 +134,8 @@ def build_engine(
     :param fp16: enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.
     :param int8: enable INT-8 quantization, best performance but model should have been quantized.
     :param fp16_fix: a function to set FP32 precision on some nodes to fix FP16 overflow
+    :param profiling: enable profiling support of the model.
+        https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Core/Profiler.html
     :return: TensorRT engine to use during inference
     """
     # default input shape
@@ -158,8 +161,13 @@ def build_engine(
                 builder.max_batch_size = max([s.max_shape[0] for s in input_shapes])
                 config: IBuilderConfig = builder.create_builder_config()
                 config.max_workspace_size = workspace_size
-                # to enable complete trt inspector debugging, only for TensorRT >= 8.2
-                # config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
+                config.set_tactic_sources(
+                    tactic_sources=1 << int(trt.TacticSource.CUBLAS)
+                    | 1 << int(trt.TacticSource.CUBLAS_LT)
+                    | 1 << int(trt.TacticSource.CUDNN)  # trt advised to use cuDNN for transfo architecture
+                )
+                if profiling:
+                    config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
                 if int8:
                     config.set_flag(trt.BuilderFlag.INT8)
                 if fp16:
@@ -167,9 +175,10 @@ def build_engine(
                 config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
                 # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
                 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
-                logger.log(msg="parsing trt model", severity=trt.ILogger.INFO)
+                logger.log(msg="parsing TensorRT model", severity=trt.ILogger.INFO)
                 with open(onnx_file_path, "rb") as f:
-                    # File path needed for models with external dataformat
+                    # file path needed for models with external dataformat
+                    # https://github.com/onnx/onnx-tensorrt/issues/818
                     parser.parse(model=f.read(), path=onnx_file_path)
                 profile: IOptimizationProfile = builder.create_optimization_profile()
                 # duplicate default shape (one for each input)
@@ -195,7 +204,7 @@ def build_engine(
                         )
                 config.add_optimization_profile(profile)
                 if fp16:
-                    network_definition = fix_fp16_network(network_def)
+                    network_definition = fp16_fix(network_def)
 
                 logger.log(
                     msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING

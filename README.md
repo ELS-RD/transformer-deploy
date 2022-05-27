@@ -107,7 +107,7 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.02-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 
 # output:
@@ -178,7 +178,7 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.02-py3 \
   bash -c "pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
   tritonserver --model-repository=/models"
 
@@ -236,7 +236,7 @@ docker run -it --rm --gpus all \
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.02-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 
 # output:
@@ -304,7 +304,7 @@ To run decoding algorithm server side, we need to install `Pytorch` on `Triton` 
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.02-py3 \
   bash -c "pip install transformers torch==1.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
   tritonserver --model-repository=/models"
 

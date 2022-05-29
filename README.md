@@ -259,7 +259,7 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 10
 Query ONNX models (replace `transformer_onnx_inference` by `transformer_tensorrt_inference` to query TensorRT engine):
 
 ```shell
-curl -X POST  http://localhost:8000/v2/models/transformer_tensorrt_inference/versions/1/infer \
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
   --data-binary "@demo/question-answering/query_body.bin" \
   --header "Inference-Header-Content-Length: 276"
 

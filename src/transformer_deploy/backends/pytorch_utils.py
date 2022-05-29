@@ -139,6 +139,12 @@ def convert_to_onnx(
             continue
         if v.dtype in [torch.long, torch.int64]:
             inputs_pytorch[k] = v.type(torch.int32)
+    # get input names in the same order as in the model forward
+    model_args = model_pytorch.forward.__code__.co_varnames
+    input_names = []
+    for arg_name in model_args:
+        if arg_name in inputs_pytorch.keys():
+            input_names.append(arg_name)
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize
@@ -146,7 +152,7 @@ def convert_to_onnx(
             f=output_path,  # output path / file object
             opset_version=13,  # the ONNX version to use, >= 13 supports channel quantized model
             do_constant_folding=True,  # simplify model (replace constant expressions)
-            input_names=list(inputs_pytorch.keys()),  # input names
+            input_names=input_names,  # input names
             output_names=output_names,  # output names
             dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
             training=TrainingMode.EVAL,  # always put the model in evaluation mode

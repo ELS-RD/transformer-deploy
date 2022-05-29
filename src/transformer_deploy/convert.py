@@ -228,7 +228,7 @@ def main(commands: argparse.Namespace):
         triton_conf = conf_class(
             model_name_base=commands.name,
             dim_output=get_triton_output_shape(
-                output=pytorch_output[0] if type(pytorch_output) == torch.Tensor else pytorch_output[0][0],
+                output=pytorch_output[0] if type(pytorch_output[0]) == torch.Tensor else pytorch_output[0][0],
                 task=commands.task,
             ),
             nb_instance=commands.nb_instances,

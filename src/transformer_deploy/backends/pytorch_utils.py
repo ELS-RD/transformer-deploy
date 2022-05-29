@@ -145,6 +145,9 @@ def convert_to_onnx(
     for arg_name in model_args:
         if arg_name in inputs_pytorch.keys():
             input_names.append(arg_name)
+    # sentence transformer model forward is kargs and kwargs
+    if len(input_names) == 0:
+        input_names = list(inputs_pytorch.keys())
     with torch.no_grad():
         torch.onnx.export(
             model_pytorch,  # model to optimize

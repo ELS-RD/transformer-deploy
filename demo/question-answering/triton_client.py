@@ -34,7 +34,7 @@ if __name__ == "__main__":
     model_version = "1"
     batch_size = 1
 
-    if args.length == 128:
+    if args.length == 256:
         question = "Which name is also used to describe the Amazon rainforest in English?"
         text = """The Amazon rainforest (Portuguese: Floresta Amazônica or Amazônia; Spanish: Selva Amazónica,
          Amazonía or usually Amazonia; French: Forêt amazonienne; Dutch: Amazoneregenwoud), also known in 

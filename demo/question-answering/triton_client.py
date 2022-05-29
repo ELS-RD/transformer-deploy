@@ -61,8 +61,7 @@ if __name__ == "__main__":
 
     question_input = tritonclient.http.InferInput(name="QUESTION", shape=(batch_size,), datatype="BYTES")
     context_input = tritonclient.http.InferInput(name="CONTEXT", shape=(batch_size,), datatype="BYTES")
-    start_logits = tritonclient.http.InferRequestedOutput(name="start_logits", binary_data=False)
-    end_logits = tritonclient.http.InferRequestedOutput(name="end_logits", binary_data=False)
+    output = tritonclient.http.InferInput(name="output", shape=(batch_size,), datatype="BYTES")
 
     question_input.set_data_from_numpy(np.asarray([question] * batch_size, dtype=object))
     context_input.set_data_from_numpy(np.asarray([text] * batch_size, dtype=object))
@@ -70,7 +69,7 @@ if __name__ == "__main__":
         model_name=model_name,
         model_version=model_version,
         inputs=[question_input, context_input],
-        outputs=[start_logits, end_logits],
+        outputs=[output],
     )
 
     print(response.get_response())

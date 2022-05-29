@@ -1,4 +1,4 @@
-onnxruntime-gpu
+onnxruntime-gpu==1.10.0
 torch==1.11.0+cu113
 nvidia-tensorrt==8.2.5.1
 onnx_graphsurgeon

@@ -30,6 +30,7 @@ import torch
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
+    AutoModelForQuestionAnswering,
     AutoModelForSequenceClassification,
     AutoModelForTokenClassification,
     AutoTokenizer,
@@ -62,6 +63,7 @@ from transformer_deploy.benchmarks.utils import (
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
+from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
 
@@ -122,7 +124,7 @@ def launch_inference(
 def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
     triton_output_shape = list(output.shape)
     triton_output_shape[0] = -1  # dynamic batch size
-    if task in ["text-generation", "token-classification"]:
+    if task in ["text-generation", "token-classification", "question-answering"]:
         triton_output_shape[1] = -1  # dynamic sequence size
     return triton_output_shape
 
@@ -164,6 +166,8 @@ def main(commands: argparse.Namespace):
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "token-classification":
         model_pytorch = AutoModelForTokenClassification.from_pretrained(commands.model, use_auth_token=auth_token)
+    elif commands.task == "question-answering":
+        model_pytorch = AutoModelForQuestionAnswering.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "text-generation":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
@@ -192,13 +196,14 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
-        var_output_seq=commands.task in ["text-generation", "token-classification"],
+        var_output_seq=commands.task in ["text-generation", "token-classification", "question-answering"],
+        output_names=["output"] if commands.task != "question-answering" else ["start_logits", "end_logits"],
     )
 
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
-        if task in ["classification", "text-generation", "token-classification"]:
+        if task in ["classification", "text-generation", "token-classification", "question-answering"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
@@ -215,12 +220,17 @@ def main(commands: argparse.Namespace):
             conf_class: Type[Configuration] = ConfigurationDec
         elif commands.task == "token-classification":
             conf_class: Type[Configuration] = ConfigurationTokenClassifier
+        elif commands.task == "question-answering":
+            conf_class: Type[Configuration] = ConfigurationQuestionAnswering
         else:
             conf_class = ConfigurationEnc
 
         triton_conf = conf_class(
             model_name_base=commands.name,
-            dim_output=get_triton_output_shape(output=pytorch_output[0], task=commands.task),
+            dim_output=get_triton_output_shape(
+                output=pytorch_output[0] if type(pytorch_output) == torch.Tensor else pytorch_output[0][0],
+                task=commands.task,
+            ),
             nb_instance=commands.nb_instances,
             tensor_input_names=input_names,
             working_directory=commands.output,
@@ -349,7 +359,7 @@ def main(commands: argparse.Namespace):
 
             def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
                 results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
-                return results["output"]
+                return results["output"] if "output" in results else (results["start_logits"], results["end_logits"])
 
             logging.info("running %s benchmark", benchmark_name)
             ort_output, time_buffer = launch_inference(

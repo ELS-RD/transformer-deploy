@@ -15,7 +15,7 @@
 """
 Utils related to Pytorch inference.
 """
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Union
 
 import torch
 from torch.onnx import TrainingMode
@@ -32,8 +32,14 @@ def infer_classification_pytorch(
     :return: a function to perform inference
     """
 
-    def infer(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-        model_output = model(**inputs).logits.detach()  # noqa: F821
+    def infer(inputs: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        model_output = model(**inputs)  # noqa: F821
+        if "logits" in model_output:
+            model_output = model_output.logits.detach()
+        elif "start_logits" in model_output and "end_logits" in model_output:
+            start_logits = model_output.start_logits.detach()
+            end_logits = model_output.end_logits.detach()
+            model_output = (start_logits, end_logits)
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
@@ -79,6 +85,7 @@ def convert_to_onnx(
     inputs_pytorch: Dict[str, torch.Tensor],
     quantization: bool,
     var_output_seq: bool,
+    output_names: Tuple[str, ...],
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.
@@ -122,9 +129,10 @@ def convert_to_onnx(
         else:
             # if there is no specific requirement, each axis name is unique, fix some issue on T5 model
             dynamic_axis[k] = {0: "batch_size", 1: f"sequence-{k}"}
-    dynamic_axis["output"] = {0: "batch_size"}
-    if var_output_seq:
-        dynamic_axis["output"][1] = "sequence"
+    for output_name in output_names:
+        dynamic_axis[output_name] = {0: "batch_size"}
+        if var_output_seq:
+            dynamic_axis[output_name][1] = "sequence"
     # replace int64 input tensors by int32 -> for ONNX Runtime binding API and expected by TensorRT engine
     for k, v in inputs_pytorch.items():
         if not isinstance(v, torch.Tensor):
@@ -139,7 +147,7 @@ def convert_to_onnx(
             opset_version=13,  # the ONNX version to use, >= 13 supports channel quantized model
             do_constant_folding=True,  # simplify model (replace constant expressions)
             input_names=list(inputs_pytorch.keys()),  # input names
-            output_names=["output"],  # output axis name, hard coded so only 1 output supported
+            output_names=output_names,  # output names
             dynamic_axes=dynamic_axis,  # declare dynamix axis for each input / output
             training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,

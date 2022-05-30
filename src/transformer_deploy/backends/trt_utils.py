@@ -17,6 +17,7 @@ All the tooling to ease TensorRT usage.
 """
 import dataclasses
 from dataclasses import dataclass
+from time import time
 from typing import Callable, Dict, List, Optional
 
 import tensorrt as trt
@@ -203,9 +204,15 @@ def build_engine(
                         )
                 config.add_optimization_profile(profile)
                 if fp16:
-                    network_def = fp16_fix(network_def)
-                trt_engine = builder.build_serialized_network(network_def, config)
+                    network_definition = fp16_fix(network_def)
+
+                logger.log(
+                    msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING
+                )
+                start = time()
+                trt_engine = builder.build_serialized_network(network_definition, config)
                 engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
+                logger.log(msg=f"building engine took {time() - start:4.1f} seconds", severity=trt.ILogger.WARNING)
                 assert engine is not None, "error during engine generation, check error messages above :-("
                 return engine
 

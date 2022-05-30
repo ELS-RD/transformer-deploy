@@ -19,6 +19,7 @@ This module contains code related to client interface.
 """
 
 import argparse
+import gc
 import logging
 import os
 from pathlib import Path
@@ -128,6 +129,7 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 
 def main(commands: argparse.Namespace):
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
+    logging.info("running with commands: %s", commands)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
@@ -156,7 +158,6 @@ def main(commands: argparse.Namespace):
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
     model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
     input_names: List[str] = tokenizer.model_input_names
-    logging.info(f"axis: {input_names}")
     if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
     elif commands.task == "classification":
@@ -168,6 +169,9 @@ def main(commands: argparse.Namespace):
         input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
+
+    logging.info(f"axis: {input_names}")
+
     model_pytorch.eval()
     if run_on_cuda:
         model_pytorch.cuda()
@@ -201,6 +205,7 @@ def main(commands: argparse.Namespace):
         raise Exception(f"unknown task: {task}")
 
     with torch.inference_mode():
+        logging.info("running Pytorch (FP32) benchmark")
         pytorch_output, time_buffer = launch_inference(
             infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
@@ -222,11 +227,12 @@ def main(commands: argparse.Namespace):
             device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
-        if run_on_cuda:
+        if run_on_cuda and not commands.fast:
             from torch.cuda.amp import autocast
 
             with autocast():
                 engine_name = "Pytorch (FP16)"
+                logging.info("running Pytorch (FP16) benchmark")
                 pytorch_fp16_output, time_buffer = launch_inference(
                     infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                     inputs=inputs_pytorch,
@@ -240,8 +246,10 @@ def main(commands: argparse.Namespace):
                 )
                 timings[engine_name] = time_buffer
         elif commands.device == "cpu":
+            logging.info("preparing Pytorch (INT-8) benchmark")
             model_pytorch = torch.quantization.quantize_dynamic(model_pytorch, {torch.nn.Linear}, dtype=torch.qint8)
             engine_name = "Pytorch (INT-8)"
+            logging.info("running Pytorch (FP32) benchmark")
             pytorch_int8_output, time_buffer = launch_inference(
                 infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
                 inputs=inputs_pytorch,
@@ -256,7 +264,13 @@ def main(commands: argparse.Namespace):
             timings[engine_name] = time_buffer
     model_pytorch.cpu()
 
+    logging.info("cleaning up")
+    if run_on_cuda:
+        torch.cuda.empty_cache()
+    gc.collect()
+
     if "tensorrt" in commands.backend:
+        logging.info("preparing TensorRT (FP16) benchmark")
         try:
             import tensorrt as trt
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
@@ -288,6 +302,7 @@ def main(commands: argparse.Namespace):
             runtime=runtime, engine_file_path=tensorrt_path
         )
 
+        logging.info("running TensorRT (FP16) benchmark")
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
             infer=tensorrt_model, inputs=inputs_pytorch, nb_measures=commands.nb_measures
@@ -300,6 +315,7 @@ def main(commands: argparse.Namespace):
         )
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
+        gc.collect()
         triton_conf.create_configs(
             tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
         )
@@ -323,6 +339,7 @@ def main(commands: argparse.Namespace):
             (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
             (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
         ]:
+            logging.info("preparing %s benchmark", benchmark_name)
             ort_model = create_model_for_provider(
                 path=model_path,
                 provider_to_use=provider,
@@ -334,6 +351,7 @@ def main(commands: argparse.Namespace):
                 results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
                 return results["output"]
 
+            logging.info("running %s benchmark", benchmark_name)
             ort_output, time_buffer = launch_inference(
                 infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
             )
@@ -345,6 +363,7 @@ def main(commands: argparse.Namespace):
             )
             timings[benchmark_name] = time_buffer
             del ort_model
+            gc.collect()
 
         triton_conf.create_configs(
             tokenizer=tokenizer,

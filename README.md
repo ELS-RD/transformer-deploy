@@ -298,6 +298,27 @@ Two detailed notebooks are available:
 * GPT-2: <https://github.com/ELS-RD/transformer-deploy/blob/main/demo/generative-model/gpt2.ipynb>
 * T5: <https://github.com/ELS-RD/transformer-deploy/blob/main/demo/generative-model/t5.ipynb>
 
+#### Optimize existing large model
+
+To optimize models which typically don't fit twice onto a single GPU, run the script as follows:
+
+```shell
+docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
+  bash -c "cd /project && \
+    convert_model -m gpt2-medium \
+    --backend tensorrt onnx \
+    --seq-len 6 256 256 \
+    --fast \
+    --atol 3 \
+    --task text-generation"
+```
+
+The larger the model gets, the more likely it is that you need to also increase the absolute tolerance of the script.
+Additionally, some models may return a message similar to: `Converted FP32 value in weights (either FP32 infinity or FP32 value outside FP16 range) to corresponding FP16 infinity`. It is best to test and evaluate the model afterwards to understand the implications of this conversion.
+
+Depending on model size this may take really long. GPT Neo 2.7B can easily take 1 hour of conversion or more.
+
 #### Run Nvidia Triton inference server
 
 To run decoding algorithm server side, we need to install `Pytorch` on `Triton` docker image.

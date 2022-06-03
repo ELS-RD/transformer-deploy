@@ -166,6 +166,7 @@ docker run -it --rm --gpus all -v $PWD:/project ghcr.io/els-rd/transformer-deplo
 This is our baseline, easy to run, but not very performant.
 
 ```shell
+pip install fastapi
 # launch server, disable logging for best performances
 python3 -m uvicorn --log-level warning demo.infinity.fast_api_server_onnx:app --port 8000 --host 0.0.0.0
 # other variation, 1 worker per CPU for best latency (plus not a good idea to have several times the same model on a single GPU):

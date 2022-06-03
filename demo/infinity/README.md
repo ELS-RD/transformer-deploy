@@ -96,7 +96,7 @@ Launch `Nvidia Triton inference server`:
 ```shell
 # add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 

@@ -209,7 +209,7 @@ def inference_onnx_binding(
     In particular, it avoids any Onnx Runtime output tensor copy.
     It means that Onnx Runtime is still owner of the array, and it will overwrite its content if you do another
     inference. To avoid any issue, just set clone_tensor to True (default).
-    For best performance and lowest memory footprint, if you know what you are doing, set clone_tensor to True.
+    For best performance and lowest memory footprint, if you know what you are doing, set clone_tensor to False.
 
     :param model_onnx: ONNX model
     :param inputs: input torch tensor

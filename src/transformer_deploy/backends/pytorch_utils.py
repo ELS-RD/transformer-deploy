@@ -103,7 +103,7 @@ def convert_to_onnx(
                 "It seems that pytorch-quantization is not yet installed. "
                 "It is required when you enable the quantization flag and use CUDA device."
                 "Please find installation instructions on "
-                "https://github.com/NVIDIA/TensorRT/tree/master/tools/pytorch-quantization or use:\n"
+                "https://github.com/NVIDIA/TensorRT/tree/main/tools/pytorch-quantization or use:\n"
                 "pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\\&"
                 "subdirectory=tools/pytorch-quantization/"
             )

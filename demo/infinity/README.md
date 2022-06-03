@@ -96,7 +96,7 @@ Launch `Nvidia Triton inference server`:
 ```shell
 # add --shm-size 256m -> to have up to 4 Python backends (tokenizer) at the same time (64Mb per instance) 
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.01-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 ```
 
@@ -166,6 +166,7 @@ docker run -it --rm --gpus all -v $PWD:/project ghcr.io/els-rd/transformer-deplo
 This is our baseline, easy to run, but not very performant.
 
 ```shell
+pip install fastapi
 # launch server, disable logging for best performances
 python3 -m uvicorn --log-level warning demo.infinity.fast_api_server_onnx:app --port 8000 --host 0.0.0.0
 # other variation, 1 worker per CPU for best latency (plus not a good idea to have several times the same model on a single GPU):

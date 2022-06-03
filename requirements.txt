@@ -1,4 +1,3 @@
-fastapi
 onnx
 tritonclient[all]
 nvidia-pyindex

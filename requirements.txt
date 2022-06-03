@@ -1,8 +1,6 @@
 onnx
 tritonclient[all]
 nvidia-pyindex
-gunicorn
-uvicorn
 numpy
 requests
 transformers

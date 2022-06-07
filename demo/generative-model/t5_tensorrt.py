@@ -12,19 +12,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from time import time
-from typing import Optional, Tuple
 
-import numpy as np
 import onnx
 import tensorrt as trt
 import torch
 from onnx import GraphProto, ModelProto, helper
-from tensorrt import ICudaEngine, Logger, Runtime
-from torch.nn import Linear
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, T5ForConditionalGeneration, TensorType
+from tensorrt import Logger, Runtime
+from tensorrt.tensorrt import ICudaEngine
+from transformers import (
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    BeamSearchScorer,
+    LogitsProcessorList,
+    MaxLengthCriteria,
+    StoppingCriteriaList,
+    T5ForConditionalGeneration,
+    TensorType,
+)
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
-from transformers.models.t5.modeling_t5 import T5Stack
+from trt_t5_utils import T5TRT, ExportT5, are_equal
 
 from transformer_deploy.backends.ort_utils import create_model_for_provider, inference_onnx_binding
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
@@ -34,10 +40,13 @@ from transformer_deploy.backends.trt_utils import TensorRTShape, build_engine, l
 # TODO pre allocate the largest possible past states and reuse it with tensorrt
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#reusing-input-buffers
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#empty-tensors
+# 1. Load Pytorch model (with tokenizer)
 model_name = "t5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 input_ids: torch.Tensor = tokenizer(
-    "translate English to French: This model is now very fast!", return_tensors=TensorType.PYTORCH
+    ["translate English to French: This model is now very fast!"],
+    return_tensors=TensorType.PYTORCH,
+    padding=True,
 ).input_ids
 input_ids = input_ids.to("cuda")
 model: T5ForConditionalGeneration = AutoModelForSeq2SeqLM.from_pretrained(model_name)
@@ -49,72 +58,70 @@ out_full: Seq2SeqLMOutput = model(input_ids=input_ids, decoder_input_ids=input_i
 num_layers = model.config.num_layers
 model = model.to("cuda")
 
-
-def are_equal(a: torch.Tensor, b: torch.Tensor, atol: float = 5e-1) -> None:
-    assert np.allclose(a=a.detach().cpu().numpy(), b=b.detach().cpu().numpy(), atol=atol), f"{a}\n\nVS\n\n{b}"
-
-
+# 2. Convert encoder to onnx format
 convert_to_onnx(
     model_pytorch=model.encoder,
-    output_path="test-enc.onnx",
+    output_path=f"{model_name}-enc.onnx",
     inputs_pytorch={"input_ids": input_ids},
     var_output_seq=True,
     quantization=False,
 )
 
-enc_onnx = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvider")
+# 3. Check inference results with onnx encoder model
+enc_onnx = create_model_for_provider(f"{model_name}-enc.onnx", "CUDAExecutionProvider")
 enc_onnx_out = inference_onnx_binding(
     model_onnx=enc_onnx,
     inputs={"input_ids": input_ids},
     device=input_ids.device.type,
 )["output"]
-
 are_equal(a=enc_onnx_out, b=out_enc.last_hidden_state)
 
+# 4. Convert encoder model to TensorRT
+t5_trt_encoder_plan = f"{model_name}-trt-enc.plan"
+shape, seq_len = input_ids.shape
+input_id_shape = TensorRTShape(min_shape=[1, 1], optimal_shape=[1, 1], max_shape=[16, 200], input_name="input_ids")
+input_shapes = [input_id_shape]
+command_line_min = []
+command_line_opt = []
+command_line_max = []
+for i in input_shapes:
+    command_line_min.append(f"{i.input_name}:{'x'.join([str(s) for s in i.min_shape])}")
+    command_line_opt.append(f"{i.input_name}:{'x'.join([str(s) for s in i.optimal_shape])}")
+    command_line_max.append(f"{i.input_name}:{'x'.join([str(s) for s in i.max_shape])}")
 
-class ExportT5(torch.nn.Module):
-    def __init__(self, decoder: T5Stack, lm_head: Linear):
-        super(ExportT5, self).__init__()
-        self.decoder = decoder
-        self.lm_head = lm_head
+print(
+    "/usr/src/tensorrt/bin/trtexec --onnx=t5-small-dec-if.onnx --useSpinWait --verbose --dumpLayerInfo "
+    "--profilingVerbosity=detailed  --minShapes="
+    + ",".join(command_line_min)
+    + "  --optShapes="
+    + ",".join(command_line_opt)
+    + "  --maxShapes="
+    + ",".join(command_line_max)
+    + f"--saveEngine='{t5_trt_encoder_plan}' |& > logs.txt"
+)
 
-    def forward(
-        self,
-        input_ids: torch.Tensor,
-        encoder_hidden_states: torch.Tensor,
-        final_seq_len: Optional[torch.Tensor],
-        past_key_values: Tuple = None,
-    ):
-        out_dec = self.decoder.forward(
-            input_ids=input_ids, encoder_hidden_states=encoder_hidden_states, past_key_values=past_key_values
-        )
-        # Rescale output before projecting on vocab
-        out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (model.model_dim**-0.5)
-        out_dec["last_hidden_state"] = self.lm_head(out_dec["last_hidden_state"])
-        out_dec["past_key_values"] = list(out_dec["past_key_values"])
-        for i, layer_out in enumerate(out_dec["past_key_values"]):  # type: int, Tuple
-            assert len(layer_out) == 4
-            layer_out_l = list(layer_out)
-            for j, l in enumerate(layer_out):  # type: int, torch.Tensor
-                if j <= 1:
-                    layer_out_l[j] = l[:, :, : final_seq_len[0], :]
-                else:
-                    layer_out_l[j] = l
-            out_dec["past_key_values"][i] = tuple(layer_out_l)
-        out_dec["past_key_values"] = tuple(out_dec["past_key_values"])
-        return out_dec
+trt_logger: Logger = trt.Logger(trt.Logger.ERROR)
+runtime: Runtime = trt.Runtime(trt_logger)
+engine: ICudaEngine = build_engine(
+    runtime=runtime,
+    onnx_file_path=f"{model_name}-enc.onnx",
+    logger=trt_logger,
+    workspace_size=20000 * 1024 ** 2,
+    fp16=False,  # for tests only
+    int8=False,
+    input_shapes=input_shapes,
+)
+save_engine(engine, t5_trt_encoder_plan)
 
-
+# 5. Check inference results with decoder model
 model.cuda()
-model_decoder = ExportT5(decoder=model.decoder, lm_head=model.lm_head).eval()
+model_decoder = ExportT5(decoder=model.decoder, lm_head=model.lm_head, model_dim=model.model_dim).eval()
 out_model_export: torch.Tensor = model_decoder(
     input_ids=input_ids,
     encoder_hidden_states=out_enc.last_hidden_state,
     final_seq_len=torch.tensor([input_ids.shape[1]], dtype=torch.int32),
 )
-
 are_equal(a=out_model_export["last_hidden_state"], b=out_full.logits)
-
 
 model_decoder.cuda()
 # decoder output one step before
@@ -165,6 +172,7 @@ for i in range(num_layers):
     dynamic_axis[f"present.{i}.encoder.key"] = {0: "batch", 2: "encoder_sequence_length"}
     dynamic_axis[f"present.{i}.encoder.value"] = {0: "batch", 2: "encoder_sequence_length"}
 
+# 6. Convert decoder with cache to onnx format
 with torch.no_grad():
     model.config.return_dict = True
     model.eval()
@@ -173,7 +181,7 @@ with torch.no_grad():
     torch.onnx.export(
         model_decoder,
         (model_inputs,),
-        f="test-dec-cache.onnx",
+        f=f"{model_name}-dec-cache.onnx",
         input_names=input_names,
         output_names=output_names,
         dynamic_axes=dynamic_axis,
@@ -187,6 +195,7 @@ model_inputs_no_cache = {
     "final_seq_len": torch.tensor([input_ids.shape[1]], dtype=torch.int32),
 }
 
+# 7. Convert decoder with no cache to onnx format
 with torch.no_grad():
     model.config.return_dict = True
     model.eval()
@@ -195,7 +204,7 @@ with torch.no_grad():
     torch.onnx.export(
         model_decoder,
         (model_inputs_no_cache,),
-        f="test-dec-no-cache.onnx",
+        f=f"{model_name}-dec-no-cache.onnx",
         input_names=list(model_inputs_no_cache.keys()),
         output_names=output_names,
         dynamic_axes={k: v for k, v in dynamic_axis.items() if "past_key_values" not in k},
@@ -203,16 +212,14 @@ with torch.no_grad():
         opset_version=13,
     )
 
-
 _ = model_decoder.cpu()  # free cuda memory
 
-
-onnx_model_no_cache_fp16 = onnx.load("test-dec-no-cache.onnx")
-onnx_model_cache_fp16 = onnx.load("test-dec-cache.onnx")
-
+onnx_model_no_cache_fp16 = onnx.load(f"{model_name}-dec-no-cache.onnx")
+onnx_model_cache_fp16 = onnx.load(f"{model_name}-dec-cache.onnx")
 
 assert len(onnx_model_cache_fp16.graph.output) == len(onnx_model_no_cache_fp16.graph.output)
 
+# 8. Create new decoder model with new graph
 final_output = list()
 for node in onnx_model_cache_fp16.graph.output:
     new_output = onnx.helper.make_empty_tensor_value_info(node.name)
@@ -333,19 +340,14 @@ if_graph_def: GraphProto = helper.make_graph(
     initializer=list(onnx_model_no_cache_fp16.graph.initializer),
 )
 
-
 model_def: ModelProto = helper.make_model(
     if_graph_def, producer_name="onnx-example", opset_imports=[helper.make_opsetid(onnx.defs.ONNX_DOMAIN, 13)]
 )
-onnx.save(model_def, "test-dec-if.onnx")
+onnx.save(model_def, f"{model_name}-dec-if.onnx")
 
-
-trt_logger: Logger = trt.Logger(trt.Logger.ERROR)
-runtime: Runtime = trt.Runtime(trt_logger)
-trt_model_name = "trt-t5-dec.plan"
-
+# 9. Convert new decoder model to TensorRT
+t5_trt_decoder_plan = f"{model_name}-trt-dec.plan"
 # 768 for base model, 512 for small, make it dependent from the Pytorch model configuration
-
 shape, seq_len = input_ids.shape
 input_id_shape = TensorRTShape(min_shape=[4, 1], optimal_shape=[4, 1], max_shape=[4, 200], input_name="input_ids")
 encoder_hidden_states_shape = TensorRTShape(
@@ -407,35 +409,29 @@ for i in input_shapes:
     command_line_max.append(f"{i.input_name}:{'x'.join([str(s) for s in i.max_shape])}")
 
 print(
-    "/usr/src/tensorrt/bin/trtexec --onnx=test-dec-if.onnx --useSpinWait --verbose --dumpLayerInfo "
+    "/usr/src/tensorrt/bin/trtexec --onnx=t5-small-dec-if.onnx --useSpinWait --verbose --dumpLayerInfo "
     "--profilingVerbosity=detailed  --minShapes="
     + ",".join(command_line_min)
     + "  --optShapes="
     + ",".join(command_line_opt)
     + "  --maxShapes="
     + ",".join(command_line_max)
-    + f"--saveEngine='{trt_model_name}' |& > logs.txt"
+    + f"--saveEngine='{t5_trt_decoder_plan}' |& > logs.txt"
 )
 
 
 engine: ICudaEngine = build_engine(
     runtime=runtime,
-    onnx_file_path="test-dec-if.onnx",
+    onnx_file_path=f"{model_name}-dec-if.onnx",
     logger=trt_logger,
-    workspace_size=20000 * 1024**2,
+    workspace_size=20000 * 1024 ** 2,
     fp16=False,  # for tests only
     int8=False,
     input_shapes=input_shapes,
     shape_tensors=shape_tensors,
     # fp16_fix=get_fix_fp16_network_func(keep_fp32=keep_fp32),
 )
-
-
-save_engine(engine, trt_model_name)
-
-
-tensorrt_model = load_engine(runtime=runtime, engine_file_path=trt_model_name)
-
+save_engine(engine, t5_trt_decoder_plan)
 
 c = {
     "input_ids": torch.ones((4, 1), dtype=torch.int32, device="cuda"),
@@ -450,11 +446,26 @@ for i in range(num_layers):
     c[f"past_key_values.{i}.encoder.key"] = torch.zeros([4, 8, 10, 64], dtype=torch.float32)
     c[f"past_key_values.{i}.encoder.value"] = torch.zeros([4, 8, 10, 64], dtype=torch.float32)
 
-for _ in range(100):
-    _ = tensorrt_model(c)
-start = time()
-for _ in range(100):
-    _ = tensorrt_model(c)
-print((time() - start) / 100)
-a = tensorrt_model(c)
+# test loading engine with inference:
+t5_encoder_trt = load_engine(runtime=runtime, engine_file_path=t5_trt_encoder_plan)
+a = t5_encoder_trt({"input_ids": torch.ones((4, 1), dtype=torch.int32, device="cuda")})
 print(a)
+
+# test loading engine with inference:
+t5_decoder_trt = load_engine(runtime=runtime, engine_file_path=t5_trt_decoder_plan)
+a = t5_decoder_trt(c)
+print(a)
+
+# Test full inference with T5TRT wrapper:
+t5_trt_wrapper = T5TRT(
+    config=model.config,
+    encoder_engine_path=t5_trt_encoder_plan,
+    decoder_engine_path=t5_trt_decoder_plan,
+    device=model.device,
+    batch_size=4,
+    tokenizer=tokenizer,
+    profile_index=0,
+    use_cache=False,
+)
+outputs = t5_trt_wrapper.generate(inputs=input_ids, max_length=10, num_beams=4, min_length=10)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))

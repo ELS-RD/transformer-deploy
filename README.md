@@ -243,7 +243,7 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 1024m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.02-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
   bash -c "pip install transformers torch==1.11.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
   tritonserver --model-repository=/models"
 

@@ -18,12 +18,13 @@ Generate Nvidia Triton server configuration files for encoder based models (Bert
 import inspect
 from pathlib import Path
 
+import tritonclient.grpc.model_config_pb2 as model_config
+from google.protobuf import text_format
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.utils import token_classifier
-import tritonclient.grpc.model_config_pb2 as model_config
-from google.protobuf import text_format
+
 
 class ConfigurationTokenClassifier(Configuration):
     @property
@@ -41,10 +42,14 @@ class ConfigurationTokenClassifier(Configuration):
         """
 
         config = self._get_model_base(name=self.python_folder_name, backend="python")
-        config.input.append(model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1]))
-        config.output.append(model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_STRING, dims=[-1]))
+        config.input.append(
+            model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
+        config.output.append(
+            model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
         config.instance_group.append(model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind))
-        config.parameters["FORCE_CPU_ONLY_INPUT_TENSORS"] = model_config.ModelParameter(string_value="no")
+        config.parameters["FORCE_CPU_ONLY_INPUT_TENSORS"].string_value = "no"
         return text_format.MessageToString(config)
 
     def create_configs(

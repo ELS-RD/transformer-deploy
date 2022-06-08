@@ -23,9 +23,9 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
-from transformers import PretrainedConfig, PreTrainedTokenizer
 import tritonclient.grpc.model_config_pb2 as model_config
 from google.protobuf import text_format
+from transformers import PretrainedConfig, PreTrainedTokenizer
 
 
 class EngineType(Enum):
@@ -42,13 +42,13 @@ class Configuration(ABC):
     python_code: Optional[str]
 
     def __init__(
-            self,
-            working_directory: str,
-            model_name_base: str,
-            dim_output: List[int],
-            nb_instance: int,
-            tensor_input_names: List[str],
-            device: str,
+        self,
+        working_directory: str,
+        model_name_base: str,
+        dim_output: List[int],
+        nb_instance: int,
+        tensor_input_names: List[str],
+        device: str,
     ):
         """
         Configuration file setup.
@@ -65,7 +65,11 @@ class Configuration(ABC):
         self.nb_instance = nb_instance
         self.tensor_input_names = tensor_input_names
         self.working_dir: Path = Path(working_directory)
-        self.device_kind = model_config.ModelInstanceGroup.Kind.KIND_GPU if device == "cuda" else model_config.ModelInstanceGroup.Kind.KIND_CPU
+        self.device_kind = (
+            model_config.ModelInstanceGroup.Kind.KIND_GPU
+            if device == "cuda"
+            else model_config.ModelInstanceGroup.Kind.KIND_CPU
+        )
 
     @property
     def python_folder_name(self) -> str:
@@ -79,7 +83,8 @@ class Configuration(ABC):
         result: List[str] = list()
         for input_name in self.tensor_input_names:
             result.append(
-                model_config.ModelInput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1]))
+                model_config.ModelInput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1])
+            )
         return result
 
     def _get_tokens_output(self) -> List[str]:
@@ -90,8 +95,10 @@ class Configuration(ABC):
         result: List[str] = list()
         for input_name in self.tensor_input_names:
             result.append(
-                model_config.ModelOutput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1]))
+                model_config.ModelOutput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1])
+            )
         return result
+
     @property
     def model_name(self) -> str:
         assert self.engine_type is not None
@@ -134,14 +141,16 @@ class Configuration(ABC):
             max_batch_size=0,
             platform=self.inference_platform,
             default_model_filename="model.bin",
-            input= self._get_tokens(),
-            output=[model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output)],
-            instance_group=[model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind)]
+            input=self._get_tokens(),
+            output=[
+                model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output)
+            ],
+            instance_group=[model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind)],
         )
         return text_format.MessageToString(config)
 
     def create_configs(
-            self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
+        self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
     ) -> None:
         """
         Create Triton configuration folder layout, generate configuration files, generate/move artefacts, etc.

@@ -18,12 +18,12 @@ Generate Nvidia Triton server configuration files for encoder based models (Bert
 import inspect
 from pathlib import Path
 
+import tritonclient.grpc.model_config_pb2 as model_config
+from google.protobuf import text_format
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.utils import python_tokenizer
-import tritonclient.grpc.model_config_pb2 as model_config
-from google.protobuf import text_format
 
 
 class ConfigurationEnc(Configuration):
@@ -41,7 +41,9 @@ class ConfigurationEnc(Configuration):
         :return: tokenization step configuration
         """
         config = self._get_model_base(name=self.python_folder_name, backend="python")
-        config.input.append(model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1]))
+        config.input.append(
+            model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
         config.output.extend(self._get_tokens_output())
         config.instance_group.append(model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind))
         return text_format.MessageToString(config)
@@ -53,28 +55,33 @@ class ConfigurationEnc(Configuration):
         """
         mapping_keys = {}
         for input_name in self.tensor_input_names:
-            mapping_keys[input_name] =input_name
+            mapping_keys[input_name] = input_name
 
-        config = self._get_model_base(name=self.inference_folder_name, backend="ensemble")
-        config.input.append(model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1]))
-        config.output.append(model_config.ModelInput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output))
-        config.ensemble_scheduling = model_config.ModelEnsembling(step=[
-            model_config.ModelEnsembling.Step(
-                model_name=self.python_folder_name,
-                model_version=-1,
-                input_map={"TEXT": "TEXT"},
-                output_map= mapping_keys
-            ),
-            model_config.ModelEnsembling.Step(
-                model_name=self.python_folder_name,
-                model_version=-1,
-                input_map= mapping_keys,
-                output_map={"output": "output"},
-            )
-        ])
+        config = self._get_model_base(name=self.inference_folder_name, platform="ensemble")
+        config.input.append(
+            model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
+        config.output.append(
+            model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output)
+        )
+        config.ensemble_scheduling.step.extend(
+            [
+                model_config.ModelEnsembling.Step(
+                    model_name=self.python_folder_name,
+                    model_version=-1,
+                    input_map={"TEXT": "TEXT"},
+                    output_map=mapping_keys,
+                ),
+                model_config.ModelEnsembling.Step(
+                    model_name=self.python_folder_name,
+                    model_version=-1,
+                    input_map=mapping_keys,
+                    output_map={"output": "output"},
+                ),
+            ]
+        )
 
         return text_format.MessageToString(config)
-
 
     def create_configs(
         self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType

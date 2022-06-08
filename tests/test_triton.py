@@ -75,220 +75,171 @@ def conf_token_classifier(working_directory: tempfile.TemporaryDirectory):
 def test_model_conf(conf_encoder, conf_decoder, conf_token_classifier):
     expected = """
 name: "test_onnx_model"
-max_batch_size: 0
 platform: "onnxruntime_onnx"
-default_model_filename: "model.bin"
-
-input [
-{
-    name: "input_ids"
-    data_type: TYPE_INT32
-    dims: [-1, -1]
-},
-{
-    name: "attention_mask"
-    data_type: TYPE_INT32
-    dims: [-1, -1]
+input {
+  name: "input_ids"
+  data_type: TYPE_INT32
+  dims: -1
+  dims: -1
 }
-]
-
+input {
+  name: "attention_mask"
+  data_type: TYPE_INT32
+  dims: -1
+  dims: -1
+}
 output {
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [-1, 2]
+  name: "output"
+  data_type: TYPE_FP32
+  dims: -1
+  dims: 2
 }
-
-instance_group [
-    {
-      count: 1
-      kind: KIND_GPU
-    }
-]
-"""  # noqa: W293
-    assert expected.strip() == conf_encoder.get_model_conf()
-    assert expected.strip() == conf_decoder.get_model_conf()
-    assert expected.strip() == conf_token_classifier.get_model_conf()
+instance_group {
+  count: 1
+  kind: KIND_GPU
+}
+default_model_filename: "model.bin"
+"""
+    assert expected.lstrip() == conf_encoder.get_model_conf()
+    assert expected.lstrip() == conf_token_classifier.get_model_conf()
 
 
 def test_tokenizer_conf(conf_encoder):
     expected = """
 name: "test_onnx_tokenize"
-max_batch_size: 0
+input {
+  name: "TEXT"
+  data_type: TYPE_STRING
+  dims: -1
+}
+output {
+  name: "input_ids"
+  data_type: TYPE_INT32
+  dims: -1
+  dims: -1
+}
+output {
+  name: "attention_mask"
+  data_type: TYPE_INT32
+  dims: -1
+  dims: -1
+}
+instance_group {
+  count: 1
+  kind: KIND_GPU
+}
 backend: "python"
-
-input [
-{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-}
-]
-
-output [
-{
-    name: "input_ids"
-    data_type: TYPE_INT32
-    dims: [-1, -1]
-},
-{
-    name: "attention_mask"
-    data_type: TYPE_INT32
-    dims: [-1, -1]
-}
-]
-
-instance_group [
-    {
-      count: 1
-      kind: KIND_GPU
-    }
-]
 """  # noqa: W293
-    assert expected.strip() == conf_encoder.get_tokenize_conf()
+    assert expected.lstrip() == conf_encoder.get_tokenize_conf()
 
 
 def test_inference_conf(conf_encoder):
     expected = """
 name: "test_onnx_inference"
-max_batch_size: 0
 platform: "ensemble"
-
-input [
-{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
+input {
+  name: "TEXT"
+  data_type: TYPE_STRING
+  dims: -1
 }
-]
-
 output {
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [-1, 2]
+  name: "output"
+  data_type: TYPE_FP32
+  dims: -1
+  dims: 2
 }
-
 ensemble_scheduling {
-    step [
-        {
-            model_name: "test_onnx_tokenize"
-            model_version: -1
-            input_map {
-            key: "TEXT"
-            value: "TEXT"
-        }
-        output_map [
-{
-    key: "input_ids"
-    value: "input_ids"
-},
-{
-    key: "attention_mask"
-    value: "attention_mask"
-}
-        ]
-        },
-        {
-            model_name: "test_onnx_model"
-            model_version: -1
-            input_map [
-{
-    key: "input_ids"
-    value: "input_ids"
-},
-{
-    key: "attention_mask"
-    value: "attention_mask"
-}
-            ]
-        output_map {
-                key: "output"
-                value: "output"
-            }
-        }
-    ]
+  step {
+    model_name: "test_onnx_tokenize"
+    model_version: -1
+    input_map {
+      key: "TEXT"
+      value: "TEXT"
+    }
+    output_map {
+      key: "attention_mask"
+      value: "attention_mask"
+    }
+    output_map {
+      key: "input_ids"
+      value: "input_ids"
+    }
+  }
+  step {
+    model_name: "test_onnx_tokenize"
+    model_version: -1
+    input_map {
+      key: "attention_mask"
+      value: "attention_mask"
+    }
+    input_map {
+      key: "input_ids"
+      value: "input_ids"
+    }
+    output_map {
+      key: "output"
+      value: "output"
+    }
+  }
 }
 """  # noqa: W293
-    assert expected.strip() == conf_encoder.get_inference_conf()
+    assert expected.lstrip() == conf_encoder.get_inference_conf()
 
 
 def test_generate_conf(conf_decoder):
     expected = """
 name: "test_onnx_generate"
-max_batch_size: 0
-backend: "python"
-
-input [
-    {
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
-]
-
-output [
-    {
-        name: "output"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
-]
-
-instance_group [
-    {
-      count: 1
-      kind: KIND_GPU
-    }
-]
-
-parameters: {
+input {
+  name: "TEXT"
+  data_type: TYPE_STRING
+  dims: -1
+}
+output {
+  name: "output"
+  data_type: TYPE_STRING
+  dims: -1
+}
+instance_group {
+  count: 1
+  kind: KIND_GPU
+}
+parameters {
   key: "FORCE_CPU_ONLY_INPUT_TENSORS"
-  value: {
-    string_value:"no"
+  value {
+    string_value: "no"
   }
 }
+backend: "python"
 """  # noqa: W293
-    print(conf_decoder.get_generation_conf())
-    assert expected.strip() == conf_decoder.get_generation_conf()
+    assert expected.lstrip() == conf_decoder.get_generation_conf()
 
 
 def test_token_classifier_inference_conf(conf_token_classifier):
     expected = """
 name: "test_onnx_inference"
-max_batch_size: 0
-backend: "python"
-
-input [
-    {
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
-]
-
-output [
-    {
-        name: "output"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }
-]
-
-instance_group [
-    {
-      count: 1
-      kind: KIND_GPU
-    }
-]
-
-
-parameters: {
+input {
+  name: "TEXT"
+  data_type: TYPE_STRING
+  dims: -1
+}
+output {
+  name: "output"
+  data_type: TYPE_STRING
+  dims: -1
+}
+instance_group {
+  count: 1
+  kind: KIND_GPU
+}
+parameters {
   key: "FORCE_CPU_ONLY_INPUT_TENSORS"
-  value: {
-    string_value:"no"
+  value {
+    string_value: "no"
   }
 }
-"""
-    assert expected.strip() == conf_token_classifier.get_inference_conf()
+backend: "python"
+"""  # noqa: W293
+    assert expected.lstrip() == conf_token_classifier.get_inference_conf()
 
 
 def test_create_folders(

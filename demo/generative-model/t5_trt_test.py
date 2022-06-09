@@ -15,7 +15,6 @@ model: T5ForConditionalGeneration = AutoModelForSeq2SeqLM.from_pretrained(model_
 
 model.config.use_cache = True
 
-
 model = model.to("cuda")
 t5_trt_encoder_plan = f"{model_name}-trt-enc.plan"
 t5_trt_decoder_plan = f"{model_name}-trt-dec.plan"
@@ -26,7 +25,7 @@ t5_trt_wrapper = T5TRT(
     decoder_engine_path=t5_trt_decoder_plan,
     tokenizer=tokenizer,
     device=model.device,
+    use_cache=True,
 )
-seq_len = 10
-outputs = t5_trt_wrapper.generate(inputs=input_ids, min_length=seq_len, max_length=seq_len, num_beams=4)
+outputs = t5_trt_wrapper.generate(inputs=input_ids, max_length=8, num_beams=4, no_repeat_ngram_size=2)
 print(tokenizer.decode(outputs[0], skip_special_tokens=True))

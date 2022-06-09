@@ -11,7 +11,7 @@ from torch import Tensor
 from transformers import PretrainedConfig, PreTrainedTokenizer
 from transformers.file_utils import ModelOutput
 from transformers.generation_utils import GenerationMixin
-from transformers.modeling_outputs import Seq2SeqLMOutput
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
 from transformers.models.t5.modeling_t5 import T5Stack
 
 from transformer_deploy.backends.trt_utils import get_binding_idxs, infer_tensorrt, load_engine
@@ -56,7 +56,8 @@ class T5TRTDecoder(torch.nn.Module):
         self.inputs["input_ids"] = input_ids
         self.inputs["final_seq_len"] = torch.Tensor([1])
         self.inputs["encoder_hidden_states"] = encoder_hidden_states
-        self.inputs["enable_cache"] = torch.tensor([self.use_cache], device=self.device, dtype=torch.bool)
+        use_cache = self.use_cache and past_key_values is not None
+        self.inputs["enable_cache"] = torch.tensor([use_cache], device=self.device, dtype=torch.bool)
         if past_key_values is not None:
             for index, (k_dec, v_dec, k_enc, v_enc) in enumerate(past_key_values):
                 self.inputs[f"past_key_values.{index}.decoder.key"] = k_dec
@@ -66,10 +67,10 @@ class T5TRTDecoder(torch.nn.Module):
         else:
             for i in range(self.config.num_layers):
                 self.inputs[f"past_key_values.{i}.decoder.key"] = torch.zeros(
-                    [input_ids.shape[0], 8, 130, 64], dtype=torch.float32
+                    [input_ids.shape[0], 8, 1, 64], dtype=torch.float32
                 )
                 self.inputs[f"past_key_values.{i}.decoder.value"] = torch.zeros(
-                    [input_ids.shape[0], 8, 130, 64], dtype=torch.float32
+                    [input_ids.shape[0], 8, 1, 64], dtype=torch.float32
                 )
                 self.inputs[f"past_key_values.{i}.encoder.key"] = torch.zeros(
                     [input_ids.shape[0], 8, 13, 64], dtype=torch.float32
@@ -97,7 +98,10 @@ class T5TRTDecoder(torch.nn.Module):
             idx_dec_out += 4
             past_states.append(kv)
 
-        return Seq2SeqLMOutput(logits=dec_output[0], past_key_values=past_states)
+        return BaseModelOutputWithPastAndCrossAttentions(
+            last_hidden_state=dec_output[0],
+            past_key_values=past_states,
+        )
 
 
 class T5TRT(torch.nn.Module, GenerationMixin):
@@ -132,6 +136,7 @@ class T5TRT(torch.nn.Module, GenerationMixin):
                 config=self.config,
                 profile_index=self.profile_index,
                 device=self.device,
+                use_cache=self.use_cache,
             )
             .cuda()
             .eval()
@@ -172,7 +177,7 @@ class T5TRT(torch.nn.Module, GenerationMixin):
         encoder = self.get_encoder()
 
         # 2. prepare encoder args and encoder kwargs from model kwargs
-        irrelevant_prefix = ["decoder_", "cross_attn", "use_cache", "output"]
+        irrelevant_prefix = ["decoder_", "cross_attn", "use_cache"]
         encoder_kwargs = {
             argument: value
             for argument, value in model_kwargs.items()
@@ -249,7 +254,7 @@ class T5TRT(torch.nn.Module, GenerationMixin):
             past_key_values=past_key_values,
         )
         self.timings.append(time.monotonic() - start_timer)
-        return dec_output
+        return Seq2SeqLMOutput(logits=dec_output.last_hidden_state, past_key_values=dec_output.past_key_values)
 
 
 class ExportT5(torch.nn.Module):

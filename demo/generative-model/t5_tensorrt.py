@@ -22,20 +22,15 @@ from tensorrt.tensorrt import ICudaEngine
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
-    BeamSearchScorer,
-    LogitsProcessorList,
-    MaxLengthCriteria,
-    StoppingCriteriaList,
     T5ForConditionalGeneration,
     TensorType,
 )
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
-from trt_t5_utils import T5TRT, ExportT5, are_equal
 
 from transformer_deploy.backends.ort_utils import create_model_for_provider, inference_onnx_binding
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
 from transformer_deploy.backends.trt_utils import TensorRTShape, build_engine, load_engine, save_engine
-
+from trt_t5_utils import T5TRT, ExportT5, are_equal
 
 # TODO pre allocate the largest possible past states and reuse it with tensorrt
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#reusing-input-buffers
@@ -80,7 +75,14 @@ are_equal(a=enc_onnx_out, b=out_enc.last_hidden_state)
 t5_trt_encoder_plan = f"{model_name}-trt-enc.plan"
 shape, seq_len = input_ids.shape
 input_id_shape = TensorRTShape(min_shape=[1, 1], optimal_shape=[1, 1], max_shape=[16, 200], input_name="input_ids")
-input_shapes = [input_id_shape]
+output_attentions_shape = TensorRTShape(
+    min_shape=[1, 1], optimal_shape=[1, 1], max_shape=[16, 200], input_name="output_attentions"
+)
+output_hidden_states_shape = TensorRTShape(
+    min_shape=[1, 1], optimal_shape=[1, 1], max_shape=[16, 200], input_name="output_hidden_states"
+)
+return_dict_shape = TensorRTShape(min_shape=[1, 1], optimal_shape=[1, 1], max_shape=[16, 200], input_name="return_dict")
+input_shapes = [input_id_shape, output_attentions_shape, output_hidden_states_shape, return_dict_shape]
 command_line_min = []
 command_line_opt = []
 command_line_max = []

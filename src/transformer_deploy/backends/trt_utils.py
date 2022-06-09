@@ -290,7 +290,7 @@ def load_engine(
         # retrieve input/output IDs
         input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
 
-        def tensorrt_model(input_ids: Dict[str, torch.Tensor]) -> torch.Tensor:
+        def tensorrt_model(input_ids: Dict[str, torch.Tensor], **_) -> torch.Tensor:
             return infer_tensorrt(
                 context=context,
                 host_inputs=input_ids,

@@ -20,6 +20,7 @@ import logging
 import multiprocessing
 from collections import defaultdict
 from pathlib import Path
+from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -275,6 +276,7 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
     for n in model.graph.node:
         for output_name in n.output:
             output_nodes.append(onnx.ValueInfoProto(name=output_name))
+    #output_nodes.extend(model.graph.output)
     # clear output array (protobuff way...)
     while model.graph.output:
         model.graph.output.pop()
@@ -285,6 +287,7 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
 def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor]) -> List[str]:
     """
     Identify out of range values in node outputs.
+
     :param graph: graph as adjency nodes dict
     :param output_nodes: output of each node
     :return: list of nodes producing outputs outside fp16 tensor
@@ -292,7 +295,7 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
     keep_fp32 = list()
     min_float16 = torch.finfo(torch.float16).min
     max_float16 = torch.finfo(torch.float16).max
-    resolution = 5.96e-08  # torch.finfo(torch.float16).eps  # minimum value that can be represented by FP16
+    resolution = 5.96e-08  # minimum value that can be represented by FP16
     for k, tensor in output_nodes.items():
         if tensor.dtype != torch.float32:
             continue
@@ -300,7 +303,8 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
         if (
             torch.any(tensor > max_float16)
             or torch.any(tensor < min_float16)
-            or (torch.any((tensor < resolution) & (tensor > -resolution) & (tensor != 0)))  # limited memory footprint
+            # limited memory footprint check
+            or (torch.any((tensor < resolution) & (tensor > -resolution) & (tensor != 0)))
         ):
             keep_fp32.append(graph[k])
     return keep_fp32
@@ -308,14 +312,32 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
 
 def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict[str, str]]:
     """
-    Extract output->node and input->node mappings
+    Extract output->node and input->node mappings.
+    Supports If node and their subgraphs.
+    (in this case output nodes may have the same name in both subgraphs, only one will be kept)
+
     :param onnx_model: ONNX model
     :return: 2 mappings, (i->node, o->node)
     """
     output_mapping: Dict[str, str] = dict()
     input_mapping: Dict[str, str] = dict()
-    for node in onnx_model.graph.node:  # type: NodeProto
-        assert len(node.output) == 1
+    nodes = Queue()
+
+    def add_q(items: List[NodeProto]) -> None:
+        for item in items:
+            nodes.put(item=item)
+
+    add_q(items=onnx_model.graph.node)
+
+    while not nodes.empty():
+        node: NodeProto = nodes.get()
+
+        if node.op_type == "If":
+            add_q(items=node.attribute[0].g.node)
+            add_q(items=node.attribute[1].g.node)
+        else:
+            assert len(node.output) == 1
+        # not true for If node...
         output_node = node.output[0]
         output_mapping[output_node] = node.name
         for i in node.input:
@@ -337,36 +359,33 @@ def use_external_data(path: str) -> bool:
     return False
 
 
-def get_keep_fp32_nodes(
-    onnx_model_path: str,
+def search_fp32_nodes(
+    original_model: str,
+    modified_model: str,
     get_input: Callable[[], Dict[str, torch.Tensor]],
-    early_stop: int = 100,
-    device: str = "cuda",
+    early_stop: int,
 ) -> List[str]:
     """
-    Find the list of nodes to keep in FP32 to avoid out of range values
-    :param onnx_model_path: ONNX model path
+    Find the list of nodes to keep in FP32 to avoid out of range values/rounding to zero.
+
+    :param original_model: Onnx model path
+    :param modified_model: Onnx model path where each node is an output of the model
     :param get_input: generate input to test the model. Output should change from call to call
     :param early_stop: will test until `early_stop` tests are done without any new node to keep in FP32
-    :param device: where to run the inference
     :return: list of names of nodes to keep in FP32
     """
-    # do not load weights on LLM (>2Gb), we only need to modify the computation graph
-    onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
-    onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
-    path_onnx_model_fp32_all_nodes = onnx_model_path + "_all_nodes.onnx"
-    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=path_onnx_model_fp32_all_nodes, save_as_external_data=False)
-    provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
-    ort_model_fp32_all_nodes = create_model_for_provider(path_onnx_model_fp32_all_nodes, provider)
+    ort_model_fp32_all_nodes = create_model_for_provider(modified_model, ["CUDAExecutionProvider"])
     ort_binding = ort_model_fp32_all_nodes.io_binding()
+    onnx_model: ModelProto = onnx.load_model(f=original_model, load_external_data=False)
     input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
     # list all nodes which have an output out of the FP16 range
     keep_fp32_nodes = list()
     no_new_node_counter = 0
     while no_new_node_counter < early_stop:
         inputs = get_input()
+        # TODO replace by a function which performs the inference
         outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
-            model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device=device, binding=ort_binding, clone_tensor=False
+            model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device="cuda", binding=ort_binding, clone_tensor=False
         )
         keep_node_io = find_node_fp32(graph=output_mapping, output_nodes=outputs)
 
@@ -377,8 +396,7 @@ def get_keep_fp32_nodes(
         else:
             no_new_node_counter = 0
 
-    if device == "cuda":
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     # I/O names that can't be found in the graph
     nodes_to_skip = (
         [n.name for n in onnx_model.graph.input]
@@ -396,6 +414,32 @@ def get_keep_fp32_nodes(
             map_children[node.name].append(child)
     keep_fp32_nodes += [c for k in keep_fp32_nodes if k in map_children for c in map_children[k]]
     return keep_fp32_nodes
+
+
+def get_keep_fp32_nodes(
+    onnx_model_path: str,
+    get_input: Callable[[], Dict[str, torch.Tensor]],
+    early_stop: int = 100,
+) -> List[str]:
+    """
+    Find the list of nodes to keep in FP32 to avoid out of range values
+    :param onnx_model_path: ONNX model path
+    :param get_input: generate input to test the model. Output should change from call to call
+    :param early_stop: will test until `early_stop` tests are done without any new node to keep in FP32
+    :return: list of names of nodes to keep in FP32
+    """
+    # do not load weights on LLM (>2Gb), we only need to modify the computation graph
+    onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
+    onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
+    onnx_model_fp32_all_nodes_path = onnx_model_path + "_all_nodes.onnx"
+    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=onnx_model_fp32_all_nodes_path, save_as_external_data=False)
+
+    return search_fp32_nodes(
+        original_model=onnx_model_path,
+        modified_model=onnx_model_fp32_all_nodes_path,
+        get_input=get_input,
+        early_stop=early_stop,
+    )
 
 
 def convert_fp16(onnx_model: str, nodes_to_exclude: List[str]) -> ModelProto:

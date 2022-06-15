@@ -416,7 +416,7 @@ def search_fp32_nodes(
 
 
 def get_keep_fp32_nodes(
-    onnx_model_path: str, get_input: Callable[[], Dict[str, torch.Tensor]], early_stop: int = 100
+    onnx_model_path: str, get_input: Callable[[], Dict[str, torch.Tensor]], early_stop: int = 30
 ) -> List[str]:
     """
     Find the list of nodes to keep in FP32 to avoid out of range values

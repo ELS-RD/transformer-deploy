@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from collections import defaultdict
 from pathlib import Path
 
 import onnx
@@ -54,9 +55,14 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
 
     # search for not-duplicated weights, called initializer in ONNX
     to_add = list()
+    # speed-up the duplicated weights search
+    initializer_no_cache = defaultdict(list)
+    for node_no_cache in model_no_cache.graph.initializer:
+        initializer_no_cache[hash(node_no_cache.raw_data)].append(node_no_cache)
+
     for node_cache in model_cache.graph.initializer:
         found = False
-        for node_no_cache in model_no_cache.graph.initializer:
+        for node_no_cache in initializer_no_cache[hash(node_cache.raw_data)]:
             if node_cache.raw_data == node_no_cache.raw_data:
                 found = True
                 mapping_initializer_cache_to_no_cache[node_cache.name] = node_no_cache.name

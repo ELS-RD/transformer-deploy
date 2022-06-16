@@ -295,7 +295,7 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
     keep_fp32 = list()
     min_float16 = torch.finfo(torch.float16).min
     max_float16 = torch.finfo(torch.float16).max
-    resolution = 5.96e-08  # minimum value that can be represented by FP16
+    resolution = 5.96e-08  # minimum value that can be represented by FP16 in practice
     for k, tensor in output_nodes.items():
         if tensor.dtype != torch.float32:
             continue
@@ -346,19 +346,6 @@ def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict
     return input_mapping, output_mapping
 
 
-def use_external_data(path: str) -> bool:
-    """
-    Check if a model uses external data
-    :param path: Onnx model path
-    :return: True if any initalizer (model weight) is stored in an external file
-    """
-    model = onnx.load_model(f=path, load_external_data=False)
-    for i in model.graph.initializer:
-        if i.HasField("data_location") and i.data_location == onnx.TensorProto.EXTERNAL:
-            return True
-    return False
-
-
 def search_fp32_nodes(
     original_model: str,
     modified_model_session: InferenceSession,
@@ -382,7 +369,6 @@ def search_fp32_nodes(
     no_new_node_counter = 0
     while no_new_node_counter < early_stop:
         inputs = get_input()
-        # TODO replace by a function which performs the inference
         outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
             model_onnx=modified_model_session, inputs=inputs, device="cuda", binding=ort_binding, clone_tensor=False
         )

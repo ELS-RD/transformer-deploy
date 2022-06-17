@@ -53,18 +53,35 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 25
 
 ## Query the inference server
 
-First you need to convert your strings to a binary file following the format of `demo/infinity/query_body.bin`.  
-The `Json` part is straightforward, the second part a bit less.  
-Please follow the code below for the recipe for a single string.  
-If you have several strings, just concatenate the results.
+To query your inference server you first need to need to convert your string to a binary file following the same format as in `demo/infinity/query_body.bin`. 
 
+The `query_body.bin` file is composed of three parts, a header describing the inputs/outputs values, a binary value representing the length of the binary input data and the binary input data.
+
+The header part is straightforward as it's simply a JSON describing the inputs and outputs values:
+```json
+{"inputs":[{"name":"TEXT","shape":[1],"datatype":"BYTES","parameters":{"binary_data_size":59}}],"outputs":[{"name":"output","parameters":{"binary_data":false}}]}
+```
+> Note that we provide the `binary_data_size` value describing the lenght of the content following the header.
+
+The integer representing the length of the input data is written in little endian: `7`.
+> Note that the length of the content is not 7 but 55 as the `7` in the 55th ascii character.
+
+The binary input data is simply a text encoded in `UTF-8` format: `This live event is great. I will sign-up for Infinity.`
+(If you have several strings, just concatenate the results.)
+
+You can follow the code below for the recipe for a single string. It will also tell you the value to specify within the `Inference-Header-Content-Length` header.
 ```python
 import struct
 
-text: str = "This live event is great. I will sign-up for Infinity.\n"
-text_b: bytes = text.encode("UTF-8")
-print(struct.pack("<I", len(text_b))+text_b)
-# <I means little-endian unsigned integers, followed by the number of elements
+text_b: bytes = "This live event is great. I will sign-up for Infinity.\n".encode("UTF-8")
+
+prefix: bytes = b'{"inputs":[{"name":"TEXT","shape":[1],"datatype":"BYTES","parameters":{"binary_data_size":' + bytes(str(len(text_b) + len(struct.pack("<I", len(text_b)))), encoding='utf8') + b'}}],"outputs":[{"name":"output","parameters":{"binary_data":false}}]}'
+
+print('--header "Inference-Header-Content-Length: ', len(prefix), '"', sep="")
+
+with open("body.bin", "wb+") as f:
+  f.write(prefix + struct.pack("<I", len(text_b)) + text_b)
+  # <I means little-endian unsigned integers, followed by the number of elements
 ```
 
 !!! tip
@@ -72,6 +89,7 @@ print(struct.pack("<I", len(text_b))+text_b)
     check Nvidia implementation from [https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187](https://github.com/triton-inference-server/client/blob/530bcac5f1574aa2222930076200544eb274245c/src/python/library/tritonclient/utils/__init__.py#L187)
     for more information.
 
+You can now query your model using your input file :
 ```shell
 # https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_binary_data.md
 # @ means no data conversion (curl feature)

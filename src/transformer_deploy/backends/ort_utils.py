@@ -16,9 +16,11 @@
 All the tooling to ease ONNX Runtime usage.
 """
 import copy
+import ctypes as C
 import logging
 import multiprocessing
 from collections import defaultdict
+from ctypes.util import find_library
 from pathlib import Path
 from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple, Union
@@ -37,6 +39,9 @@ from onnxruntime.transformers.fusion_utils import FusionUtils
 from onnxruntime.transformers.onnx_model import OnnxModel
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
 
+
+libc = C.CDLL(find_library("c"))
+libc.malloc.restype = C.c_void_p
 
 # GPU inference only
 try:
@@ -159,17 +164,19 @@ numpy_to_torch_dtype_dict = {
 
 torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
-ort_to_numpy_dtype_dict = {
-    "tensor(bool)": np.uint8,  # bool not supported by DlPack! https://github.com/dmlc/dlpack/issues/75
-    "tensor(float16)": np.float16,
-    "tensor(float)": np.float32,
-    "tensor(float64)": np.float64,
-    "tensor(int32)": np.int32,
-    "tensor(int64)": np.int64,
+ort_to_torch_dtype_dict = {
+    "tensor(bool)": (torch.bool, 1),  # bool not supported by DlPack! https://github.com/dmlc/dlpack/issues/75
+    "tensor(int8)": (torch.int8, 1),
+    "tensor(int16)": (torch.int16, 2),
+    "tensor(int32)": (torch.int32, 4),
+    "tensor(int64)": (torch.int64, 8),
+    "tensor(float16)": (torch.float16, 2),
+    "tensor(bfloat16)": (torch.bfloat16, 2),  # bfloat16 not supported by DlPack!
+    "tensor(float)": (torch.float32, 4),
+    "tensor(double)": (torch.float64, 8),
 }
 
 
-# TODO add test including different input and checking that tensor is not overriden
 def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
     """
     Convert OrtValue output by Onnx Runtime to Pytorch tensor.
@@ -179,22 +186,31 @@ def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
         By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """
+    torch_type, element_size = ort_to_torch_dtype_dict[ort_tensor.data_type()]
+    nb_elements = np.prod(ort_tensor.shape()) if ort_tensor.shape() != [] else 1
+    data_size = nb_elements * element_size
+    input_shape = (data_size,)
     if ort_tensor.device_name().lower() == "cuda":
-        np_type = ort_to_numpy_dtype_dict[ort_tensor.data_type()]
         fake_owner = 1
         # size not used anywhere, so just put 0
         memory = cp.cuda.UnownedMemory(ort_tensor.data_ptr(), 0, fake_owner)
         memory_ptr = cp.cuda.MemoryPointer(memory, 0)
-        # make sure you interpret the array shape/dtype/strides correctly
-        cp_array = cp.ndarray(shape=ort_tensor.shape(), memptr=memory_ptr, dtype=np_type)
+        # make sure interpret the array shape/dtype/strides correctly
+        cp_array = cp.ndarray(shape=input_shape, memptr=memory_ptr, dtype=cp.byte)
         # cloning required otherwise ORT will recycle the storage array and put new values into it if new inf is done.
-        torch_tensor = torch.from_dlpack(cp_array.toDlpack())
-        if clone_tensor:
-            torch_tensor = torch_tensor.clone()
-        return torch_tensor
+        torch_tensor: torch.Tensor = torch.from_dlpack(cp_array.toDlpack())
     else:
-        np_tensor = ort_tensor.numpy()
-        return torch.from_numpy(np_tensor)
+        # fake type as some don't exist in C, like float16
+        # otherwise we would use np.ctypeslib.as_ctypes_type
+        data_pointer = C.cast(ort_tensor.data_ptr(), C.POINTER(C.c_byte))
+        np_tensor = np.ctypeslib.as_array(data_pointer, shape=input_shape)
+        torch_tensor = torch.from_numpy(np_tensor)
+    # https://github.com/csarofeen/pytorch/pull/1481 -> no casting, just reinterpret_cast
+    torch_tensor = torch_tensor.view(torch_type)
+    torch_tensor = torch_tensor.reshape(ort_tensor.shape())
+    if clone_tensor:
+        torch_tensor = torch_tensor.clone()
+    return torch_tensor
 
 
 def inference_onnx_binding(

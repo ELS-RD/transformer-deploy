@@ -11,11 +11,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import List
 
+import numpy as np
 import onnx
+import pytest
 from onnx import GraphProto, ModelProto, NodeProto, TensorProto, ValueInfoProto, helper
+from onnxruntime import OrtValue
 
-from transformer_deploy.backends.ort_utils import get_io_to_node_mapping
+from transformer_deploy.backends.ort_utils import get_io_to_node_mapping, ort_to_torch_dtype_dict, to_pytorch
 
 
 def get_onnx_if() -> ModelProto:
@@ -136,3 +140,44 @@ def test_io_mapping():
     for k, v in list(inputs.items()) + list(outputs.items()):
         assert k
         assert v
+
+
+@pytest.mark.gpu
+def test_to_pytorch():
+    content = [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]]
+    test_data: List[np.ndarray] = [
+        np.float16(content),
+        np.float32(content),
+        np.float64(content),
+        np.int8(content),
+        np.int16(content),
+        np.int32(content),
+        np.int64(content),
+        np.array(1, dtype=np.float64),
+        np.array(1, dtype=np.int64),
+    ]
+    for data in test_data:
+        ortvalue_cpu = OrtValue.ortvalue_from_numpy(data)
+        # no clone
+        tensor = to_pytorch(ort_tensor=ortvalue_cpu, clone_tensor=False)
+        expected_dtype, _ = ort_to_torch_dtype_dict[ortvalue_cpu.data_type()]
+        assert expected_dtype == tensor.dtype
+        assert tensor.shape == data.shape
+        assert np.allclose(tensor.numpy(), data)
+
+        # cuda
+        data_gpu = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
+        tensor_gpu = to_pytorch(ort_tensor=data_gpu, clone_tensor=False)
+        assert tensor_gpu.is_cuda
+        assert np.allclose(tensor_gpu.cpu().numpy(), data)
+
+        if len(data.shape) > 0:
+            # check data update impact torch tensor
+            new_data = data + 1
+            assert not np.allclose(new_data, data)
+            ortvalue_cpu.update_inplace(new_data)
+            assert np.allclose(tensor.cpu().numpy(), new_data)
+            # check data update doesn't impact torch tensor
+            ortvalue_cpu.update_inplace(data)
+            tensor = to_pytorch(ort_tensor=ortvalue_cpu, clone_tensor=True)
+            assert np.allclose(tensor.numpy(), data)

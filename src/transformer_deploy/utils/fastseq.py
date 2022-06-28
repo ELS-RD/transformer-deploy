@@ -20,7 +20,7 @@ def code_utils(module_name: str, function: Any, new_function_name: str, modifica
     """
     This function helps updating a module given the function name and the modifications to be done on this function
     Once you use update_module(), you just need to override the function with its new version using the new function
-    name. If you want to replace the whole code function you can pass * in src code as a key.
+    name.
     :param module_name: the module to be updated
     :param function: the function to be updated in the given module
     :param modifications: a dictionary containing all the modifications to be done, keys are the source/original code

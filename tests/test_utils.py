@@ -11,7 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import logging
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -79,30 +78,6 @@ def test_extract_model_info():
 
 
 def test_update_module():
-    logger = logging.getLogger(__name__)
-    # replace the whole function body
-    code_utils(
-        module_name="transformers.models.t5.modeling_t5",
-        function=transformers.models.t5.modeling_t5.T5Attention.forward,
-        new_function_name="updatedForward",
-        modifications={"*": "return True"},
-        log=logger,
-    )
-
-    transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
-    assert transformers.models.t5.modeling_t5.T5Attention.forward(1, hidden_states=None)
-
-    code_utils(
-        module_name="transformers.models.t5.modeling_t5",
-        function=transformers.models.t5.modeling_t5.T5Attention.compute_bias,
-        new_function_name="updatedBias",
-        modifications={"*": "return 10"},
-        log=logger,
-    )
-    transformers.models.t5.modeling_t5.T5Attention.compute_bias = transformers.models.t5.modeling_t5.updatedBias
-    assert transformers.models.t5.modeling_t5.T5Attention.compute_bias(1, 10, 20) == 10
-
-    # test specific modification
     src_code = (
         "vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}\n"
         "        vocab.update(self.added_tokens_encoder)\n"
@@ -112,7 +87,6 @@ def test_update_module():
         function=transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab,
         new_function_name="new_vocab",
         modifications={src_code: 'vocab = {"1": "success"}\n'},
-        log=logger,
     )
     transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab = transformers.models.t5.tokenization_t5.new_vocab
     assert transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab(1) == {"1": "success"}

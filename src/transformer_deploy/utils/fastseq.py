@@ -11,16 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 import importlib
 import inspect
-import logging
 from typing import Any, Dict
 
 
-def code_utils(
-    module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str], log: logging.Logger
-) -> bool:
+def code_utils(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
     """
     This function helps updating a module given the function name and the modifications to be done on this function
     Once you use update_module(), you just need to override the function with its new version using the new function
@@ -36,27 +32,16 @@ def code_utils(
     do:
         >>> import transformers
         >>> code_utils(module_name="transformers.models.t5.modeling_t5",
-        >>>               function=transformers.models.t5.modeling_t5.T5Attention.forward ,
-        >>>               new_function_name="updatedForward",
-        >>>               modifications=dict("*", "return True"))
+        >>>            function=transformers.models.t5.modeling_t5.T5Attention.forward ,
+        >>>            new_function_name="updatedForward",
+        >>>            modifications=dict("return outputs", "return True")
+        >>>            )
         >>> transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
     """
-    try:
-        model_module = importlib.import_module(name=module_name)
-        function_code = inspect.getsource(function)
-        for src_code, new_code in modifications.items():
-            function_code = function_code.replace("):\n", "\n):\n")  # newline to align the code after function header
-            function_code = inspect.cleandoc(function_code)
-            if src_code == "*":
-                # find the right indentation used with the function header to add it for the new code
-                # here it is specific for replacing the whole function body
-                header_end_idx = function_code.find("):\n")
-                function_code = function_code[: header_end_idx + len("):\n")] + f"    {new_code}"
-            else:
-                function_code = function_code.replace(src_code, new_code)
-        function_code = function_code.replace(f"def {function.__name__}", f"def {new_function_name}")
-        exec(inspect.cleandoc(function_code), model_module.__dict__, model_module.__dict__)
-        return True
-    except Exception as e:
-        log.error(f"Failed to update the given function: {e}")
-        return False
+    model_module = importlib.import_module(name=module_name)
+    function_code = inspect.getsource(function)
+    for src_code, new_code in modifications.items():
+        function_code = function_code.replace(src_code, new_code)
+    function_code = function_code.replace(f"def {function.__name__}(", f"def {new_function_name}(")
+    # adding the newline at the beginning for cleandoc constraint
+    exec(inspect.cleandoc("\n" + function_code), model_module.__dict__, model_module.__dict__)

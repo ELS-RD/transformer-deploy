@@ -87,7 +87,7 @@ def test_update_module():
     )
 
     transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
-    assert transformers.models.t5.modeling_t5.T5Attention.forward(1, hidden_states=None) == True
+    assert transformers.models.t5.modeling_t5.T5Attention.forward(1, hidden_states=None)
 
     update_module(
         module_name="transformers.models.t5.modeling_t5",

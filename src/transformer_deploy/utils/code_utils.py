@@ -16,8 +16,6 @@ import importlib
 import inspect
 from typing import Any, Dict
 
-import transformers
-
 
 def update_module(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
     """
@@ -32,6 +30,7 @@ def update_module(module_name: str, function: Any, new_function_name: str, modif
     if you're updating the forward function in T5Attention transformers
     `transformers.models.t5.modeling_t5.T5Attention.forward` and using `updatedForward` as new function name, you can
     do:
+        >>> import transformers
         >>> update_module(module_name="transformers.models.t5.modeling_t5",
         >>>               function=transformers.models.t5.modeling_t5.T5Attention.forward ,
         >>>               new_function_name="updatedForward",

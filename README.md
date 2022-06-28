@@ -2,6 +2,8 @@
 
 [![Documentation](https://img.shields.io/website?label=documentation&style=for-the-badge&up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2F)](https://els-rd.github.io/transformer-deploy/) [![tests](https://img.shields.io/github/workflow/status/ELS-RD/transformer-deploy/tests/main?label=tests&style=for-the-badge)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-360/) [![Twitter Follow](https://img.shields.io/twitter/follow/pommedeterre33?color=orange&style=for-the-badge)](https://twitter.com/pommedeterre33)
 
+**WARNING**: Docker image of this project is version `0.4.0` which is now few months old. Next release will be done on June/July 2022 when some dependencies of this library will be updated.
+
 ### Optimize and deploy in **production** 🤗 Hugging Face Transformer models in a single command line.  
 
 => Up to 10X faster inference! <=

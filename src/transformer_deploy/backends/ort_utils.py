@@ -148,8 +148,8 @@ def cpu_quantization(input_model_path: str, output_model_path: str) -> None:
 
 
 # https://github.com/pytorch/pytorch/blob/ac79c874cefee2f8bc1605eed9a924d80c0b3542/torch/testing/_internal/common_utils.py#L349
-numpy_to_torch_dtype_dict = {
-    bool: torch.bool,
+numpy_to_torch_dtype_dict: Dict[np.dtype, torch.dtype] = {
+    np.bool_: torch.bool,
     np.uint8: torch.uint8,
     np.int8: torch.int8,
     np.int16: torch.int16,
@@ -162,18 +162,20 @@ numpy_to_torch_dtype_dict = {
     np.complex128: torch.complex128,
 }
 
-torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
+torch_to_numpy_dtype_dict: Dict[torch.dtype, np.dtype] = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
-ort_to_torch_dtype_dict = {
-    "tensor(bool)": (torch.bool, 1),  # bool not supported by DlPack! https://github.com/dmlc/dlpack/issues/75
-    "tensor(int8)": (torch.int8, 1),
-    "tensor(int16)": (torch.int16, 2),
-    "tensor(int32)": (torch.int32, 4),
-    "tensor(int64)": (torch.int64, 8),
-    "tensor(float16)": (torch.float16, 2),
-    "tensor(bfloat16)": (torch.bfloat16, 2),  # bfloat16 not supported by DlPack!
-    "tensor(float)": (torch.float32, 4),
-    "tensor(double)": (torch.float64, 8),
+# np.ctypeslib.as_ctypes_type not used as it imply to manage exception, etc. for unsupported types like float16
+ort_conversion_table: Dict[str, Tuple[torch.dtype, Optional[np.dtype], Optional[int], int]] = {
+    # bool not supported by DlPack! see https://github.com/dmlc/dlpack/issues/75
+    "tensor(bool)": (torch.bool, None, C.c_bool, 1),
+    "tensor(int8)": (torch.int8, np.int8, C.c_int8, 1),
+    "tensor(int16)": (torch.int16, np.int16, C.c_int16, 2),
+    "tensor(int32)": (torch.int32, np.int32, C.c_int32, 4),
+    "tensor(int64)": (torch.int64, np.int64, C.c_int64, 8),
+    "tensor(float16)": (torch.float16, np.float16, None, 2),
+    "tensor(bfloat16)": (torch.bfloat16, None, None, 2),  # bfloat16 not supported by DlPack!
+    "tensor(float)": (torch.float32, np.float32, C.c_float, 4),
+    "tensor(double)": (torch.float64, np.float64, C.c_double, 8),
 }
 
 
@@ -186,28 +188,39 @@ def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
         By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """
-    torch_type, element_size = ort_to_torch_dtype_dict[ort_tensor.data_type()]
-    nb_elements = np.prod(ort_tensor.shape()) if ort_tensor.shape() != [] else 1
-    data_size = nb_elements * element_size
-    input_shape = (data_size,)
-    if ort_tensor.device_name().lower() == "cuda":
+    ort_type = ort_tensor.data_type()
+    torch_type, np_type, c_type, element_size = ort_conversion_table[ort_type]
+    use_cuda = ort_tensor.device_name().lower() == "cuda"
+    use_intermediate_dtype = np_type is None or (c_type is None and not use_cuda)
+    # some types are not supported by numpy (like bfloat16), so we use intermediate dtype
+    # same for ctype if tensor is on CPU
+    if use_intermediate_dtype:
+        np_type = np.byte
+        # fake type as some don't exist in C, like float16
+        c_type = C.c_byte
+        nb_elements = np.prod(ort_tensor.shape())
+        data_size = nb_elements * element_size
+        input_shape = (data_size,)
+    else:
+        input_shape = ort_tensor.shape()
+    if use_cuda:
         fake_owner = 1
         # size not used anywhere, so just put 0
         memory = cp.cuda.UnownedMemory(ort_tensor.data_ptr(), 0, fake_owner)
         memory_ptr = cp.cuda.MemoryPointer(memory, 0)
         # make sure interpret the array shape/dtype/strides correctly
-        cp_array = cp.ndarray(shape=input_shape, memptr=memory_ptr, dtype=cp.byte)
+        cp_array = cp.ndarray(shape=input_shape, memptr=memory_ptr, dtype=np_type)
         # cloning required otherwise ORT will recycle the storage array and put new values into it if new inf is done.
         torch_tensor: torch.Tensor = torch.from_dlpack(cp_array.toDlpack())
     else:
-        # fake type as some don't exist in C, like float16
-        # otherwise we would use np.ctypeslib.as_ctypes_type
-        data_pointer = C.cast(ort_tensor.data_ptr(), C.POINTER(C.c_byte))
+        data_pointer = C.cast(ort_tensor.data_ptr(), C.POINTER(c_type))
         np_tensor = np.ctypeslib.as_array(data_pointer, shape=input_shape)
         torch_tensor = torch.from_numpy(np_tensor)
-    # https://github.com/csarofeen/pytorch/pull/1481 -> no casting, just reinterpret_cast
-    torch_tensor = torch_tensor.view(torch_type)
-    torch_tensor = torch_tensor.reshape(ort_tensor.shape())
+    # convert back to the right type
+    if use_intermediate_dtype:
+        # https://github.com/csarofeen/pytorch/pull/1481 -> no casting, just reinterpret_cast
+        torch_tensor = torch_tensor.view(torch_type)
+        torch_tensor = torch_tensor.reshape(ort_tensor.shape())
     if clone_tensor:
         torch_tensor = torch_tensor.clone()
     return torch_tensor

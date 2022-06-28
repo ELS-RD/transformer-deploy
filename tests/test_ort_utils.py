@@ -11,15 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import onnx
 import pytest
 from onnx import GraphProto, ModelProto, NodeProto, TensorProto, ValueInfoProto, helper
 from onnxruntime import OrtValue
+from pytest_benchmark.fixture import BenchmarkFixture
 
-from transformer_deploy.backends.ort_utils import get_io_to_node_mapping, ort_to_torch_dtype_dict, to_pytorch
+from transformer_deploy.backends.ort_utils import get_io_to_node_mapping, ort_conversion_table, to_pytorch
 
 
 def get_onnx_if() -> ModelProto:
@@ -142,13 +143,60 @@ def test_io_mapping():
         assert v
 
 
+def check_pytorch_conversion(data: np.ndarray, ortvalue: OrtValue, benchmark: Optional[BenchmarkFixture]):
+    """
+    Check that the converter to PyTorch tensor produces the same output as ONNX model
+    """
+    if benchmark is not None:
+        tensor = benchmark(to_pytorch, ort_tensor=ortvalue, clone_tensor=False)
+    else:
+        tensor = to_pytorch(ort_tensor=ortvalue, clone_tensor=False)
+    if ortvalue.device_name().lower() == "cuda":
+        assert tensor.is_cuda
+    expected_dtype, *_ = ort_conversion_table[ortvalue.data_type()]
+    assert tensor.dtype == expected_dtype
+    assert tensor.shape == data.shape
+    assert np.allclose(tensor.cpu().numpy(), data)
+
+
+def test_conversion_cpu_float16(benchmark):
+    """
+    float16 doesn't exist in ctypes, it will use an intermediate dtype during the conversion,
+    making the conversion slower.
+    """
+    data = np.arange(1000, dtype=np.float16)
+    ortvalue = OrtValue.ortvalue_from_numpy(data)
+    check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
+
+
+def test_conversion_cpu_float32(benchmark):
+    data = np.arange(1000, dtype=np.float32)
+    ortvalue = OrtValue.ortvalue_from_numpy(data)
+    check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
+
+
+@pytest.mark.gpu
+def test_conversion_gpu_float16(benchmark):
+    data = np.arange(1000, dtype=np.float16)
+    ortvalue = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
+    check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
+
+
+@pytest.mark.gpu
+def test_conversion_gpu_float32(benchmark):
+    data = np.arange(1000, dtype=np.float32)
+    ortvalue = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
+    check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
+
+
 @pytest.mark.gpu
 def test_to_pytorch():
-    content = [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]]
+    content = np.arange(8).reshape(2, 4)
     test_data: List[np.ndarray] = [
         np.float16(content),
         np.float32(content),
         np.float64(content),
+        np.bool_(content),
         np.int8(content),
         np.int16(content),
         np.int32(content),
@@ -157,27 +205,25 @@ def test_to_pytorch():
         np.array(1, dtype=np.int64),
     ]
     for data in test_data:
-        ortvalue_cpu = OrtValue.ortvalue_from_numpy(data)
-        # no clone
-        tensor = to_pytorch(ort_tensor=ortvalue_cpu, clone_tensor=False)
-        expected_dtype, _ = ort_to_torch_dtype_dict[ortvalue_cpu.data_type()]
-        assert expected_dtype == tensor.dtype
-        assert tensor.shape == data.shape
-        assert np.allclose(tensor.numpy(), data)
+        ortvalue = OrtValue.ortvalue_from_numpy(data)
+        check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=None)
+        ortvalue = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
+        check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=None)
 
-        # cuda
-        data_gpu = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
-        tensor_gpu = to_pytorch(ort_tensor=data_gpu, clone_tensor=False)
-        assert tensor_gpu.is_cuda
-        assert np.allclose(tensor_gpu.cpu().numpy(), data)
 
-        if len(data.shape) > 0:
-            # check data update impact torch tensor
-            new_data = data + 1
-            assert not np.allclose(new_data, data)
-            ortvalue_cpu.update_inplace(new_data)
-            assert np.allclose(tensor.cpu().numpy(), new_data)
-            # check data update doesn't impact torch tensor
-            ortvalue_cpu.update_inplace(data)
-            tensor = to_pytorch(ort_tensor=ortvalue_cpu, clone_tensor=True)
-            assert np.allclose(tensor.numpy(), data)
+def test_to_pytorch_update_ort_value_inplace():
+    data = np.arange(4, dtype=np.float32).reshape((2, 2))
+    ortvalue = OrtValue.ortvalue_from_numpy(data)
+    tensor = to_pytorch(ort_tensor=ortvalue, clone_tensor=False)
+    assert np.allclose(tensor.numpy(), data)
+
+    new_data = data + 1
+    assert not np.allclose(new_data, data)
+    ortvalue.update_inplace(new_data)
+    assert np.allclose(tensor.cpu().numpy(), new_data)
+    # check data update doesn't impact torch tensor
+    ortvalue.update_inplace(data)
+    tensor = to_pytorch(ort_tensor=ortvalue, clone_tensor=True)
+    assert np.allclose(tensor.numpy(), data)
+    ortvalue.update_inplace(new_data)
+    assert np.allclose(tensor.numpy(), data)

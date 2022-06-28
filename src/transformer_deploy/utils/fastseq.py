@@ -17,7 +17,7 @@ import inspect
 from typing import Any, Dict
 
 
-def update_module(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
+def code_utils(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
     """
     This function helps updating a module given the function name and the modifications to be done on this function
     Once you use update_module(), you just need to override the function with its new version using the new function
@@ -31,7 +31,7 @@ def update_module(module_name: str, function: Any, new_function_name: str, modif
     `transformers.models.t5.modeling_t5.T5Attention.forward` and using `updatedForward` as new function name, you can
     do:
         >>> import transformers
-        >>> update_module(module_name="transformers.models.t5.modeling_t5",
+        >>> code_utils(module_name="transformers.models.t5.modeling_t5",
         >>>               function=transformers.models.t5.modeling_t5.T5Attention.forward ,
         >>>               new_function_name="updatedForward",
         >>>               modifications=dict("*", "return True"))
@@ -43,11 +43,13 @@ def update_module(module_name: str, function: Any, new_function_name: str, modif
         try:
             def_code_idx = function_code.find(
                 "):\n",
-            )
-            function_code = function_code.replace("):\n", "\n):\n")
-            indent_def_len = function_code.find("def")
-            indent = "".join(" " for _ in range(indent_def_len))
+            )  # find the end of the Python function header
+            function_code = function_code.replace("):\n", "\n):\n")  # newline to align the code after function header
             if src_code == "*":
+                # find the right indentation used with the function header to add it for the new code
+                # here it is specific for replacing the whole function body
+                indent_def_len = function_code.find("def")
+                indent = "".join(" " for _ in range(indent_def_len))
                 function_code = function_code[: def_code_idx + len("):\n")] + f"{indent}    {new_code}"
             else:
                 function_code = function_code.replace(src_code, new_code)

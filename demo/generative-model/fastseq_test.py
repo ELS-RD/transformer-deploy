@@ -1,3 +1,4 @@
+import logging
 import time
 
 import torch
@@ -90,6 +91,7 @@ def transformers_modifications_test(
             function=transformers.models.t5.modeling_t5.T5Attention.forward,
             new_function_name="updatedForward",
             modifications=forward_modifications,
+            log=logger,
         )
         transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
 
@@ -107,6 +109,7 @@ def transformers_modifications_test(
             function=transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache,
             new_function_name="updated_reorder_cache",
             modifications=reorder_cache_modifications,
+            log=logger,
         )
         transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache = (
             transformers.models.t5.modeling_t5.updated_reorder_cache
@@ -204,6 +207,7 @@ def transformers_modifications_test(
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
     source_path = "./data/cnndm_128.txt"
     expected_output_path = "./data/expected_t5_output.hypo"
     # test with transformers modifications

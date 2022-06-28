@@ -207,7 +207,7 @@ if __name__ == "__main__":
     source_path = "./data/cnndm_128.txt"
     expected_output_path = "./data/expected_t5_output.hypo"
     # test with transformers modifications
-    modify_transformers = True
+    modify_transformers = False
     transformers_modifications_test(
         modify_transformers,
         source_path,

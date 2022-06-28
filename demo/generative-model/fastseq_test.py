@@ -1,54 +1,10 @@
-import importlib
-import inspect
 import time
 
 import torch
 import transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, T5ForConditionalGeneration
 
-
-def update_transformers():
-    # update forward function in T5Attention: ["transformers.models.t5.modeling_t5.T5Attention.forward()"]
-    model_module = importlib.import_module(name="transformers.models.t5.modeling_t5")
-    original_t5_attention = inspect.getsource(transformers.models.t5.modeling_t5.T5Attention.forward)
-    code_to_find = (
-        "value_states = project(\n            hidden_states, self.v, key_value_states, "
-        "past_key_value[1] if past_key_value is not None else None\n        )\n"
-    )
-    code_to_add = (
-        "        if self.is_decoder and use_cache is True:\n            "
-        "key_states = key_states.contiguous()\n            "
-        "value_states = value_states.contiguous()\n"
-    )
-    modeified_attention_t5 = original_t5_attention.replace(code_to_find, code_to_find + code_to_add)
-    modeified_attention_t5 = modeified_attention_t5.replace("def forward", "def updatedForward")
-    exec(inspect.cleandoc(modeified_attention_t5), model_module.__dict__, model_module.__dict__)
-    transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
-
-    # update forward function in T5Attention:
-    # ["transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache()"]
-    original_t5_generation = inspect.getsource(
-        transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache
-    )
-    modified_t5_generation = original_t5_generation.replace(
-        "self, past, beam_idx):", "\n        self,\n        past,\n        beam_idx,\n    ):"
-    )
-    code_to_find = "for layer_past_state in layer_past_states"
-    code_to_add = "[0:2]"
-    modified_t5_generation = modified_t5_generation.replace(code_to_find, code_to_find + code_to_add)
-    code_to_find = (
-        "reordered_layer_past_states = reordered_layer_past_states + (\n                    "
-        "layer_past_state.index_select(0, beam_idx.to(layer_past_state.device)),\n                )\n"
-    )
-    code_to_add = "\n            reordered_layer_past_states = (reordered_layer_past_states + layer_past_states[2:])\n"
-    modified_t5_generation = modified_t5_generation.replace(code_to_find, code_to_find + code_to_add)
-    modified_t5_generation = modified_t5_generation.replace("def _reorder_cache", "def updated_reorder_cache")
-    exec(inspect.cleandoc(modified_t5_generation), model_module.__dict__, model_module.__dict__)
-    transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache = (
-        transformers.models.t5.modeling_t5.updated_reorder_cache
-    )
-
-    return
+from transformer_deploy.utils.code_utils import update_module
 
 
 def _generate(
@@ -56,13 +12,13 @@ def _generate(
     tokenizer,
     batch_count,
     slines,
-    max_token_length,
-    num_beams,
-    min_gen_length,
-    max_gen_length,
-    no_repeat_ngram_size,
-    early_stopping,
-    use_cache,
+    max_token_length: int = 1024,
+    num_beams: int = 4,
+    min_gen_length: int = 55,
+    max_gen_length: int = 199,
+    no_repeat_ngram_size: int = 3,
+    early_stopping: bool = True,
+    use_cache: bool = True,
     do_log=True,
 ):
     """Generate the summaries.
@@ -120,7 +76,42 @@ def transformers_modifications_test(
     test_name = "with transformers modifications" if modify_transformers else "without transformers modifications"
     print(f"Start test {test_name}")
     if modify_transformers:
-        update_transformers()
+        modification = (
+            "value_states = project(\n            hidden_states, self.v, key_value_states, "
+            "past_key_value[1] if past_key_value is not None else None\n        )\n"
+        )
+        forward_modifications = {
+            modification: modification + "        if self.is_decoder and use_cache is True:\n            "
+            "key_states = key_states.contiguous()\n            "
+            "value_states = value_states.contiguous()\n"
+        }
+        update_module(
+            module_name="transformers.models.t5.modeling_t5",
+            function=transformers.models.t5.modeling_t5.T5Attention.forward,
+            new_function_name="updatedForward",
+            modifications=forward_modifications,
+        )
+        transformers.models.t5.modeling_t5.T5Attention.forward = transformers.models.t5.modeling_t5.updatedForward
+
+        modification = (
+            "reordered_layer_past_states = reordered_layer_past_states + (\n                    "
+            "layer_past_state.index_select(0, beam_idx.to(layer_past_state.device)),\n                )\n"
+        )
+        reorder_cache_modifications = {
+            "for layer_past_state in layer_past_states": "for layer_past_state in layer_past_states[0:2]",
+            modification: modification + "\n            reordered_layer_past_states ="
+            " (reordered_layer_past_states + layer_past_states[2:])\n",
+        }
+        update_module(
+            module_name="transformers.models.t5.modeling_t5",
+            function=transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache,
+            new_function_name="updated_reorder_cache",
+            modifications=reorder_cache_modifications,
+        )
+        transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache = (
+            transformers.models.t5.modeling_t5.updated_reorder_cache
+        )
+
     expected_outputs = []
     with open(expected_output_path, "rt", encoding="utf-8") as expected_output_file:
         for idx, line in enumerate(expected_output_file):
@@ -195,6 +186,7 @@ def transformers_modifications_test(
                     no_repeat_ngram_size,
                     early_stopping,
                     use_cache,
+                    do_log=False,
                 )
             )
             processed_sample_count += len(slines)
@@ -215,7 +207,7 @@ if __name__ == "__main__":
     source_path = "./data/cnndm_128.txt"
     expected_output_path = "./data/expected_t5_output.hypo"
     # test with transformers modifications
-    modify_transformers = False
+    modify_transformers = True
     transformers_modifications_test(
         modify_transformers,
         source_path,

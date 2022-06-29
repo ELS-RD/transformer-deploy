@@ -16,22 +16,23 @@ import inspect
 from typing import Any, Dict
 
 
-def code_utils(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
+def code_patcher(module_name: str, function: Any, new_function_name: str, modifications: Dict[str, str]):
     """
+    This function is used in this project to
     This function helps updating a module given the function name and the modifications to be done on this function
-    Once you use update_module(), you just need to override the function with its new version using the new function
+    Once you use code_patcher(), you just need to override the function with its new version using the new function
     name.
     :param module_name: the module to be updated
     :param function: the function to be updated in the given module
     :param modifications: a dictionary containing all the modifications to be done, keys are the source/original code
-    return: Whether it succeeded to update the given function
     and values are the new code to be used to replace source code
+    return: Whether it succeeded to update the given function
     Example:
     if you're updating the forward function in T5Attention transformers
     `transformers.models.t5.modeling_t5.T5Attention.forward` and using `updatedForward` as new function name, you can
     do:
         >>> import transformers
-        >>> code_utils(module_name="transformers.models.t5.modeling_t5",
+        >>> code_patcher(module_name="transformers.models.t5.modeling_t5",
         >>>            function=transformers.models.t5.modeling_t5.T5Attention.forward ,
         >>>            new_function_name="updatedForward",
         >>>            modifications=dict("return outputs", "return True")

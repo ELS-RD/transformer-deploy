@@ -1,11 +1,10 @@
-import logging
 import time
 
 import torch
 import transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, T5ForConditionalGeneration
 
-from transformer_deploy.utils.fastseq import code_utils
+from transformer_deploy.utils.fastseq import code_patcher
 
 
 def _generate(
@@ -86,7 +85,7 @@ def transformers_modifications_test(
             "key_states = key_states.contiguous()\n            "
             "value_states = value_states.contiguous()\n"
         }
-        code_utils(
+        code_patcher(
             module_name="transformers.models.t5.modeling_t5",
             function=transformers.models.t5.modeling_t5.T5Attention.forward,
             new_function_name="updatedForward",
@@ -103,7 +102,7 @@ def transformers_modifications_test(
             modification: modification + "\n            reordered_layer_past_states ="
             " (reordered_layer_past_states + layer_past_states[2:])\n",
         }
-        code_utils(
+        code_patcher(
             module_name="transformers.models.t5.modeling_t5",
             function=transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache,
             new_function_name="updated_reorder_cache",

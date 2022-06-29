@@ -13,13 +13,16 @@
 #  limitations under the License.
 from typing import List, Optional
 
+import numpy
 import numpy as np
 import onnx
 import pytest
+import torch
 from onnx import GraphProto, ModelProto, NodeProto, TensorProto, ValueInfoProto, helper
 from onnxruntime import OrtValue
 from pytest_benchmark.fixture import BenchmarkFixture
 
+from transformer_deploy.backends.onnx_utils import convert_bf16_to_fp32, convert_fp32_to_bf16
 from transformer_deploy.backends.ort_utils import get_io_to_node_mapping, ort_conversion_table, to_pytorch
 
 
@@ -159,6 +162,7 @@ def check_pytorch_conversion(data: np.ndarray, ortvalue: OrtValue, benchmark: Op
     assert np.allclose(tensor.cpu().numpy(), data)
 
 
+@pytest.mark.benchmark(group="pytorch_conversion", disable_gc=True, warmup=True)
 def test_conversion_cpu_float16(benchmark):
     """
     float16 doesn't exist in ctypes, it will use an intermediate dtype during the conversion,
@@ -169,12 +173,14 @@ def test_conversion_cpu_float16(benchmark):
     check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
 
 
+@pytest.mark.benchmark(group="pytorch_conversion", disable_gc=True, warmup=True)
 def test_conversion_cpu_float32(benchmark):
     data = np.arange(1000, dtype=np.float32)
     ortvalue = OrtValue.ortvalue_from_numpy(data)
     check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
 
 
+@pytest.mark.benchmark(group="pytorch_conversion", disable_gc=True, warmup=True)
 @pytest.mark.gpu
 def test_conversion_gpu_float16(benchmark):
     data = np.arange(1000, dtype=np.float16)
@@ -182,6 +188,7 @@ def test_conversion_gpu_float16(benchmark):
     check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
 
 
+@pytest.mark.benchmark(group="pytorch_conversion", disable_gc=True, warmup=True)
 @pytest.mark.gpu
 def test_conversion_gpu_float32(benchmark):
     data = np.arange(1000, dtype=np.float32)
@@ -227,3 +234,21 @@ def test_to_pytorch_update_ort_value_inplace():
     assert np.allclose(tensor.numpy(), data)
     ortvalue.update_inplace(new_data)
     assert np.allclose(tensor.numpy(), data)
+
+
+@pytest.mark.benchmark(group="bf16", disable_gc=True, warmup=False)
+def test_conversion_to_bf16(benchmark):
+    fp32_random_array = np.random.random(10).astype(np.float32)
+    bf16_bytes = benchmark(convert_fp32_to_bf16, fp32_data=fp32_random_array.tobytes())
+    fp32_result = torch.frombuffer(bf16_bytes, dtype=torch.bfloat16).type(torch.float32).numpy()
+    assert np.allclose(fp32_result, fp32_random_array, atol=0.01)
+
+
+@pytest.mark.benchmark(group="bf16", disable_gc=True, warmup=False)
+def test_conversion_from_bf16(benchmark):
+    original_bf16 = torch.rand(10, dtype=torch.bfloat16)
+    original_as_fp32 = original_bf16.type(torch.float32).numpy()
+    bf16_bytes = original_bf16.view(torch.int16).numpy().tobytes()
+    conversion_fp32_bytes = benchmark(convert_bf16_to_fp32, bf16_data=bf16_bytes)
+    conversion_fp32 = numpy.frombuffer(conversion_fp32_bytes, dtype=np.float32)
+    assert np.allclose(original_as_fp32, conversion_fp32, atol=0.01)

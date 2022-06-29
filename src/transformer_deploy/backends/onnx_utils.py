@@ -11,9 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import copy
+import sys
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 import onnx
 from onnx import ModelProto
 from onnx.shape_inference import infer_shapes_path
@@ -152,3 +155,77 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
         if_graph_def, producer_name="onnx-example", opset_imports=[onnx.helper.make_opsetid(onnx.defs.ONNX_DOMAIN, 13)]
     )
     save_onnx(proto=model_if, model_path=output_path)
+
+
+def convert_bf16_to_fp32(bf16_data: bytes) -> bytes:
+    """
+    Convert bf16 byte array to fp32 byte array.
+
+    :param bf16_data: an array of bf16 numbers (from numpy)
+    :return: an array of fp32 numbers (from numpy)
+    """
+    data: np.ndarray = np.frombuffer(bf16_data, dtype=np.uint16)
+    zeros: np.ndarray = np.zeros_like(data)
+    to_concatenate = [zeros, data] if sys.byteorder == "little" else [data, zeros]
+    fp32_data: np.ndarray = np.ascontiguousarray(np.stack(to_concatenate).transpose()).view(np.float32).squeeze()
+    return fp32_data.tobytes()
+
+
+def convert_fp32_to_bf16(fp32_data: bytes) -> bytes:
+    """
+    Convert fp32 byte array to bf16 byte array.
+
+    :param fp32_data: an array of fp32 numbers (from numpy)
+    :return: an array of bf16 numbers (from numpy)
+    """
+    data: np.ndarray = np.frombuffer(fp32_data, dtype=np.float32)
+    # view() shows the data in another format WITHOUT performing any conversion
+    # therefore we just (virtually) split each number into two 16-bit parts
+    fake_int16_view = data.view(dtype=np.int16)
+    # we keep only one half of each, which part will depend of the OS (little or big endian)
+    np_bfp16 = fake_int16_view[1::2] if sys.byteorder == "little" else fake_int16_view[0::2]
+    return np_bfp16.tobytes()
+
+
+def patch_constant_node_bf16(model: ModelProto) -> ModelProto:
+    """
+    Patch ONNX graph to convert ConstantOfShape operators using bf16 to fp32 + cast.
+    ConstantOfShape in bf16 is not supported by ONNX.
+    :param model: original ONNX model
+    :return: ONNX model patched
+    """
+    model = copy.deepcopy(model)
+    all_nodes = dict()
+    for node in model.graph.node:
+        for name in node.input:
+            all_nodes[name] = node
+
+    graph_index = 0
+    while graph_index < len(model.graph.node):
+        current_node = model.graph.node[graph_index]
+        bfloat16 = onnx.TensorProto.BFLOAT16
+        if current_node.op_type == "ConstantOfShape" and current_node.attribute[0].t.data_type == bfloat16:
+            # change constant type to float
+            current_node.attribute[0].t.data_type = onnx.TensorProto.FLOAT
+            # current_node.attribute[0].t.raw_data = np.array(0, dtype=np.float32).tobytes()
+            current_node.attribute[0].t.raw_data = convert_bf16_to_fp32(bf16_data=current_node.attribute[0].t.raw_data)
+            # a = np.frombuffer(node.attribute[0].t.raw_data, dtype=np.uint16)
+            # a.astype(np.float32)
+            original_output_name = current_node.output[0]
+            new_output_name = f"{original_output_name}_float"
+            # node.output[0] = output_name
+            cast_node: onnx.NodeProto = onnx.helper.make_node(
+                op_type="Cast",
+                inputs=[current_node.output[0]],
+                outputs=[new_output_name],
+                name=new_output_name,
+                to=bfloat16,
+            )
+            model.graph.node.insert(graph_index + 1, cast_node)
+            graph_index += 1  # skip the inserted node
+            next_node = all_nodes[current_node.output[0]]
+            for index, input_name in enumerate(next_node.input):
+                if input_name == original_output_name:
+                    next_node.input[index] = new_output_name
+        graph_index += 1  # next node
+    return model

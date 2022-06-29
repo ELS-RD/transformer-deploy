@@ -178,34 +178,11 @@ def test_sentence_transformers_cpu():
 def test_gpt2_gpu():
     commands = [
         "--model",
-        "distilgpt2",
+        "sshleifer/tiny-gpt2",
         "--task",
         "text-generation",
         "--backend",
         "onnx",
-        "--batch",
-        "1",
-        "16",
-        "16",
-        "--seq-len",
-        "8",
-        "8",
-        "8",
-        "--output",
-        tempfile.mkdtemp(),
-    ]
-    args = parse_args(commands=commands)
-    main(commands=args)
-
-
-@pytest.mark.gpu
-def test_gpt2_medium_gpu():
-    commands = [
-        "--model",
-        "gpt2-medium",
-        "--task",
-        "text-generation",
-        "--backend",
         "tensorrt",
         "--batch",
         "1",

@@ -206,7 +206,7 @@ def transformers_modifications_test(
 if __name__ == "__main__":
     source_path = "./data/cnndm_128.txt"
     expected_output_path = "./data/expected_t5_output.hypo"
-    # test with transformers modifications
+    # test without transformers modifications
     modify_transformers = False
     transformers_modifications_test(
         modify_transformers,
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         expected_output_path,
         nbr_examples=40,
     )
-    # test without transformers modifications
+    # test with transformers modifications
     modify_transformers = True
     transformers_modifications_test(
         modify_transformers,

@@ -42,6 +42,10 @@ def code_patcher(module_name: str, function: Any, new_function_name: str, modifi
     model_module = importlib.import_module(name=module_name)
     function_code = inspect.getsource(function)
     for src_code, new_code in modifications.items():
+        assert src_code in function_code, (
+            f"Failed to update function {function.__name__} in module {module_name}: "
+            f'\n"{src_code}" was not found in {function.__name__} source code'
+        )
         function_code = function_code.replace(src_code, new_code)
     function_code = function_code.replace(f"def {function.__name__}(", f"def {new_function_name}(")
     # adding the newline at the beginning for cleandoc constraint

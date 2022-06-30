@@ -15,10 +15,12 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import torch
+import transformers.models.t5.modeling_t5
 
 from transformer_deploy.backends.pytorch_utils import get_model_size
 from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs, to_numpy
 from transformer_deploy.convert import check_accuracy
+from transformer_deploy.utils.fastseq import code_patcher
 
 
 def generate_fake_outputs(
@@ -73,3 +75,18 @@ def test_extract_model_info():
     for m in models:
         att, hidden_size = get_model_size(path=m)
         assert att > 0 and hidden_size > 0
+
+
+def test_update_module():
+    src_code = (
+        "vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}\n"
+        "        vocab.update(self.added_tokens_encoder)\n"
+    )
+    code_patcher(
+        module_name="transformers.models.t5.tokenization_t5",
+        function=transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab,
+        new_function_name="new_vocab",
+        modifications={src_code: 'vocab = {"1": "success"}\n'},
+    )
+    transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab = transformers.models.t5.tokenization_t5.new_vocab
+    assert transformers.models.t5.tokenization_t5.T5Tokenizer.get_vocab(1) == {"1": "success"}

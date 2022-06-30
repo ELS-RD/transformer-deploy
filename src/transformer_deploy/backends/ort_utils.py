@@ -305,10 +305,8 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
     for n in model.graph.node:
         for output_name in n.output:
             output_nodes.append(onnx.ValueInfoProto(name=output_name))
-    # output_nodes.extend(model.graph.output)
     # clear output array (protobuff way...)
-    while model.graph.output:
-        model.graph.output.pop()
+    model.graph.ClearField("output")
     model.graph.output.extend(output_nodes)
     return model
 

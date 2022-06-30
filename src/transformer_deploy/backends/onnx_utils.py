@@ -58,22 +58,24 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
 
     # search for not-duplicated weights, called initializer in ONNX
     to_add = list()
-    # speed-up the duplicated weights search
+    # speed-up the duplicated weights search by using a dict of weights hashes
     initializer_no_cache = defaultdict(list)
     for node_no_cache in model_no_cache.graph.initializer:
+        if len(node_no_cache.raw_data) < 1024**2:  # skip weights smaller than 1MB
+            continue
         initializer_no_cache[hash(node_no_cache.raw_data)].append(node_no_cache)
 
-    for node_cache in model_cache.graph.initializer:
-        found = False
-        for node_no_cache in initializer_no_cache[hash(node_cache.raw_data)]:
-            if node_cache.raw_data == node_no_cache.raw_data:
-                found = True
-                mapping_initializer_cache_to_no_cache[node_cache.name] = node_no_cache.name
+    for initializer_cache in model_cache.graph.initializer:
+        is_initializer_shared_with_no_cache_model = False
+        for node_no_cache in initializer_no_cache[hash(initializer_cache.raw_data)]:
+            if initializer_cache.raw_data == node_no_cache.raw_data:
+                is_initializer_shared_with_no_cache_model = True
+                mapping_initializer_cache_to_no_cache[initializer_cache.name] = node_no_cache.name
                 break
-        if not found:
-            node_cache.name = prefix_cache + node_cache.name
-            to_add.append(node_cache)
-            mapping_initializer_cache_to_no_cache[node_cache.name] = node_cache.name
+        if not is_initializer_shared_with_no_cache_model:
+            initializer_cache.name = prefix_cache + initializer_cache.name
+            to_add.append(initializer_cache)
+            mapping_initializer_cache_to_no_cache[initializer_cache.name] = initializer_cache.name
 
     model_no_cache.graph.initializer.extend(to_add)
     # I/O model names should not be prefixed
@@ -81,12 +83,15 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
 
     # replace pointers to duplicated weights to their deduplicated version
     for node in model_cache.graph.node:
+        if "Identity_1" == node.name:
+            print("")
+
         for index, input_name in enumerate(node.input):
-            if input_name in model_io_names:
+            if input_name in model_io_names:  # check if node input is an input of the model
                 continue
             node.input[index] = mapping_initializer_cache_to_no_cache.get(input_name, prefix_cache + input_name)
         for index, output_name in enumerate(node.output):
-            if output_name in model_io_names:
+            if output_name in model_io_names:  # check if node output is an output of the model
                 continue
             node.output[index] = prefix_cache + output_name
         node.name = prefix_cache + node.name

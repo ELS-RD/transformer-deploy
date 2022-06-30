@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import tempfile
 from typing import List, Optional
 
 import numpy
@@ -22,7 +23,12 @@ from onnx import GraphProto, ModelProto, NodeProto, TensorProto, ValueInfoProto,
 from onnxruntime import InferenceSession, OrtValue
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from transformer_deploy.backends.onnx_utils import convert_bf16_to_fp32, convert_fp32_to_bf16
+from transformer_deploy.backends.onnx_utils import (
+    convert_bf16_to_fp32,
+    convert_fp32_to_bf16,
+    merge_autoregressive_model_graphs,
+    save_onnx,
+)
 from transformer_deploy.backends.ort_utils import (
     get_io_to_node_mapping,
     inference_onnx_binding,
@@ -105,6 +111,22 @@ def test_pytorch_inference_float32_cuda(benchmark):
 @pytest.mark.gpu
 def test_pytorch_inference_float16_cuda(benchmark):
     pytorch_inference(benchmark=benchmark, ort_type=TensorProto.FLOAT16, torch_type=torch.float16, device="cuda")
+
+
+def test_merge_onnx():
+    model1 = get_simple_onnx(input_type=TensorProto.FLOAT)
+    model1_path = tempfile.NamedTemporaryFile()
+    save_onnx(model1, model1_path.name)
+    model2 = get_simple_onnx(input_type=TensorProto.FLOAT)
+    model2_path = tempfile.NamedTemporaryFile()
+    save_onnx(model2, model2_path.name)
+    output = tempfile.NamedTemporaryFile()
+    merge_autoregressive_model_graphs(model1_path.name, model2_path.name, output.name)
+    ort_model = InferenceSession(output.name, providers=["CPUExecutionProvider"])
+    input_names = [i.name for i in ort_model.get_inputs()]
+    assert input_names == ["X", "enable_cache"]
+    output_names = [o.name for o in ort_model.get_outputs()]
+    assert output_names == ["OUT"]
 
 
 def get_onnx_if() -> ModelProto:

@@ -103,10 +103,13 @@ def optimize_onnx(
     :param hidden_size: hidden layer size of a model (0 -> try to detect)
     :param architecture: model architecture to optimize. One of [bert, bart, gpt2]
     """
-    assert architecture in ["bert", "bart", "gpt2"], f"unsupported architecture: {architecture}"
-    opt_level = 1 if architecture == "bert" else 0
+    assert architecture in ["bert", "bart", "distilbert", "gpt2"], f"unsupported architecture: {architecture}"
+    opt_level = 1 if architecture in ["bert", "distilbert"] else 0
     optimization_options = FusionOptions(model_type=architecture)
     optimization_options.enable_gelu_approximation = False  # additional optimization
+    if architecture == "distilbert":
+        optimization_options.enable_embed_layer_norm = False
+        architecture = "bert"
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
         model_type=architecture,

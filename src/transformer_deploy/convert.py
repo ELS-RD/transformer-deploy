@@ -340,6 +340,7 @@ def main(commands: argparse.Namespace):
             use_cuda=run_on_cuda,
             num_attention_heads=num_attention_heads,
             hidden_size=hidden_size,
+            architecture=model_config.model_type,
         )
         if commands.device == "cpu" and commands.quantization:
             cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)

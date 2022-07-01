@@ -283,7 +283,10 @@ def infer_tensorrt(
         bindings, torch.cuda.current_stream().cuda_stream
     ), "failure during execution of inference"
     torch.cuda.current_stream().synchronize()  # sync all CUDA ops
-    return output_tensors
+    if len(output_tensors) == 1:
+        return output_tensors
+    else:
+        return (output_tensors,)
 
 
 def load_engine(

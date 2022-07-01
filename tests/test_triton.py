@@ -21,8 +21,9 @@ from transformers import AutoConfig, AutoTokenizer, PretrainedConfig, PreTrained
 from transformer_deploy.triton.configuration import EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
+from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
-from transformer_deploy.utils import generative_model, python_tokenizer, token_classifier
+from transformer_deploy.utils import generative_model, python_tokenizer, question_answering, token_classifier
 
 
 @pytest.fixture
@@ -61,6 +62,20 @@ def conf_decoder(working_directory: tempfile.TemporaryDirectory):
 @pytest.fixture
 def conf_token_classifier(working_directory: tempfile.TemporaryDirectory):
     conf = ConfigurationTokenClassifier(
+        model_name_base="test",
+        dim_output=[-1, 2],
+        nb_instance=1,
+        tensor_input_names=["input_ids", "attention_mask"],
+        working_directory=working_directory.name,
+        device="cuda",
+    )
+    conf.engine_type = EngineType.ONNX
+    return conf
+
+
+@pytest.fixture
+def conf_question_answering(working_directory: tempfile.TemporaryDirectory):
+    conf = ConfigurationQuestionAnswering(
         model_name_base="test",
         dim_output=[-1, 2],
         nb_instance=1,
@@ -291,8 +306,57 @@ parameters: {
     assert expected.strip() == conf_token_classifier.get_inference_conf()
 
 
+def test_question_answering_inference_conf(conf_question_answering):
+    expected = """
+name: "test_onnx_inference"
+max_batch_size: 0
+backend: "python"
+
+input [
+    {
+        name: "QUESTION"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    },
+    {
+        name: "CONTEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+
+output [
+    {
+        name: "output"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }
+]
+
+instance_group [
+    {
+      count: 1
+      kind: KIND_GPU
+    }
+]
+
+
+parameters: {
+  key: "FORCE_CPU_ONLY_INPUT_TENSORS"
+  value: {
+    string_value:"no"
+  }
+}
+"""
+    assert expected.strip() == conf_question_answering.get_inference_conf()
+
+
 def test_create_folders(
-    conf_encoder, conf_decoder, conf_token_classifier, working_directory: tempfile.TemporaryDirectory
+    conf_encoder,
+    conf_decoder,
+    conf_token_classifier,
+    conf_question_answering,
+    working_directory: tempfile.TemporaryDirectory,
 ):
     fake_model_path = Path(working_directory.name).joinpath("fake_model.bin")
     fake_model_path.write_bytes(b"abc")
@@ -326,6 +390,15 @@ def test_create_folders(
                 conf_token_classifier.inference_folder_name,
             ],
             token_classifier,
+        ),
+        (
+            conf_question_answering,
+            [
+                conf_question_answering.model_folder_name,
+                conf_question_answering.python_folder_name,
+                conf_question_answering.inference_folder_name,
+            ],
+            question_answering,
         ),
     ]:
         conf.create_configs(tokenizer=tokenizer, config=config, model_path=fake_model_path, engine_type=EngineType.ONNX)

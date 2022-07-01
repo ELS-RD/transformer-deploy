@@ -199,12 +199,37 @@ def test_gpt2_gpu():
     main(commands=args)
 
 
-def test_bert_ner_cpu():
+@pytest.mark.gpu
+def test_bert_ner_gpu():
     commands = [
         "--model",
         "kamalkraj/bert-base-cased-ner-conll2003",
         "--task",
         "token-classification",
+        "--backend",
+        "onnx",
+        "--batch",
+        "1",
+        "16",
+        "16",
+        "--seq-len",
+        "8",
+        "8",
+        "8",
+        "--output",
+        tempfile.mkdtemp(),
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)
+
+
+@pytest.mark.gpu
+def test_qa_gpu():
+    commands = [
+        "--model",
+        "distilbert-base-cased-distilled-squad",
+        "--task",
+        "question-answering",
         "--backend",
         "onnx",
         "--batch",

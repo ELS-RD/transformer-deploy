@@ -22,3 +22,7 @@ Decoder based model like `GPT-2` have similar architecture than Bert but are def
 In the notebook we show how IO is important.
 At the end, we get X4 speedup compared to Hugging Face code.
 
+# Question answering
+Example of a question answering model server request using triton.
+A notebook explaining how to create [query_body.bin](question-answering/query_body.bin) for a question answering model.
+for cURL request.

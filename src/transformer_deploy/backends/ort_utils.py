@@ -35,6 +35,7 @@ from onnxruntime.transformers.fusion_options import FusionOptions
 from onnxruntime.transformers.fusion_utils import FusionUtils
 from onnxruntime.transformers.onnx_model import OnnxModel
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
+from onnxruntime.transformers.optimizer import MODEL_TYPES
 
 
 # GPU inference only
@@ -103,13 +104,14 @@ def optimize_onnx(
     :param hidden_size: hidden layer size of a model (0 -> try to detect)
     :param architecture: model architecture to optimize. One of [bert, bart, gpt2]
     """
-    assert architecture in ["bert", "bart", "distilbert", "gpt2"], f"unsupported architecture: {architecture}"
-    opt_level = 1 if architecture in ["bert", "distilbert"] else 0
     optimization_options = FusionOptions(model_type=architecture)
     optimization_options.enable_gelu_approximation = False  # additional optimization
     if architecture == "distilbert":
         optimization_options.enable_embed_layer_norm = False
+    if architecture not in MODEL_TYPES:
+        logging.info(f"Unknown architecture {architecture} for Onnx Runtime optimizer, overriding with 'bert' value")
         architecture = "bert"
+    opt_level = 1 if architecture == "bert" else 0
     optimized_model: BertOnnxModel = optimizer.optimize_model(
         input=onnx_path,
         model_type=architecture,

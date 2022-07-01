@@ -118,6 +118,8 @@ def to_numpy(tensors: List[Union[np.ndarray, torch.Tensor]]) -> np.ndarray:
         pytorch_output = [t.detach().cpu().numpy() for t in tensors]
     elif isinstance(tensors[0], np.ndarray):
         pytorch_output = tensors
+    elif isinstance(tensors[0], (tuple, list)):
+        pytorch_output = [to_numpy(t) for t in tensors]
     else:
         raise Exception(f"unknown tensor type: {type(tensors[0])}")
     return np.asarray(pytorch_output)

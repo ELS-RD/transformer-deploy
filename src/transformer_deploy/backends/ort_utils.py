@@ -30,6 +30,7 @@ import onnx
 import torch
 from onnx import ModelProto, NodeProto
 from onnx.shape_inference import infer_shapes_path
+
 # noinspection PyUnresolvedReferences
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic

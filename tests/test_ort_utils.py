@@ -102,13 +102,13 @@ def test_pytorch_inference_float32_cpu(benchmark):
 
 
 @pytest.mark.benchmark(group="pytorch_inference", disable_gc=True, warmup=True)
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_pytorch_inference_float32_cuda(benchmark):
     pytorch_inference(benchmark=benchmark, ort_type=TensorProto.FLOAT, torch_type=torch.float32, device="cuda")
 
 
 @pytest.mark.benchmark(group="pytorch_inference", disable_gc=True, warmup=True)
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_pytorch_inference_float16_cuda(benchmark):
     pytorch_inference(benchmark=benchmark, ort_type=TensorProto.FLOAT16, torch_type=torch.float16, device="cuda")
 
@@ -286,7 +286,7 @@ def test_ort_conversion_cpu_float32(benchmark):
 
 
 @pytest.mark.benchmark(group="ort_pytorch_conversion", disable_gc=True, warmup=True)
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_ort_conversion_gpu_float16(benchmark):
     data = np.arange(1000, dtype=np.float16)
     ortvalue = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
@@ -294,14 +294,14 @@ def test_ort_conversion_gpu_float16(benchmark):
 
 
 @pytest.mark.benchmark(group="ort_pytorch_conversion", disable_gc=True, warmup=True)
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_ort_conversion_gpu_float32(benchmark):
     data = np.arange(1000, dtype=np.float32)
     ortvalue = OrtValue.ortvalue_from_numpy(data, "cuda", 0)
     check_pytorch_conversion(data=data, ortvalue=ortvalue, benchmark=benchmark)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_to_pytorch():
     content = np.arange(8).reshape(2, 4)
     test_data: List[np.ndarray] = [

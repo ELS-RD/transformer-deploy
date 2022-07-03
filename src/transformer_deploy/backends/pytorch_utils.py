@@ -101,6 +101,7 @@ def convert_to_onnx(
     Should be on the same device than the model (CPU or GPU)
     :param quantization: model is quantized
     :param var_output_seq: variable size sequence
+    :param output_names: list of output names in ONNX model
     """
     if quantization:
         try:

@@ -30,6 +30,7 @@ import onnx
 import torch
 from onnx import ModelProto, NodeProto
 from onnx.shape_inference import infer_shapes_path
+# noinspection PyUnresolvedReferences
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
@@ -388,7 +389,7 @@ def search_fp32_nodes(
     Find the list of nodes to keep in FP32 to avoid out of range values/rounding to zero.
 
     :param original_model: Onnx model path
-    :param modified_model: Onnx model path where each node is an output of the model
+    :param modified_model_session: Onnx model session
     :param get_input: generate input to test the model. Output should change from call to call
     :param early_stop: will test until `early_stop` tests are done without any new node to keep in FP32
     :return: list of names of nodes to keep in FP32

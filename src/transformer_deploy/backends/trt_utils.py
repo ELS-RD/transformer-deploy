@@ -111,7 +111,6 @@ def build_engine(
     fp16: bool,
     int8: bool,
     fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
-    profiling: bool = False,
     **kwargs,
 ) -> ICudaEngine:
     """
@@ -134,8 +133,6 @@ def build_engine(
     :param fp16: enable FP16 precision, it usually provide a 20-30% boost compared to ONNX Runtime.
     :param int8: enable INT-8 quantization, best performance but model should have been quantized.
     :param fp16_fix: a function to set FP32 precision on some nodes to fix FP16 overflow
-    :param profiling: enable profiling support of the model.
-        https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Core/Profiler.html
     :return: TensorRT engine to use during inference
     """
     # default input shape
@@ -166,8 +163,6 @@ def build_engine(
                     | 1 << int(trt.TacticSource.CUBLAS_LT)
                     | 1 << int(trt.TacticSource.CUDNN)  # trt advised to use cuDNN for transfo architecture
                 )
-                if profiling:
-                    config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
                 if int8:
                     config.set_flag(trt.BuilderFlag.INT8)
                 if fp16:

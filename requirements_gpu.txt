@@ -1,5 +1,5 @@
 onnxruntime-gpu
-torch==1.12.0+cu113
+torch==1.11.0+cu113
 nvidia-tensorrt==8.4.1.5
 onnx_graphsurgeon
 polygraphy

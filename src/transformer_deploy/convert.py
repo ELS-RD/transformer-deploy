@@ -293,7 +293,7 @@ def main(commands: argparse.Namespace):
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
-        trt_logger: Logger = trt.Logger(trt.Logger.INFO if commands.verbose else trt.Logger.WARNING)
+        trt_logger: Logger = trt.Logger(trt.Logger.VERBOSE if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
         engine: ICudaEngine = build_engine(
             runtime=runtime,

@@ -18,11 +18,11 @@ source_code_check_format:
 .PHONY: test
 test:
 	${MAKE} source_code_check_format || exit 1
-	pytest || exit 1
+	${MAKE} test_ci
 
 .PHONY: test_ci
 test_ci:
-	pytest -m "not gpu" || exit 1
+	pytest || exit 1
 
 .PHONY: docker_build
 docker_build:

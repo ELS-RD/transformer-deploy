@@ -14,12 +14,13 @@
 import tempfile
 
 import pytest
+import torch
 
 from transformer_deploy.convert import main
 from transformer_deploy.utils.args import parse_args
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_albert_gpu():
     commands = [
         "--model",
@@ -71,7 +72,7 @@ def test_minilm_cpu():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_minilm_quantization():
     commands = [
         "--model",
@@ -100,7 +101,7 @@ def test_minilm_quantization():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_camembert_gpu():
     commands = [
         "--model",
@@ -123,7 +124,7 @@ def test_camembert_gpu():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_electra_gpu():
     commands = [
         "--model",
@@ -174,7 +175,7 @@ def test_sentence_transformers_cpu():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_gpt2_gpu():
     commands = [
         "--model",
@@ -199,7 +200,7 @@ def test_gpt2_gpu():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_bert_ner_gpu():
     commands = [
         "--model",
@@ -223,7 +224,7 @@ def test_bert_ner_gpu():
     main(commands=args)
 
 
-@pytest.mark.gpu
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_qa_gpu():
     commands = [
         "--model",

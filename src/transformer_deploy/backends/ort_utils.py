@@ -16,10 +16,13 @@
 All the tooling to ease ONNX Runtime usage.
 """
 import copy
+import ctypes as C
 import logging
 import multiprocessing
 from collections import defaultdict
+from ctypes.util import find_library
 from pathlib import Path
+from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -27,6 +30,8 @@ import onnx
 import torch
 from onnx import ModelProto, NodeProto
 from onnx.shape_inference import infer_shapes_path
+
+# noinspection PyUnresolvedReferences
 from onnxruntime import ExecutionMode, GraphOptimizationLevel, InferenceSession, IOBinding, OrtValue, SessionOptions
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from onnxruntime.transformers import optimizer
@@ -37,6 +42,9 @@ from onnxruntime.transformers.onnx_model import OnnxModel
 from onnxruntime.transformers.onnx_model_bert import BertOnnxModel
 from onnxruntime.transformers.optimizer import MODEL_TYPES
 
+
+libc = C.CDLL(find_library("c"))
+libc.malloc.restype = C.c_void_p
 
 # GPU inference only
 try:
@@ -147,8 +155,8 @@ def cpu_quantization(input_model_path: str, output_model_path: str) -> None:
 
 
 # https://github.com/pytorch/pytorch/blob/ac79c874cefee2f8bc1605eed9a924d80c0b3542/torch/testing/_internal/common_utils.py#L349
-numpy_to_torch_dtype_dict = {
-    bool: torch.bool,
+numpy_to_torch_dtype_dict: Dict[np.dtype, torch.dtype] = {
+    np.bool_: torch.bool,
     np.uint8: torch.uint8,
     np.int8: torch.int8,
     np.int16: torch.int16,
@@ -161,19 +169,23 @@ numpy_to_torch_dtype_dict = {
     np.complex128: torch.complex128,
 }
 
-torch_to_numpy_dtype_dict = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
+torch_to_numpy_dtype_dict: Dict[torch.dtype, np.dtype] = {v: k for k, v in numpy_to_torch_dtype_dict.items()}
 
-ort_to_numpy_dtype_dict = {
-    "tensor(bool)": np.uint8,  # bool not supported by DlPack! https://github.com/dmlc/dlpack/issues/75
-    "tensor(float16)": np.float16,
-    "tensor(float)": np.float32,
-    "tensor(float64)": np.float64,
-    "tensor(int32)": np.int32,
-    "tensor(int64)": np.int64,
+# np.ctypeslib.as_ctypes_type not used as it imply to manage exception, etc. for unsupported types like float16
+ort_conversion_table: Dict[str, Tuple[torch.dtype, Optional[np.dtype], Optional[int], int]] = {
+    # bool not supported by DlPack! see https://github.com/dmlc/dlpack/issues/75
+    "tensor(bool)": (torch.bool, None, C.c_bool, 1),
+    "tensor(int8)": (torch.int8, np.int8, C.c_int8, 1),
+    "tensor(int16)": (torch.int16, np.int16, C.c_int16, 2),
+    "tensor(int32)": (torch.int32, np.int32, C.c_int32, 4),
+    "tensor(int64)": (torch.int64, np.int64, C.c_int64, 8),
+    "tensor(float16)": (torch.float16, np.float16, None, 2),
+    "tensor(bfloat16)": (torch.bfloat16, None, None, 2),  # bfloat16 not supported by DlPack!
+    "tensor(float)": (torch.float32, np.float32, C.c_float, 4),
+    "tensor(double)": (torch.float64, np.float64, C.c_double, 8),
 }
 
 
-# TODO add test including different input and checking that tensor is not overriden
 def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
     """
     Convert OrtValue output by Onnx Runtime to Pytorch tensor.
@@ -183,22 +195,42 @@ def to_pytorch(ort_tensor: OrtValue, clone_tensor: bool) -> torch.Tensor:
         By cloning you guarantee that the data won't change.
     :return: Pytorch tensor
     """
-    if ort_tensor.device_name().lower() == "cuda":
-        np_type = ort_to_numpy_dtype_dict[ort_tensor.data_type()]
+    ort_type = ort_tensor.data_type()
+    torch_type, np_type, c_type, element_size = ort_conversion_table[ort_type]
+    use_cuda = ort_tensor.device_name().lower() == "cuda"
+    use_intermediate_dtype = np_type is None or (c_type is None and not use_cuda)
+    # some types are not supported by numpy (like bfloat16), so we use intermediate dtype
+    # same for ctype if tensor is on CPU
+    if use_intermediate_dtype:
+        np_type = np.byte
+        # fake type as some don't exist in C, like float16
+        c_type = C.c_byte
+        nb_elements = np.prod(ort_tensor.shape())
+        data_size = nb_elements * element_size
+        input_shape = (data_size,)
+    else:
+        input_shape = ort_tensor.shape()
+    if use_cuda:
         fake_owner = 1
         # size not used anywhere, so just put 0
         memory = cp.cuda.UnownedMemory(ort_tensor.data_ptr(), 0, fake_owner)
         memory_ptr = cp.cuda.MemoryPointer(memory, 0)
-        # make sure you interpret the array shape/dtype/strides correctly
-        cp_array = cp.ndarray(shape=ort_tensor.shape(), memptr=memory_ptr, dtype=np_type)
+        # make sure interpret the array shape/dtype/strides correctly
+        cp_array = cp.ndarray(shape=input_shape, memptr=memory_ptr, dtype=np_type)
         # cloning required otherwise ORT will recycle the storage array and put new values into it if new inf is done.
-        torch_tensor = torch.from_dlpack(cp_array.toDlpack())
-        if clone_tensor:
-            torch_tensor = torch_tensor.clone()
-        return torch_tensor
+        torch_tensor: torch.Tensor = torch.from_dlpack(cp_array.toDlpack())
     else:
-        np_tensor = ort_tensor.numpy()
-        return torch.from_numpy(np_tensor)
+        data_pointer = C.cast(ort_tensor.data_ptr(), C.POINTER(c_type))
+        np_tensor = np.ctypeslib.as_array(data_pointer, shape=input_shape)
+        torch_tensor = torch.from_numpy(np_tensor)
+    # convert back to the right type
+    if use_intermediate_dtype:
+        # https://github.com/csarofeen/pytorch/pull/1481 -> no casting, just reinterpret_cast
+        torch_tensor = torch_tensor.view(torch_type)
+        torch_tensor = torch_tensor.reshape(ort_tensor.shape())
+    if clone_tensor:
+        torch_tensor = torch_tensor.clone()
+    return torch_tensor
 
 
 def inference_onnx_binding(
@@ -281,8 +313,7 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
         for output_name in n.output:
             output_nodes.append(onnx.ValueInfoProto(name=output_name))
     # clear output array (protobuff way...)
-    while model.graph.output:
-        model.graph.output.pop()
+    model.graph.ClearField("output")
     model.graph.output.extend(output_nodes)
     return model
 
@@ -290,6 +321,7 @@ def add_output_nodes(model: ModelProto) -> ModelProto:
 def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor]) -> List[str]:
     """
     Identify out of range values in node outputs.
+
     :param graph: graph as adjency nodes dict
     :param output_nodes: output of each node
     :return: list of nodes producing outputs outside fp16 tensor
@@ -297,7 +329,7 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
     keep_fp32 = list()
     min_float16 = torch.finfo(torch.float16).min
     max_float16 = torch.finfo(torch.float16).max
-    resolution = 5.96e-08  # torch.finfo(torch.float16).eps  # minimum value that can be represented by FP16
+    resolution = 5.96e-08  # minimum value that can be represented by FP16 in practice
     for k, tensor in output_nodes.items():
         if tensor.dtype != torch.float32:
             continue
@@ -305,7 +337,8 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
         if (
             torch.any(tensor > max_float16)
             or torch.any(tensor < min_float16)
-            or (torch.any((tensor < resolution) & (tensor > -resolution) & (tensor != 0)))  # limited memory footprint
+            # limited memory footprint check
+            or (torch.any((tensor < resolution) & (tensor > -resolution) & (tensor != 0)))
         ):
             keep_fp32.append(graph[k])
     return keep_fp32
@@ -313,14 +346,32 @@ def find_node_fp32(graph: Dict[str, str], output_nodes: Dict[str, torch.Tensor])
 
 def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict[str, str]]:
     """
-    Extract output->node and input->node mappings
+    Extract output->node and input->node mappings.
+    Supports If node and their subgraphs.
+    (in this case output nodes may have the same name in both subgraphs, only one will be kept)
+
     :param onnx_model: ONNX model
     :return: 2 mappings, (i->node, o->node)
     """
     output_mapping: Dict[str, str] = dict()
     input_mapping: Dict[str, str] = dict()
-    for node in onnx_model.graph.node:  # type: NodeProto
-        assert len(node.output) == 1
+    nodes = Queue()
+
+    def add_q(items: List[NodeProto]) -> None:
+        for item in items:
+            nodes.put(item=item)
+
+    add_q(items=onnx_model.graph.node)
+
+    while not nodes.empty():
+        node: NodeProto = nodes.get()
+
+        if node.op_type == "If":
+            add_q(items=node.attribute[0].g.node)
+            add_q(items=node.attribute[1].g.node)
+        else:
+            assert len(node.output) == 1
+        # not true for If node...
         output_node = node.output[0]
         output_mapping[output_node] = node.name
         for i in node.input:
@@ -329,41 +380,23 @@ def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict
     return input_mapping, output_mapping
 
 
-def use_external_data(path: str) -> bool:
-    """
-    Check if a model uses external data
-    :param path: Onnx model path
-    :return: True if any initalizer (model weight) is stored in an external file
-    """
-    model = onnx.load_model(f=path, load_external_data=False)
-    for i in model.graph.initializer:
-        if i.HasField("data_location") and i.data_location == onnx.TensorProto.EXTERNAL:
-            return True
-    return False
-
-
-def get_keep_fp32_nodes(
-    onnx_model_path: str,
+def search_fp32_nodes(
+    original_model: str,
+    modified_model_session: InferenceSession,
     get_input: Callable[[], Dict[str, torch.Tensor]],
-    early_stop: int = 100,
-    device: str = "cuda",
+    early_stop: int,
 ) -> List[str]:
     """
-    Find the list of nodes to keep in FP32 to avoid out of range values
-    :param onnx_model_path: ONNX model path
+    Find the list of nodes to keep in FP32 to avoid out of range values/rounding to zero.
+
+    :param original_model: Onnx model path
+    :param modified_model_session: Onnx model session
     :param get_input: generate input to test the model. Output should change from call to call
     :param early_stop: will test until `early_stop` tests are done without any new node to keep in FP32
-    :param device: where to run the inference
     :return: list of names of nodes to keep in FP32
     """
-    # do not load weights on LLM (>2Gb), we only need to modify the computation graph
-    onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
-    onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
-    path_onnx_model_fp32_all_nodes = onnx_model_path + "_all_nodes.onnx"
-    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=path_onnx_model_fp32_all_nodes, save_as_external_data=False)
-    provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
-    ort_model_fp32_all_nodes = create_model_for_provider(path_onnx_model_fp32_all_nodes, provider)
-    ort_binding = ort_model_fp32_all_nodes.io_binding()
+    ort_binding = modified_model_session.io_binding()
+    onnx_model: ModelProto = onnx.load_model(f=original_model, load_external_data=False)
     input_mapping, output_mapping = get_io_to_node_mapping(onnx_model=onnx_model)
     # list all nodes which have an output out of the FP16 range
     keep_fp32_nodes = list()
@@ -371,7 +404,7 @@ def get_keep_fp32_nodes(
     while no_new_node_counter < early_stop:
         inputs = get_input()
         outputs: Dict[str, torch.Tensor] = inference_onnx_binding(
-            model_onnx=ort_model_fp32_all_nodes, inputs=inputs, device=device, binding=ort_binding, clone_tensor=False
+            model_onnx=modified_model_session, inputs=inputs, device="cuda", binding=ort_binding, clone_tensor=False
         )
         keep_node_io = find_node_fp32(graph=output_mapping, output_nodes=outputs)
 
@@ -382,8 +415,7 @@ def get_keep_fp32_nodes(
         else:
             no_new_node_counter = 0
 
-    if device == "cuda":
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     # I/O names that can't be found in the graph
     nodes_to_skip = (
         [n.name for n in onnx_model.graph.input]
@@ -401,6 +433,30 @@ def get_keep_fp32_nodes(
             map_children[node.name].append(child)
     keep_fp32_nodes += [c for k in keep_fp32_nodes if k in map_children for c in map_children[k]]
     return keep_fp32_nodes
+
+
+def get_keep_fp32_nodes(
+    onnx_model_path: str, get_input: Callable[[], Dict[str, torch.Tensor]], early_stop: int = 100
+) -> List[str]:
+    """
+    Find the list of nodes to keep in FP32 to avoid out of range values
+    :param onnx_model_path: ONNX model path
+    :param get_input: generate input to test the model. Output should change from call to call
+    :param early_stop: will test until `early_stop` tests are done without any new node to keep in FP32
+    :return: list of names of nodes to keep in FP32
+    """
+    # do not load weights on LLM (>2Gb), we only need to modify the computation graph
+    onnx_model: ModelProto = onnx.load_model(f=onnx_model_path, load_external_data=False)
+    onnx_model_fp32_all_nodes = add_output_nodes(model=onnx_model)
+    onnx_model_fp32_all_nodes_path = onnx_model_path + "_all_nodes.onnx"
+    onnx.save_model(proto=onnx_model_fp32_all_nodes, f=onnx_model_fp32_all_nodes_path, save_as_external_data=False)
+    modified_model_session = create_model_for_provider(onnx_model_fp32_all_nodes_path, ["CUDAExecutionProvider"])
+    return search_fp32_nodes(
+        original_model=onnx_model_path,
+        modified_model_session=modified_model_session,
+        get_input=get_input,
+        early_stop=early_stop,
+    )
 
 
 def convert_fp16(onnx_model: str, nodes_to_exclude: List[str]) -> ModelProto:

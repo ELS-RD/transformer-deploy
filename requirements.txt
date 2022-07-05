@@ -8,6 +8,7 @@ sentencepiece
 sympy
 coloredlogs
 pytest
+pytest-benchmark
 colored
 black[jupyter]
 isort

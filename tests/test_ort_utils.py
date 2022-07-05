@@ -138,7 +138,7 @@ def get_onnx_if() -> ModelProto:
     input_x: ValueInfoProto = helper.make_tensor_value_info("X", TensorProto.FLOAT, shape=["axis1", "axis2"])
     input_y: ValueInfoProto = helper.make_tensor_value_info("Y", TensorProto.FLOAT, shape=["axis1", "axis2"])
     out: ValueInfoProto = helper.make_tensor_value_info("OUT", TensorProto.FLOAT, shape=[1, 4])
-    outptu_z: ValueInfoProto = helper.make_tensor_value_info("Z", TensorProto.FLOAT, shape=[1, 4])
+    output_z: ValueInfoProto = helper.make_tensor_value_info("Z", TensorProto.FLOAT, shape=[1, 4])
 
     # Create a node (NodeProto)
     add_1_node: NodeProto = helper.make_node(
@@ -229,7 +229,7 @@ def get_onnx_if() -> ModelProto:
         nodes=[retrieve_shape, gather_def, equal_def, squeeze_def, if_node],
         name="if-model",
         inputs=[input_x, input_y],
-        outputs=[outptu_z],
+        outputs=[output_z],
         initializer=[gather_dim_index, expected_val, squeeze_dim, init_tensor],
     )
 

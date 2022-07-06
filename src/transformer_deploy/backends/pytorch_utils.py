@@ -15,7 +15,7 @@
 """
 Utils related to Pytorch inference.
 """
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Tuple, Union, List
 
 import torch
 from torch.onnx import TrainingMode
@@ -85,7 +85,7 @@ def convert_to_onnx(
     inputs_pytorch: Dict[str, torch.Tensor],
     quantization: bool,
     var_output_seq: bool,
-    output_names: Tuple[str, ...],
+    output_names: List[str],
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.

@@ -16,7 +16,7 @@ import pathlib
 
 import pkg_resources
 from setuptools import find_packages, setup
-
+from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 
 with pathlib.Path("requirements.txt").open() as f:
     install_requires = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
@@ -26,6 +26,12 @@ with pathlib.Path("requirements_gpu.txt").open() as f:
 
 with pathlib.Path("requirements_cpu.txt").open() as f:
     extra_cpu = [str(requirement) for requirement in pkg_resources.parse_requirements(f)]
+
+extensions = [
+    CUDAExtension('ngram_repeat_block_cuda', [
+        'src/transformer_deploy/cuda/ngram_repeat_block_cuda.cpp',
+        'src/transformer_deploy/cuda/ngram_repeat_block_cuda_kernel.cu',]),
+]
 
 setup(
     name="transformer-deploy",
@@ -49,9 +55,13 @@ setup(
         "CPU": extra_cpu,
     },
     python_requires=">=3.6.0",
+    ext_modules=extensions,
     entry_points={
         "console_scripts": [
             "convert_model = transformer_deploy.convert:entrypoint",
         ],
+    },
+    cmdclass={
+        'build_ext': BuildExtension
     },
 )

@@ -61,6 +61,7 @@ def _generate(
 
 def transformers_modifications_test(
     modify_transformers: bool,
+    update_logits_path: bool,
     source_path: str,
     expected_output_path: str,
     nbr_examples: int = 100,
@@ -111,6 +112,36 @@ def transformers_modifications_test(
         transformers.models.t5.modeling_t5.T5ForConditionalGeneration._reorder_cache = (
             transformers.models.t5.modeling_t5.updated_reorder_cache
         )
+
+    if update_logits_path:
+        modification = (
+            "for ngram in zip(*[gen_tokens[i:] for i in range(ngram_size)]):\n"
+        )
+        get_ngrams_modifications = {
+            "prev_input_ids: torch.Tensor, num_hypos: int):": "prev_input_ids: torch.Tensor, num_hypos: int, pad_token_id: int = None):\n",
+            modification: modification + "            if pad_token_id is None or ngram[-1] != pad_token_id:\n",
+            "prev_ngram_tuple = tuple(ngram[:-1])": "    prev_ngram_tuple = tuple(ngram[:-1])",
+            "generated_ngram[prev_ngram_tuple] =": "    generated_ngram[prev_ngram_tuple] ="
+        }
+        code_patcher(
+            module_name="transformers.generation_logits_process",
+            function=transformers.generation_logits_process._get_ngrams,
+            new_function_name="updated_get_ngrams",
+            modifications=get_ngrams_modifications,
+        )
+        transformers.generation_logits_process._get_ngrams = transformers.generation_logits_process.updated_get_ngrams
+
+        get_ngrams_modifications = {
+            ", num_hypos: int, cur_len: int": ", num_hypos: int, cur_len: int, pad_tokens_id: int",
+            "_get_ngrams(ngram_size, prev_input_ids, num_hypos)": "updated_get_ngrams(ngram_size, prev_input_ids, num_hypos, pad_tokens_id)"
+        }
+        code_patcher(
+            module_name="transformers.generation_logits_process",
+            function=transformers.generation_logits_process._calc_banned_ngram_tokens,
+            new_function_name="updated_calc_banned_ngram_tokens",
+            modifications=get_ngrams_modifications,
+        )
+        transformers.generation_logits_process._calc_banned_ngram_tokens = transformers.generation_logits_process.updated_calc_banned_ngram_tokens
 
     expected_outputs = []
     with open(expected_output_path, "rt", encoding="utf-8") as expected_output_file:
@@ -208,17 +239,31 @@ if __name__ == "__main__":
     expected_output_path = "./data/expected_t5_output.hypo"
     # test without transformers modifications
     modify_transformers = False
+    update_logits_path = False
     transformers_modifications_test(
         modify_transformers,
+        update_logits_path,
         source_path,
         expected_output_path,
-        nbr_examples=40,
+        nbr_examples=120,
     )
     # test with transformers modifications
     modify_transformers = True
+    update_logits_path = True
     transformers_modifications_test(
         modify_transformers,
+        update_logits_path,
         source_path,
         expected_output_path,
-        nbr_examples=40,
+        nbr_examples=100,
+    )
+    # test with transformers and logits process modifications
+    modify_transformers = False
+    update_logits_path = True
+    transformers_modifications_test(
+        modify_transformers,
+        update_logits_path,
+        source_path,
+        expected_output_path,
+        nbr_examples=100,
     )

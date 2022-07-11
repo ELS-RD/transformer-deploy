@@ -60,6 +60,7 @@ convert_to_onnx(
     inputs_pytorch={"input_ids": input_ids},
     var_output_seq=True,
     quantization=False,
+    output_names=["output"],
 )
 
 enc_onnx = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvider")

@@ -18,11 +18,9 @@ All the tooling to ease ONNX Runtime usage.
 import copy
 import ctypes as C
 import logging
-import multiprocessing
-from collections import defaultdict
+from collections import defaultdict, deque
 from ctypes.util import find_library
 from pathlib import Path
-from queue import Queue
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -57,8 +55,7 @@ except ImportError:
 def create_model_for_provider(
     path: str,
     provider_to_use: Union[str, List],
-    nb_threads: int = multiprocessing.cpu_count(),
-    nb_instances: int = 0,
+    nb_threads: int = 0,
     optimization_level: GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED,
     enable_profiling: bool = False,
     log_severity: int = 2,
@@ -68,8 +65,7 @@ def create_model_for_provider(
     :param path: path to ONNX file or serialized to string model
     :param provider_to_use: provider to use for inference
     :param nb_threads: intra_op_num_threads to use. You may want to try different parameters,
-        more core does not always provide best performances.
-    :param nb_instances: inter_op_num_threads to use, to execute multiple subgraphs in parallel when possible.
+        more core does not always provide best performances. 0 let ORT choose the best value.
     :param optimization_level: expected level of ONNX Runtime optimization. For GPU and NLP, extended is the one
         providing kernel fusion of element wise operations. Enable all level is for CPU inference.
         see https://onnxruntime.ai/docs/performance/graph-optimizations.html#layout-optimizations
@@ -84,10 +80,8 @@ def create_model_for_provider(
     if isinstance(provider_to_use, str):
         provider_to_use = [provider_to_use]
     if provider_to_use == ["CPUExecutionProvider"]:
-        options.execution_mode = ExecutionMode.ORT_SEQUENTIAL if nb_instances <= 1 else ExecutionMode.ORT_PARALLEL
+        options.execution_mode = ExecutionMode.ORT_SEQUENTIAL
         options.intra_op_num_threads = nb_threads
-        if nb_instances > 1:
-            options.inter_op_num_threads = nb_instances
     return InferenceSession(path, options, providers=provider_to_use)
 
 
@@ -355,16 +349,16 @@ def get_io_to_node_mapping(onnx_model: ModelProto) -> Tuple[Dict[str, str], Dict
     """
     output_mapping: Dict[str, str] = dict()
     input_mapping: Dict[str, str] = dict()
-    nodes = Queue()
+    nodes = deque()
 
     def add_q(items: List[NodeProto]) -> None:
         for item in items:
-            nodes.put(item=item)
+            nodes.append(item)
 
     add_q(items=onnx_model.graph.node)
 
-    while not nodes.empty():
-        node: NodeProto = nodes.get()
+    while nodes:  # breadth first search
+        node: NodeProto = nodes.popleft()
 
         if node.op_type == "If":
             add_q(items=node.attribute[0].g.node)

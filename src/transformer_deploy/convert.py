@@ -359,7 +359,6 @@ def main(commands: argparse.Namespace):
                 path=model_path,
                 provider_to_use=provider,
                 nb_threads=commands.nb_threads,
-                nb_instances=commands.nb_instances,
             )
 
             def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:

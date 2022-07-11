@@ -17,9 +17,12 @@ Utils related to Pytorch inference.
 """
 from typing import Callable, Dict, List, Tuple, Union
 
+import onnx
 import torch
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
+
+from src.transformer_deploy.backends.onnx_utils import save_onnx
 
 
 def infer_classification_pytorch(
@@ -162,6 +165,8 @@ def convert_to_onnx(
             training=TrainingMode.EVAL,  # always put the model in evaluation mode
             verbose=False,
         )
+    proto = onnx.load(output_path, load_external_data=False)
+    save_onnx(proto=proto, model_path=output_path)
     if quantization:
         TensorQuantizer.use_fb_fake_quant = False
     if hasattr(model_pytorch, "config") and hasattr(model_pytorch.config, "use_cache"):

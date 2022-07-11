@@ -1,3 +1,4 @@
+torch
 onnx
 tritonclient[all]
 nvidia-pyindex
@@ -13,3 +14,4 @@ colored
 black[jupyter]
 isort
 flake8
+onnxoptimizer

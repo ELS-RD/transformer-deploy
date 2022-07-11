@@ -98,7 +98,9 @@ def check_accuracy(
 
 
 def launch_inference(
-    infer: Callable, inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]], nb_measures: int
+    infer: Callable[[Dict[str, torch.Tensor]], torch.Tensor],
+    inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]],
+    nb_measures: int,
 ) -> Tuple[List[Union[np.ndarray, torch.Tensor]], List[float]]:
     """
     Perform inference and measure latency.
@@ -308,14 +310,16 @@ def main(commands: argparse.Namespace):
         )
         save_engine(engine=engine, engine_file_path=tensorrt_path)
         # important to check the engine has been correctly serialized
-        tensorrt_model: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = load_engine(
+        tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
             runtime=runtime, engine_file_path=tensorrt_path
         )
+
+        tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(tensorrt_model(x).values())[0]
 
         logging.info("running TensorRT (FP16) benchmark")
         engine_name = "TensorRT (FP16)"
         tensorrt_output, time_buffer = launch_inference(
-            infer=tensorrt_model, inputs=inputs_pytorch, nb_measures=commands.nb_measures
+            infer=tensorrt_inf, inputs=inputs_pytorch, nb_measures=commands.nb_measures
         )
         check_accuracy(
             engine_name=engine_name,

@@ -107,9 +107,9 @@ def build_engine(
     runtime: Runtime,
     onnx_file_path: str,
     logger: Logger,
-    workspace_size: int,
     fp16: bool,
     int8: bool,
+    workspace_size: Optional[int] = None,
     fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
     **kwargs,
 ) -> ICudaEngine:
@@ -157,7 +157,9 @@ def build_engine(
                 # and also the batch size for which the ICudaEngine will be optimized.
                 builder.max_batch_size = max([s.max_shape[0] for s in input_shapes])
                 config: IBuilderConfig = builder.create_builder_config()
-                config.max_workspace_size = workspace_size
+                if workspace_size is not None:
+                    config.set_memory_pool_limit(trt.tensorrt.MemoryPoolType.DLA_GLOBAL_DRAM, workspace_size)
+                    config.max_workspace_size = workspace_size
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS)
                     | 1 << int(trt.TacticSource.CUBLAS_LT)
@@ -245,7 +247,7 @@ def infer_tensorrt(
     host_inputs: Dict[str, torch.Tensor],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
-) -> List[torch.Tensor]:
+) -> Dict[str, torch.Tensor]:
     """
     Perform inference with TensorRT.
     :param context: shared variable
@@ -256,8 +258,10 @@ def infer_tensorrt(
     """
 
     input_tensors: List[torch.Tensor] = list()
+    output_names: List[str] = list()
     for i in range(context.engine.num_bindings):
         if not context.engine.binding_is_input(index=i):
+            output_names.append(context.engine.get_binding_name(index=i))
             continue
         tensor_name = context.engine.get_binding_name(i)
         assert tensor_name in host_inputs, f"missing input: {tensor_name}"
@@ -278,15 +282,14 @@ def infer_tensorrt(
         bindings, torch.cuda.current_stream().cuda_stream
     ), "failure during execution of inference"
     torch.cuda.current_stream().synchronize()  # sync all CUDA ops
-    if len(output_tensors) == 1:
-        return output_tensors
-    else:
-        return (output_tensors,)
+
+    outputs = {name: tensor for name, tensor in zip(output_names, output_tensors)}
+    return outputs
 
 
 def load_engine(
     runtime: Runtime, engine_file_path: str, profile_index: int = 0
-) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
+) -> Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]]:
     """
     Load serialized TensorRT engine.
     :param runtime: shared variable
@@ -302,13 +305,13 @@ def load_engine(
         # retrieve input/output IDs
         input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
 
-        def tensorrt_model(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        def tensorrt_model(inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
             return infer_tensorrt(
                 context=context,
                 host_inputs=inputs,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
-            )[0]
+            )
 
         return tensorrt_model
 

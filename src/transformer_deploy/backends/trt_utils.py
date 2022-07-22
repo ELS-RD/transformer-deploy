@@ -16,6 +16,7 @@
 All the tooling to ease TensorRT usage.
 """
 import dataclasses
+import logging
 from dataclasses import dataclass
 from time import time
 from typing import Callable, Dict, List, Optional
@@ -107,9 +108,9 @@ def build_engine(
     runtime: Runtime,
     onnx_file_path: str,
     logger: Logger,
-    workspace_size: int,
     fp16: bool,
     int8: bool,
+    workspace_size: Optional[int] = None,
     fp16_fix: Callable[[INetworkDefinition], INetworkDefinition] = fix_fp16_network,
     **kwargs,
 ) -> ICudaEngine:
@@ -157,7 +158,9 @@ def build_engine(
                 # and also the batch size for which the ICudaEngine will be optimized.
                 builder.max_batch_size = max([s.max_shape[0] for s in input_shapes])
                 config: IBuilderConfig = builder.create_builder_config()
-                config.max_workspace_size = workspace_size
+                if workspace_size is not None:
+                    config.set_memory_pool_limit(trt.tensorrt.MemoryPoolType.DLA_GLOBAL_DRAM, workspace_size)
+                    config.max_workspace_size = workspace_size
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS)
                     | 1 << int(trt.TacticSource.CUBLAS_LT)
@@ -217,7 +220,7 @@ def get_output_tensors(
     host_inputs: List[torch.Tensor],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
-) -> List[torch.Tensor]:
+) -> Dict[str, torch.Tensor]:
     """
     Reserve memory in GPU for input and output tensors.
     :param context: TensorRT context shared accross inference steps
@@ -230,29 +233,29 @@ def get_output_tensors(
     for host_input, binding_index in zip(host_inputs, input_binding_idxs):
         context.set_binding_shape(binding_index, tuple(host_input.shape))
     # assert context.all_binding_shapes_specified
-    device_outputs: List[torch.Tensor] = []
+    device_outputs: Dict[str, torch.Tensor] = dict()
     for binding_index in output_binding_idxs:
         # TensorRT computes output shape based on input shape provided above
-        output_shape = context.get_binding_shape(binding_index)
+        output_shape = context.get_binding_shape(binding=binding_index)
+        output_name = context.engine.get_binding_name(index=binding_index)
         # allocate buffers to hold output results
-        output = torch.empty(tuple(output_shape), device="cuda")
-        device_outputs.append(output)
+        device_outputs[output_name] = torch.empty(tuple(output_shape), device="cuda")
     return device_outputs
 
 
 def infer_tensorrt(
     context: IExecutionContext,
-    host_inputs: Dict[str, torch.Tensor],
+    inputs: Dict[str, torch.Tensor],
     input_binding_idxs: List[int],
     output_binding_idxs: List[int],
-) -> List[torch.Tensor]:
+) -> Dict[str, torch.Tensor]:
     """
     Perform inference with TensorRT.
     :param context: shared variable
-    :param host_inputs: input tensor
+    :param inputs: input tensor
     :param input_binding_idxs: input tensor indexes
     :param output_binding_idxs: output tensor indexes
-    :return: output tensor
+    :return: output Dict[tensor name, tensor value]
     """
 
     input_tensors: List[torch.Tensor] = list()
@@ -260,33 +263,31 @@ def infer_tensorrt(
         if not context.engine.binding_is_input(index=i):
             continue
         tensor_name = context.engine.get_binding_name(i)
-        assert tensor_name in host_inputs, f"missing input: {tensor_name}"
-        tensor = host_inputs[tensor_name]
+        assert tensor_name in inputs, f"input not provided: {tensor_name}"
+        tensor = inputs[tensor_name]
         assert isinstance(tensor, torch.Tensor), f"unexpected tensor class: {type(tensor)}"
+        assert tensor.device.type == "cuda", f"unexpected device type (trt only works on CUDA): {tensor.device.type}"
         # warning: small changes in output if int64 is used instead of int32
         if tensor.dtype in [torch.int64, torch.long]:
+            logging.warning(f"using {tensor.dtype} instead of int32 for {tensor_name}, will be casted to int32")
             tensor = tensor.type(torch.int32)
-        if tensor.device.type != "cuda":
-            tensor = tensor.to("cuda")
         input_tensors.append(tensor)
     # calculate input shape, bind it, allocate GPU memory for the output
-    output_tensors: List[torch.Tensor] = get_output_tensors(
+    outputs: Dict[str, torch.Tensor] = get_output_tensors(
         context, input_tensors, input_binding_idxs, output_binding_idxs
     )
-    bindings = [int(i.data_ptr()) for i in input_tensors + output_tensors]
+    bindings = [int(i.data_ptr()) for i in input_tensors + list(outputs.values())]
     assert context.execute_async_v2(
         bindings, torch.cuda.current_stream().cuda_stream
     ), "failure during execution of inference"
     torch.cuda.current_stream().synchronize()  # sync all CUDA ops
-    if len(output_tensors) == 1:
-        return output_tensors
-    else:
-        return (output_tensors,)
+
+    return outputs
 
 
 def load_engine(
     runtime: Runtime, engine_file_path: str, profile_index: int = 0
-) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
+) -> Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]]:
     """
     Load serialized TensorRT engine.
     :param runtime: shared variable
@@ -302,13 +303,13 @@ def load_engine(
         # retrieve input/output IDs
         input_binding_idxs, output_binding_idxs = get_binding_idxs(engine, profile_index)  # type: List[int], List[int]
 
-        def tensorrt_model(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        def tensorrt_model(inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
             return infer_tensorrt(
                 context=context,
-                host_inputs=inputs,
+                inputs=inputs,
                 input_binding_idxs=input_binding_idxs,
                 output_binding_idxs=output_binding_idxs,
-            )[0]
+            )
 
         return tensorrt_model
 

@@ -64,7 +64,7 @@ def benchmark(
             for seq_len in seq_lens:
                 inputs = get_pytorch_input(size=(batch_size, seq_len))
                 latencies = list()
-                nb_retry = 1 if is_warmup else 5
+                nb_retry = 5
                 for _ in range(nb_retry):
                     results: BenchmarkOutput = fn(inputs)
                     latencies.append(results.latency)

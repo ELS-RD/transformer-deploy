@@ -18,6 +18,8 @@ Generate Nvidia Triton server configuration files for encoder based models (Bert
 import inspect
 from pathlib import Path
 
+import tritonclient.grpc.model_config_pb2 as model_config
+from google.protobuf import text_format
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
 from transformer_deploy.triton.configuration import Configuration, EngineType
@@ -38,85 +40,48 @@ class ConfigurationEnc(Configuration):
         Generate tokenization step configuration.
         :return: tokenization step configuration
         """
-        return f"""
-{self._get_header(name=self.python_folder_name, backend="python")}
-
-input [
-{{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-}}
-]
-
-output [
-{self._get_tokens()}
-]
-
-{self._instance_group()}
-""".strip()
+        config = self._get_model_base(name=self.python_folder_name, backend="python")
+        config.input.append(
+            model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
+        config.output.extend(self._get_tokens_output())
+        config.instance_group.append(model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind))
+        return text_format.MessageToString(config)
 
     def get_inference_conf(self) -> str:
         """
         Generate inference step configuration.
         :return: inference step configuration
         """
-        output_map_blocks = list()
+        mapping_keys = {}
         for input_name in self.tensor_input_names:
-            output_map_text = f"""
-{{
-    key: "{input_name}"
-    value: "{input_name}"
-}}
-""".strip()
-            output_map_blocks.append(output_map_text)
+            mapping_keys[input_name] = input_name
 
-        mapping_keys = ",\n".join(output_map_blocks)
-
-        return f"""
-{self._get_header(name=self.inference_folder_name, platform="ensemble")}
-
-input [
-{{
-    name: "TEXT"
-    data_type: TYPE_STRING
-    dims: [ -1 ]
-}}
-]
-
-output {{
-    name: "output"
-    data_type: TYPE_FP32
-    dims: {str(self.dim_output)}
-}}
-
-ensemble_scheduling {{
-    step [
-        {{
-            model_name: "{self.python_folder_name}"
-            model_version: -1
-            input_map {{
-            key: "TEXT"
-            value: "TEXT"
-        }}
-        output_map [
-{mapping_keys}
-        ]
-        }},
-        {{
-            model_name: "{self.model_folder_name}"
-            model_version: -1
-            input_map [
-{mapping_keys}
+        config = self._get_model_base(name=self.inference_folder_name, platform="ensemble")
+        config.input.append(
+            model_config.ModelInput(name="TEXT", data_type=model_config.DataType.TYPE_STRING, dims=[-1])
+        )
+        config.output.append(
+            model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output)
+        )
+        config.ensemble_scheduling.step.extend(
+            [
+                model_config.ModelEnsembling.Step(
+                    model_name=self.python_folder_name,
+                    model_version=-1,
+                    input_map={"TEXT": "TEXT"},
+                    output_map=mapping_keys,
+                ),
+                model_config.ModelEnsembling.Step(
+                    model_name=self.python_folder_name,
+                    model_version=-1,
+                    input_map=mapping_keys,
+                    output_map={"output": "output"},
+                ),
             ]
-        output_map {{
-                key: "output"
-                value: "output"
-            }}
-        }}
-    ]
-}}
-""".strip()
+        )
+
+        return text_format.MessageToString(config)
 
     def create_configs(
         self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType

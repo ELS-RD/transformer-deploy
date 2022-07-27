@@ -22,7 +22,7 @@ import torch
 from torch.onnx import TrainingMode
 from transformers import AutoConfig, PreTrainedModel
 
-from src.transformer_deploy.backends.onnx_utils import save_onnx
+from transformer_deploy.backends.onnx_utils import save_onnx
 
 
 def infer_classification_pytorch(

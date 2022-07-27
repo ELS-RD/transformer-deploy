@@ -154,13 +154,9 @@ def build_engine(
             flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
         ) as network_def:  # type: INetworkDefinition
             with trt.OnnxParser(network_def, logger) as parser:  # type: OnnxParser
-                # The maximum batch size which can be used at execution time,
-                # and also the batch size for which the ICudaEngine will be optimized.
-                builder.max_batch_size = max([s.max_shape[0] for s in input_shapes])
                 config: IBuilderConfig = builder.create_builder_config()
                 if workspace_size is not None:
                     config.set_memory_pool_limit(trt.tensorrt.MemoryPoolType.DLA_GLOBAL_DRAM, workspace_size)
-                    config.max_workspace_size = workspace_size
                 config.set_tactic_sources(
                     tactic_sources=1 << int(trt.TacticSource.CUBLAS)
                     | 1 << int(trt.TacticSource.CUBLAS_LT)

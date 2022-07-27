@@ -149,66 +149,64 @@ def build_engine(
         assert "input_shapes" in kwargs, "missing input shapes"
         input_shapes: List[TensorRTShape] = kwargs["input_shapes"]
 
-    with trt.Builder(logger) as builder:  # type: Builder
-        with builder.create_network(
-            flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
-        ) as network_def:  # type: INetworkDefinition
-            with trt.OnnxParser(network_def, logger) as parser:  # type: OnnxParser
-                config: IBuilderConfig = builder.create_builder_config()
-                if workspace_size is not None:
-                    config.set_memory_pool_limit(trt.tensorrt.MemoryPoolType.DLA_GLOBAL_DRAM, workspace_size)
-                config.set_tactic_sources(
-                    tactic_sources=1 << int(trt.TacticSource.CUBLAS)
-                    | 1 << int(trt.TacticSource.CUBLAS_LT)
-                    | 1 << int(trt.TacticSource.CUDNN)  # trt advised to use cuDNN for transfo architecture
-                )
-                if int8:
-                    config.set_flag(trt.BuilderFlag.INT8)
-                if fp16:
-                    config.set_flag(trt.BuilderFlag.FP16)
-                config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
-                # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
-                config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
-                logger.log(msg="parsing TensorRT model", severity=trt.ILogger.INFO)
-                with open(onnx_file_path, "rb") as f:
-                    # file path needed for models with external dataformat
-                    # https://github.com/onnx/onnx-tensorrt/issues/818
-                    parser.parse(model=f.read(), path=onnx_file_path)
-                profile: IOptimizationProfile = builder.create_optimization_profile()
-                # duplicate default shape (one for each input)
-                if len(input_shapes) == 1 and input_shapes[0].input_name is None:
-                    names = [network_def.get_input(num_input).name for num_input in range(network_def.num_inputs)]
-                    input_shapes = input_shapes[0].generate_multiple_shapes(input_names=names)
+    builder: Builder = trt.Builder(logger)
+    network_def: INetworkDefinition = builder.create_network(
+        flags=1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+    )
+    parser: OnnxParser = trt.OnnxParser(network_def, logger)
+    config: IBuilderConfig = builder.create_builder_config()
+    if workspace_size is not None:
+        config.set_memory_pool_limit(trt.tensorrt.MemoryPoolType.DLA_GLOBAL_DRAM, workspace_size)
+    config.set_tactic_sources(
+        tactic_sources=1 << int(trt.TacticSource.CUBLAS)
+        | 1 << int(trt.TacticSource.CUBLAS_LT)
+        | 1 << int(trt.TacticSource.CUDNN)  # trt advised to use cuDNN for transfo architecture
+    )
+    if int8:
+        config.set_flag(trt.BuilderFlag.INT8)
+    if fp16:
+        config.set_flag(trt.BuilderFlag.FP16)
+    config.set_flag(trt.BuilderFlag.DISABLE_TIMING_CACHE)
+    # https://github.com/NVIDIA/TensorRT/issues/1196 (sometimes big diff in output when using FP16)
+    config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
+    logger.log(msg="parsing TensorRT model", severity=trt.ILogger.INFO)
+    with open(onnx_file_path, "rb") as f:
+        # file path needed for models with external dataformat
+        # https://github.com/onnx/onnx-tensorrt/issues/818
+        parser.parse(model=f.read(), path=onnx_file_path)
+    profile: IOptimizationProfile = builder.create_optimization_profile()
+    # duplicate default shape (one for each input)
+    if len(input_shapes) == 1 and input_shapes[0].input_name is None:
+        names = [network_def.get_input(num_input).name for num_input in range(network_def.num_inputs)]
+        input_shapes = input_shapes[0].generate_multiple_shapes(input_names=names)
 
-                for shape in input_shapes:
-                    shape.check_validity()
-                    profile.set_shape(
-                        input=shape.input_name,
-                        min=shape.min_shape,
-                        opt=shape.optimal_shape,
-                        max=shape.max_shape,
-                    )
-                if "shape_tensors" in kwargs:
-                    for shape in kwargs["shape_tensors"]:
-                        profile.set_shape_input(
-                            input=shape.input_name,
-                            min=shape.min_shape,
-                            opt=shape.optimal_shape,
-                            max=shape.max_shape,
-                        )
-                config.add_optimization_profile(profile)
-                if fp16:
-                    network_def = fp16_fix(network_def)
+    for shape in input_shapes:
+        shape.check_validity()
+        profile.set_shape(
+            input=shape.input_name,
+            min=shape.min_shape,
+            opt=shape.optimal_shape,
+            max=shape.max_shape,
+        )
+    if "shape_tensors" in kwargs:
+        for shape in kwargs["shape_tensors"]:
+            profile.set_shape_input(
+                input=shape.input_name,
+                min=shape.min_shape,
+                opt=shape.optimal_shape,
+                max=shape.max_shape,
+            )
+    config.add_optimization_profile(profile)
+    if fp16:
+        network_def = fp16_fix(network_def)
 
-                logger.log(
-                    msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING
-                )
-                start = time()
-                trt_engine = builder.build_serialized_network(network_def, config)
-                engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
-                logger.log(msg=f"building engine took {time() - start:4.1f} seconds", severity=trt.ILogger.WARNING)
-                assert engine is not None, "error during engine generation, check error messages above :-("
-                return engine
+    logger.log(msg="building engine. depending on model size this may take a while", severity=trt.ILogger.WARNING)
+    start = time()
+    trt_engine = builder.build_serialized_network(network_def, config)
+    engine: ICudaEngine = runtime.deserialize_cuda_engine(trt_engine)
+    logger.log(msg=f"building engine took {time() - start:4.1f} seconds", severity=trt.ILogger.WARNING)
+    assert engine is not None, "error during engine generation, check error messages above :-("
+    return engine
 
 
 def get_output_tensors(

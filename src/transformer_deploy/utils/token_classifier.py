@@ -20,6 +20,7 @@ import json
 import os
 
 # noinspection DuplicatedCode
+from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
@@ -85,7 +86,7 @@ class TritonPythonModel:
         Initialize the tokenization process
         :param args: arguments from Triton config file
         """
-        current_name: str = os.path.join(args["model_repository"], args["model_version"])
+        current_name: str = str(Path(args["model_repository"]).parent.absolute())
         target_model = args["model_name"].replace("_inference", "_model")
         self.device = "cpu" if args["model_instance_kind"] == "CPU" else "cuda"
         self.model = BertForTokenClassification(model_name=current_name, model_path=target_model)

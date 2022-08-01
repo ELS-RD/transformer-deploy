@@ -18,6 +18,7 @@ This module is copy-pasted in generated Triton configuration folder to perform t
 
 # noinspection DuplicatedCode
 import os
+from pathlib import Path
 from typing import Callable, Dict, List
 
 import numpy as np
@@ -70,7 +71,7 @@ class TritonPythonModel:
         Initialize the tokenization process
         :param args: arguments from Triton config file
         """
-        current_path: str = os.path.join(args["model_repository"], args["model_version"])
+        current_path: str = str(Path(args["model_repository"]).parent.absolute())
         self.device = "cpu" if args["model_instance_kind"] == "CPU" else "cuda"
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
         model_config = AutoConfig.from_pretrained(current_path)

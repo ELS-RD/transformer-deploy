@@ -371,7 +371,7 @@ To optimize models which typically don't fit twice onto a single GPU, run the sc
 
 ```shell
 docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m gpt2-medium \
     --backend tensorrt onnx \

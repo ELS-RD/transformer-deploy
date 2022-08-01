@@ -48,7 +48,7 @@ setup(
         "GPU": extra_gpu,
         "CPU": extra_cpu,
     },
-    python_requires=">=3.6.0",
+    python_requires=">=3.8.0",
     entry_points={
         "console_scripts": [
             "convert_model = transformer_deploy.convert:entrypoint",

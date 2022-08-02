@@ -17,7 +17,6 @@ This module is copy-pasted in generated Triton configuration folder to perform i
 """
 
 import json
-import os
 
 # noinspection DuplicatedCode
 from pathlib import Path

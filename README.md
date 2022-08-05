@@ -1,8 +1,6 @@
 # Hugging Face Transformer submillisecond inference️ and deployment to production: 🤗 → 🤯
 
-[![Documentation](https://img.shields.io/website?label=documentation&style=for-the-badge&up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2F)](https://els-rd.github.io/transformer-deploy/) [![tests](https://img.shields.io/github/workflow/status/ELS-RD/transformer-deploy/tests/main?label=tests&style=for-the-badge)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-360/) [![Twitter Follow](https://img.shields.io/twitter/follow/pommedeterre33?color=orange&style=for-the-badge)](https://twitter.com/pommedeterre33)
-
-**WARNING**: Docker image of this project is version `0.4.0` which is now few months old. Next release will be done on June/July 2022 when some dependencies of this library will be updated.
+[![Documentation](https://img.shields.io/website?label=documentation&style=for-the-badge&up_message=online&url=https%3A%2F%2Fels-rd.github.io%2Ftransformer-deploy%2F)](https://els-rd.github.io/transformer-deploy/) [![tests](https://img.shields.io/github/workflow/status/ELS-RD/transformer-deploy/tests/main?label=tests&style=for-the-badge)](https://github.com/ELS-RD/transformer-deploy/actions/workflows/python-app.yml) [![Python 3.6](https://img.shields.io/badge/python-3.8-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-380/) [![Twitter Follow](https://img.shields.io/twitter/follow/pommedeterre33?color=orange&style=for-the-badge)](https://twitter.com/pommedeterre33)
 
 ### Optimize and deploy in **production** 🤗 Hugging Face Transformer models in a single command line.  
 
@@ -65,7 +63,7 @@ First, clone the repo as some commands below expect to find the `demo` folder:
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 # docker image may take a few minutes
-docker pull ghcr.io/els-rd/transformer-deploy:0.4.0 
+docker pull ghcr.io/els-rd/transformer-deploy:0.5.0 
 ```
 
 ### Classification/reranking (encoder model)
@@ -79,7 +77,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \
@@ -109,7 +107,7 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 
 # output:
@@ -149,7 +147,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m \"kamalkraj/bert-base-cased-ner-conll2003\" \
     --backend tensorrt onnx \
@@ -180,8 +178,8 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
-  bash -c "pip install transformers torch==1.11.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install transformers torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
   tritonserver --model-repository=/models"
 
 # output:
@@ -214,7 +212,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m \"distilbert-base-cased-distilled-squad\" \
     --backend tensorrt onnx \
@@ -245,8 +243,8 @@ For production, it's advised to build your own 3-line Docker image with `transfo
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 1024m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
-  bash -c "pip install transformers torch==1.11.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install transformers torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
   tritonserver --model-repository=/models"
 
 # output:
@@ -282,7 +280,7 @@ This project supports models from [sentence-transformers](https://github.com/UKP
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m \"sentence-transformers/msmarco-distilbert-cos-v5\" \
     --backend tensorrt onnx \
@@ -305,7 +303,7 @@ docker run -it --rm --gpus all \
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 256m \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
   bash -c "pip install transformers && tritonserver --model-repository=/models"
 
 # output:
@@ -343,7 +341,7 @@ One point to have in mind is that Triton run:
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m gpt2 \
     --backend tensorrt onnx \
@@ -373,7 +371,7 @@ To optimize models which typically don't fit twice onto a single GPU, run the sc
 
 ```shell
 docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.4.1 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
     convert_model -m gpt2-medium \
     --backend tensorrt onnx \
@@ -394,8 +392,8 @@ To run decoding algorithm server side, we need to install `Pytorch` on `Triton` 
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.05-py3 \
-  bash -c "pip install transformers torch==1.11.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html && \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install transformers torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
   tritonserver --model-repository=/models"
 
 # output:
@@ -427,7 +425,7 @@ You may want to tweak it regarding your needs (default is set for greedy search 
 You may be interested in running optimized text generation on Python directly, without using any inference server:  
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 
@@ -442,7 +440,7 @@ It makes it easy to use.
 To play with it, open this notebook:
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.4.0 \
+docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 

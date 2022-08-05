@@ -47,7 +47,7 @@ cd transformer-deploy
 * for CPU/GPU support:
 
 ```shell
-pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu113/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
+pip3 install ".[GPU]" -f https://download.pytorch.org/whl/cu116/torch_stable.html --extra-index-url https://pypi.ngc.nvidia.com
 # if you want to perform GPU quantization (recommended):
 pip3 install git+ssh://git@github.com/NVIDIA/TensorRT#egg=pytorch-quantization\&subdirectory=tools/pytorch-quantization/
 # if you want to accelerate dense embeddings extraction:

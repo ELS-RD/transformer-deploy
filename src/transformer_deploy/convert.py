@@ -314,7 +314,14 @@ def main(commands: argparse.Namespace):
             runtime=runtime, engine_file_path=tensorrt_path
         )
 
-        tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(tensorrt_model(x).values())[0]
+        if commands.task == "question-answering":
+            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], List[torch.Tensor]] = lambda x: list(
+                tensorrt_model(x).values()
+            )
+        else:
+            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
+                tensorrt_model(x).values()
+            )[0]
 
         logging.info("running TensorRT (FP16) benchmark")
         engine_name = "TensorRT (FP16)"

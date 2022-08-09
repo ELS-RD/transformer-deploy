@@ -31,12 +31,14 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoModelForQuestionAnswering,
+    AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
     AutoModelForTokenClassification,
     AutoTokenizer,
     PretrainedConfig,
     PreTrainedModel,
     PreTrainedTokenizer,
+    TensorType,
 )
 
 from transformer_deploy.backends.ort_utils import (
@@ -64,6 +66,7 @@ from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
+from transformer_deploy.triton.configuration_seq2seq import ConfigurationSeq2Seq
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
 
@@ -126,7 +129,7 @@ def launch_inference(
 def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
     triton_output_shape = list(output.shape)
     triton_output_shape[0] = -1  # dynamic batch size
-    if task in ["text-generation", "token-classification", "question-answering"]:
+    if task in ["text-generation", "token-classification", "question-answering", "seq2seq"]:
         triton_output_shape[1] = -1  # dynamic sequence size
     return triton_output_shape
 
@@ -170,6 +173,9 @@ def main(commands: argparse.Namespace):
         model_pytorch = AutoModelForTokenClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "question-answering":
         model_pytorch = AutoModelForQuestionAnswering.from_pretrained(commands.model, use_auth_token=auth_token)
+    elif commands.task == "seq2seq":
+        model_pytorch = AutoModelForSeq2SeqLM.from_pretrained(commands.model, use_auth_token=auth_token)
+        model_pytorch = model_pytorch.encoder
     elif commands.task == "text-generation":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
@@ -184,13 +190,20 @@ def main(commands: argparse.Namespace):
 
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # take optimial size
-    inputs_pytorch = generate_multiple_inputs(
-        batch_size=tensor_shapes[1][0],
-        seq_len=tensor_shapes[1][1],
-        input_names=input_names,
-        device=commands.device,
-        nb_inputs_to_gen=commands.warmup,
-    )
+    if commands.task == "seq2seq":
+        input_ids = tokenizer(
+            "translate English to French: convert this model ...", return_tensors=TensorType.PYTORCH
+        ).input_ids
+        input_ids = input_ids.to("cuda")
+        inputs_pytorch = [{"input_ids": input_ids}]
+    else:
+        inputs_pytorch = generate_multiple_inputs(
+            batch_size=tensor_shapes[1][0],
+            seq_len=tensor_shapes[1][1],
+            input_names=input_names,
+            device=commands.device,
+            nb_inputs_to_gen=commands.warmup,
+        )
 
     # create onnx model and compare results
     convert_to_onnx(
@@ -198,14 +211,14 @@ def main(commands: argparse.Namespace):
         output_path=onnx_model_path,
         inputs_pytorch=inputs_pytorch[0],
         quantization=commands.quantization,
-        var_output_seq=commands.task in ["text-generation", "token-classification", "question-answering"],
+        var_output_seq=commands.task in ["seq2seq", "text-generation", "token-classification", "question-answering"],
         output_names=["output"] if commands.task != "question-answering" else ["start_logits", "end_logits"],
     )
 
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
-        if task in ["classification", "text-generation", "token-classification", "question-answering"]:
+        if task in ["classification", "text-generation", "token-classification", "question-answering", "seq2seq"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
@@ -220,6 +233,8 @@ def main(commands: argparse.Namespace):
         )
         if commands.task == "text-generation":
             conf_class: Type[Configuration] = ConfigurationDec
+        elif commands.task == "seq2seq":
+            conf_class: Type[Configuration] = ConfigurationSeq2Seq
         elif commands.task == "token-classification":
             conf_class: Type[Configuration] = ConfigurationTokenClassifier
         elif commands.task == "question-answering":
@@ -250,6 +265,10 @@ def main(commands: argparse.Namespace):
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
+                if commands.task == "seq2seq":
+                    pytorch_output = pytorch_output[0][0]
+                    pytorch_fp16_output = pytorch_fp16_output[0][0]
+
                 check_accuracy(
                     engine_name=engine_name,
                     pytorch_output=pytorch_output,

@@ -330,6 +330,10 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 Text generation seems to be the way to go for NLP.  
 Unfortunately, they are slow to run, below we will accelerate the most famous of them: GPT-2.
 
+#### GPT example
+We will start in first time with GPT-2 model example, then in the next section we will 
+use t5-model.
+
 #### Optimize existing model
 
 Like before, command below will prepare Triton inference server stuff.  
@@ -428,6 +432,51 @@ You may be interested in running optimized text generation on Python directly, w
 docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
+#### T5-small example
+In this section we will present the t5-small model conversion.
+
+#### Optimize existing large model
+
+To optimize models run the script as follows:
+
+```shell
+docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
+  bash -c "cd /project && \
+    convert_model -m t5-small \
+    --backend tensorrt onnx \
+    --seq-len 6 256 256 \
+    --task seq2seq"
+```
+#### Run Nvidia Triton inference server
+
+To run decoding algorithm server side, we need to install `Pytorch` on `Triton` docker image.
+
+```shell
+docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g \
+  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install transformers torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
+  tritonserver --model-repository=/models"
+
+# output:
+# ...
+# I0207 10:29:19.091191 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001
+# I0207 10:29:19.091417 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000
+# I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
+```
+
+#### Query inference
+
+Replace `transformer_onnx_generate` by `transformer_tensorrt_generate` to query `TensorRT` engine.
+
+```shell
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions/1/infer \
+  --data-binary "@demo/infinity/query_body.bin" \
+  --header "Inference-Header-Content-Length: 161"
+
+# output:
+```
+
 
 ### Model quantization on GPU
 

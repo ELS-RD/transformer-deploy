@@ -470,11 +470,9 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g
 Replace `transformer_onnx_generate` by `transformer_tensorrt_generate` to query `TensorRT` engine.
 
 ```shell
-curl -X POST  http://localhost:8000/v2/models/transformer_onnx_generate/versions/1/infer \
-  --data-binary "@demo/infinity/query_body.bin" \
-  --header "Inference-Header-Content-Length: 161"
-
-# output:
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
+  --data-binary "@demo/infinity/seq2seq_query_body.bin" \
+  --header "Inference-Header-Content-Length: 176"
 ```
 
 

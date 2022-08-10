@@ -66,7 +66,6 @@ from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
-from transformer_deploy.triton.configuration_seq2seq import ConfigurationSeq2Seq
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
 
@@ -176,6 +175,7 @@ def main(commands: argparse.Namespace):
     elif commands.task == "seq2seq":
         model_pytorch = AutoModelForSeq2SeqLM.from_pretrained(commands.model, use_auth_token=auth_token)
         model_pytorch = model_pytorch.encoder
+        input_names = ["input_ids"]
     elif commands.task == "text-generation":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
@@ -234,7 +234,7 @@ def main(commands: argparse.Namespace):
         if commands.task == "text-generation":
             conf_class: Type[Configuration] = ConfigurationDec
         elif commands.task == "seq2seq":
-            conf_class: Type[Configuration] = ConfigurationSeq2Seq
+            conf_class: Type[Configuration] = ConfigurationEnc
         elif commands.task == "token-classification":
             conf_class: Type[Configuration] = ConfigurationTokenClassifier
         elif commands.task == "question-answering":

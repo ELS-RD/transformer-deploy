@@ -1,4 +1,5 @@
 import gc
+import os
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -57,14 +58,14 @@ def export_t5_decoder_to_onnx(
     we export 2 versions of the decoder, one without cache support and one with it.
     """
     # decoder output one step before
-    out_dec_pytorch = model_decoder(
+    out_decoder_pytorch = model_decoder(
         input_ids=input_ids[:, :-1], encoder_hidden_states=encoder_outputs.last_hidden_state
     )
 
     model_inputs = {
         "input_ids": input_ids[:, -1:].type(torch.int32),
         "encoder_hidden_states": encoder_outputs.last_hidden_state,
-        "past_key_values": out_dec_pytorch.past_key_values,
+        "past_key_values": out_decoder_pytorch.past_key_values,
     }
 
     input_names = ["input_ids", "encoder_hidden_states"]
@@ -134,6 +135,10 @@ def export_t5_decoder_to_onnx(
             do_constant_folding=True,
             opset_version=13,
         )
+
+    del model_pytorch, model_decoder, encoder_outputs
+    torch.cuda.empty_cache()
+    gc.collect()
 
 
 def decoder_pytorch_inference(decoder_input_ids: torch.Tensor, encoder_hidden_states: torch.Tensor, model_decoder, **_):
@@ -209,7 +214,6 @@ def get_random_input_encoder() -> Dict[str, torch.Tensor]:
 
 def get_random_input_no_cache() -> Dict[str, torch.Tensor]:
     inputs = get_random_input_encoder()
-    _, encoder_fp16_model_path = prepare_folder(path="./test-enc")
     encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
     encoder_fp16_onnx_binding: IOBinding = encoder_fp16_onnx.io_binding()
     encoder_hidden_states = inference_onnx_binding(
@@ -225,37 +229,43 @@ def get_random_input_no_cache() -> Dict[str, torch.Tensor]:
     return inputs
 
 
-def get_random_input_cache(
-    tokenizer: PreTrainedTokenizer, decoder_if_ort_model: InferenceSession
-) -> Dict[str, torch.Tensor]:
+def get_random_input_cache() -> Dict[str, torch.Tensor]:
     inputs = get_random_input_no_cache()
     inputs["enable_cache"] = torch.tensor([False], device="cuda")
-    dec_past_states = inference_onnx_binding(
+    decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
+    decoder_past_states = inference_onnx_binding(
         model_onnx=decoder_if_ort_model,
         inputs=inputs,
         device="cuda",
         clone_tensor=False,
     )
-    for k, v in dec_past_states.items():
+    for k, v in decoder_past_states.items():
         if "present" not in k:
             continue
         new_k = k.replace("present", "past_key_values")
         inputs[new_k] = v
     batch, _ = inputs["input_ids"].shape
-    complement = torch.randint(low=0, high=tokenizer.vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
+    complement = torch.randint(low=0, high=vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
     inputs["input_ids"] = torch.concat(tensors=[inputs["input_ids"], complement], dim=1)
     inputs["enable_cache"] = torch.tensor([True], device="cuda")
+    del decoder_if_ort_model
     return inputs
 
 
-def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str):
-    """global vocab_size
-    vocab_size = tokenizer.vocab_size"""
+def convert_t5_to_onnx(tokenizer: PreTrainedTokenizer, model_name: str, path_dir: str, auth_token: str):
+    global vocab_size
+    global encoder_fp16_model_path
+    global decoder_if_model_path
+    vocab_size = tokenizer.vocab_size
     # prepare sub-folders for t5 onnx models (encoder and decoders)
-    encoder_model_path, encoder_fp16_model_path = prepare_folder(path="./test-enc")
-    decoder_cache_model_path, decoder_cache_fp16_model_path = prepare_folder(path="./test-dec-cache")
-    decoder_no_cache_model_path, decoder_no_cache_fp16_model_path = prepare_folder(path="./test-dec-no-cache")
-    decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path="./test-dec-if")
+    encoder_model_path, encoder_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "test-enc"))
+    decoder_cache_model_path, decoder_cache_fp16_model_path = prepare_folder(
+        path=os.path.join(path_dir, "test-dec-cache")
+    )
+    decoder_no_cache_model_path, decoder_no_cache_fp16_model_path = prepare_folder(
+        path=os.path.join(path_dir, "test-dec-no-cache")
+    )
+    decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "test-dec-if"))
     input_ids: torch.Tensor = tokenizer(
         'translate English to French: Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in natural language processing (NLP). The effectiveness of transfer learning has given rise to a diversity of approaches, methodology, and practice. In this paper, we explore the landscape of transfer learning techniques for NLP by introducing a unified framework that converts all text-based language problems into a text-to-text format. Our systematic study compares pre-training objectives, architectures, unlabeled data sets, transfer approaches, and other factors on dozens of language understanding tasks. By combining the insights from our exploration with scale and our new "Colossal Clean Crawled Corpus", we achieve state-of-the-art results on many benchmarks covering summarization, question answering, text classification, and more. To facilitate future work on transfer learning for NLP, we release our data set, pre-trained models, and code.',
         return_tensors=TensorType.PYTORCH,
@@ -309,8 +319,8 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     gc.collect()
 
     # Compare the output of the ONNX FP16 model with Pytorch one
-    """
     encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
+    encoder_fp16_onnx_binding = encoder_fp16_onnx.io_binding()
     encoder_onnx_out = inference_onnx_binding(
         model_onnx=encoder_fp16_onnx,
         binding=encoder_fp16_onnx_binding,
@@ -318,7 +328,6 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
         device=input_ids.device.type,
     )["output"]
     are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
-    """
 
     # 2. Convert decoder part
     # Conversion of the decoder module without cache support
@@ -333,15 +342,15 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     This module requires output from encoder but also from decoder module without cache support
     (as the cache is supposed not to be empty).
     """
-    dec_cache_model: onnx.ModelProto = onnx.load_model(f=decoder_cache_model_path, load_external_data=False)
-    dec_no_cache_model: onnx.ModelProto = onnx.load_model(f=decoder_no_cache_model_path, load_external_data=False)
-    assert len(dec_cache_model.graph.output) == len(dec_no_cache_model.graph.output)
+    decoder_cache_model: onnx.ModelProto = onnx.load_model(f=decoder_cache_model_path, load_external_data=False)
+    decoder_no_cache_model: onnx.ModelProto = onnx.load_model(f=decoder_no_cache_model_path, load_external_data=False)
+    assert len(decoder_cache_model.graph.output) == len(decoder_no_cache_model.graph.output)
 
-    dec_cache_model_fp32_all_nodes = add_output_nodes(model=dec_cache_model)
-    dec_cache_model_fp32_all_nodes_path = decoder_cache_model_path + "_all_nodes.onnx"
-    save_onnx(proto=dec_cache_model_fp32_all_nodes, model_path=dec_cache_model_fp32_all_nodes_path, clean=False)
+    decoder_cache_model_fp32_all_nodes = add_output_nodes(model=decoder_cache_model)
+    decoder_cache_model_fp32_all_nodes_path = decoder_cache_model_path + "_all_nodes.onnx"
+    save_onnx(proto=decoder_cache_model_fp32_all_nodes, model_path=decoder_cache_model_fp32_all_nodes_path, clean=False)
     # reload after shape inference
-    dec_cache_model_fp32_all_nodes = onnx.load_model(f=dec_cache_model_fp32_all_nodes_path, load_external_data=False)
+    decoder_cache_model_fp32_all_nodes = onnx.load_model(f=decoder_cache_model_fp32_all_nodes_path, load_external_data=False)
 
     ort_np_type_mapping = {
         onnx.TensorProto.FLOAT: float,
@@ -353,21 +362,21 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     # If node requires that the 2 models merged have the exact same number/type of output nodes
     # Above we added many output nodes to the model with cache support...
     # ... we need to add fake output nodes to the other decoder model.
-    no_cache_output_nodes = {item.name: item for item in dec_no_cache_model.graph.output}
+    no_cache_output_nodes = {item.name: item for item in decoder_no_cache_model.graph.output}
 
-    while dec_no_cache_model.graph.output:
-        dec_no_cache_model.graph.output.pop()
+    while decoder_no_cache_model.graph.output:
+        decoder_no_cache_model.graph.output.pop()
 
-    nb_outputs_to_create = len(dec_cache_model_fp32_all_nodes.graph.output)
+    nb_outputs_to_create = len(decoder_cache_model_fp32_all_nodes.graph.output)
     nodes_to_be_added = list()
     for i in range(nb_outputs_to_create):
-        node_name = dec_cache_model_fp32_all_nodes.graph.output[i].name
+        node_name = decoder_cache_model_fp32_all_nodes.graph.output[i].name
         if node_name in no_cache_output_nodes:
             node_to_insert = no_cache_output_nodes[node_name]
             nodes_to_be_added.append(node_to_insert)
         else:
             fake_node_name = f"output_{node_name}"
-            fake_node_ort_type = dec_cache_model_fp32_all_nodes.graph.output[i].type.tensor_type.elem_type
+            fake_node_ort_type = decoder_cache_model_fp32_all_nodes.graph.output[i].type.tensor_type.elem_type
             fake_node_np_type = ort_np_type_mapping[fake_node_ort_type]
             fake_data = np.array([1.0], dtype=fake_node_np_type)
             fake_node = onnx.helper.make_node(
@@ -382,24 +391,24 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
                 ),
                 name=fake_node_name,
             )
-            dec_no_cache_model.graph.node.append(fake_node)
+            decoder_no_cache_model.graph.node.append(fake_node)
             nodes_to_be_added.append(onnx.ValueInfoProto(name=fake_node_name))
 
-    dec_no_cache_model.graph.output.extend(nodes_to_be_added)
+    decoder_no_cache_model.graph.output.extend(nodes_to_be_added)
 
-    dec_no_cache_model_fp32_all_nodes_path = decoder_no_cache_model_path + "_all_nodes.onnx"
-    save_onnx(proto=dec_no_cache_model, model_path=dec_no_cache_model_fp32_all_nodes_path, clean=False)
+    decoder_no_cache_model_fp32_all_nodes_path = decoder_no_cache_model_path + "_all_nodes.onnx"
+    save_onnx(proto=decoder_no_cache_model, model_path=decoder_no_cache_model_fp32_all_nodes_path, clean=False)
 
     # now that each model has the same number of output nodes, we can merge them!
     merge_autoregressive_model_graphs(
-        model_cache_path=dec_cache_model_fp32_all_nodes_path,
-        model_no_cache_path=dec_no_cache_model_fp32_all_nodes_path,
+        model_cache_path=decoder_cache_model_fp32_all_nodes_path,
+        model_no_cache_path=decoder_no_cache_model_fp32_all_nodes_path,
         output_path=decoder_if_model_path,
     )
-    del dec_cache_model_fp32_all_nodes, dec_no_cache_model, dec_cache_model
-
+    del decoder_cache_model_fp32_all_nodes, decoder_no_cache_model, decoder_cache_model
     torch.cuda.empty_cache()
     gc.collect()
+
     decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
     keep_fp32_cache = search_fp32_nodes(
         original_model=decoder_if_model_path,
@@ -462,12 +471,12 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     model_pytorch = model_pytorch.eval()
     model_decoder = model_decoder.eval()
     with torch.inference_mode():
-        out_enc_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
+        out_encoder_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
         previous_step_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_decoder(
-            input_ids=input_ids[:, :-1], encoder_hidden_states=out_enc_pytorch.last_hidden_state
+            input_ids=input_ids[:, :-1], encoder_hidden_states=out_encoder_pytorch.last_hidden_state
         )
-        out_dec_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_decoder(
-            input_ids=input_ids, encoder_hidden_states=out_enc_pytorch.last_hidden_state
+        out_decoder_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_decoder(
+            input_ids=input_ids, encoder_hidden_states=out_encoder_pytorch.last_hidden_state
         )
     model_pytorch = model_pytorch.cpu()
     model_decoder = model_decoder.cpu()
@@ -476,23 +485,23 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     encoder_fp16_onnx_binding: IOBinding = encoder_fp16_onnx.io_binding()
     decoder_onnx = create_model_for_provider(decoder_if_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
     decoder_onnx_binding: IOBinding = decoder_onnx.io_binding()
-    out_dec_onnx_no_cache = decoder_onnx_inference(
+    out_decoder_onnx_no_cache = decoder_onnx_inference(
         model_pytorch=model_pytorch,
         decoder_input_ids=input_ids,
-        encoder_hidden_states=out_enc_pytorch.last_hidden_state.half(),
+        encoder_hidden_states=out_encoder_pytorch.last_hidden_state.half(),
         enable_cache=torch.tensor([False], device="cuda", dtype=torch.bool),
         past_key_values=None,
         decoder_onnx=model_decoder,
         decoder_onnx_binding=decoder_onnx_binding,
     )
     are_equal(
-        a=out_dec_onnx_no_cache.last_hidden_state[:, -1:, :],
-        b=out_dec_pytorch.last_hidden_state[:, -1:, :],
+        a=out_decoder_onnx_no_cache.last_hidden_state[:, -1:, :],
+        b=out_decoder_pytorch.last_hidden_state[:, -1:, :],
     )
     # check that past states are identical between ONNX and Pytorch
-    assert len(out_dec_onnx_no_cache.past_key_values) == len(out_dec_pytorch.past_key_values)
+    assert len(out_decoder_onnx_no_cache.past_key_values) == len(out_decoder_pytorch.past_key_values)
     for (o_dec_k, o_dev_v, o_enc_k, o_enc_v), (p_dec_k, p_dev_v, p_enc_k, p_enc_v) in zip(
-        out_dec_onnx_no_cache.past_key_values, out_dec_pytorch.past_key_values
+        out_decoder_onnx_no_cache.past_key_values, out_decoder_pytorch.past_key_values
     ):
         are_equal(a=o_dec_k, b=p_dec_k)
         are_equal(a=o_dev_v, b=p_dev_v)
@@ -502,24 +511,24 @@ def convert_t5(tokenizer: PreTrainedTokenizer, model_name: str, auth_token: str)
     previous_step_pytorch.past_key_values = tuple(
         [tuple([past.half() for past in layer_state]) for layer_state in previous_step_pytorch.past_key_values]
     )
-    out_enc_pytorch.last_hidden_state = out_enc_pytorch.last_hidden_state.half()
+    out_encoder_pytorch.last_hidden_state = out_encoder_pytorch.last_hidden_state.half()
 
-    out_dec_onnx_cache = decoder_onnx_inference(
+    out_decoder_onnx_cache = decoder_onnx_inference(
         decoder_input_ids=input_ids[:, -1:],
-        encoder_hidden_states=out_enc_pytorch.last_hidden_state,
+        encoder_hidden_states=out_encoder_pytorch.last_hidden_state,
         enable_cache=torch.tensor([True], device="cuda", dtype=torch.bool),
         past_key_values=previous_step_pytorch.past_key_values,
     )
 
     are_equal(
-        a=out_dec_onnx_cache.last_hidden_state[:, -1:, :],
-        b=out_dec_pytorch.last_hidden_state[:, -1:, :],
+        a=out_decoder_onnx_cache.last_hidden_state[:, -1:, :],
+        b=out_decoder_pytorch.last_hidden_state[:, -1:, :],
     )
 
     # check that past states are identical between ONNX and Pytorch
-    assert len(out_dec_onnx_cache.past_key_values) == len(out_dec_pytorch.past_key_values)
+    assert len(out_decoder_onnx_cache.past_key_values) == len(out_decoder_pytorch.past_key_values)
     for (o_dec_k, o_dev_v, o_enc_k, o_enc_v), (p_dec_k, p_dev_v, p_enc_k, p_enc_v) in zip(
-        out_dec_onnx_cache.past_key_values, out_dec_pytorch.past_key_values
+        out_decoder_onnx_cache.past_key_values, out_decoder_pytorch.past_key_values
     ):
         are_equal(a=o_dec_k, b=p_dec_k)
         are_equal(a=o_dev_v, b=p_dev_v)

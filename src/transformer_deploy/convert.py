@@ -66,7 +66,7 @@ from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import convert_t5
+from transformer_deploy.utils.t5_utils import convert_t5_to_onnx
 
 
 def check_accuracy(
@@ -182,7 +182,9 @@ def main(commands: argparse.Namespace):
     logging.info(f"axis: {input_names}")
 
     if commands.task == "text-generation" and commands.generative_model == "t5":
-        convert_t5(tokenizer=tokenizer, model_name=commands.model, auth_token=auth_token)
+        convert_t5_to_onnx(
+            tokenizer=tokenizer, model_name=commands.model, path_dir=commands.output, auth_token=auth_token
+        )
     else:
         model_pytorch.eval()
         tensor_shapes = list(zip(commands.batch_size, commands.seq_len))

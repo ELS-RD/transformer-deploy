@@ -66,6 +66,7 @@ from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
+from transformer_deploy.utils.t5_utils import convert_t5
 
 
 def check_accuracy(
@@ -170,37 +171,41 @@ def main(commands: argparse.Namespace):
         model_pytorch = AutoModelForTokenClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "question-answering":
         model_pytorch = AutoModelForQuestionAnswering.from_pretrained(commands.model, use_auth_token=auth_token)
-    elif commands.task == "text-generation":
+    elif commands.task == "text-generation" and commands.generative_model == "gpt":
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
+        input_names = ["input_ids"]
+    elif commands.task == "text-generation" and commands.generative_model == "t5":
         input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
 
     logging.info(f"axis: {input_names}")
 
-    model_pytorch.eval()
-    if run_on_cuda:
-        model_pytorch.cuda()
+    if commands.task == "text-generation" and commands.generative_model == "t5":
+        convert_t5(tokenizer=tokenizer, model_name=commands.model, auth_token=auth_token)
+    else:
+        model_pytorch.eval()
+        tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
+        # take optimial size
+        inputs_pytorch = generate_multiple_inputs(
+            batch_size=tensor_shapes[1][0],
+            seq_len=tensor_shapes[1][1],
+            input_names=input_names,
+            device=commands.device,
+            nb_inputs_to_gen=commands.warmup,
+        )
 
-    tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
-    # take optimial size
-    inputs_pytorch = generate_multiple_inputs(
-        batch_size=tensor_shapes[1][0],
-        seq_len=tensor_shapes[1][1],
-        input_names=input_names,
-        device=commands.device,
-        nb_inputs_to_gen=commands.warmup,
-    )
-
-    # create onnx model and compare results
-    convert_to_onnx(
-        model_pytorch=model_pytorch,
-        output_path=onnx_model_path,
-        inputs_pytorch=inputs_pytorch[0],
-        quantization=commands.quantization,
-        var_output_seq=commands.task in ["text-generation", "token-classification", "question-answering"],
-        output_names=["output"] if commands.task != "question-answering" else ["start_logits", "end_logits"],
-    )
+        if run_on_cuda:
+            model_pytorch.cuda()
+        # create onnx model and compare results
+        convert_to_onnx(
+            model_pytorch=model_pytorch,
+            output_path=onnx_model_path,
+            inputs_pytorch=inputs_pytorch[0],
+            quantization=commands.quantization,
+            var_output_seq=commands.task in ["text-generation", "token-classification", "question-answering"],
+            output_names=["output"] if commands.task != "question-answering" else ["start_logits", "end_logits"],
+        )
 
     timings = {}
 

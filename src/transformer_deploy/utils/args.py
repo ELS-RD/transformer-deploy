@@ -38,6 +38,12 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
         help="task to manage. embeddings is for sentence-transformers models",
     )
     parser.add_argument(
+        "--generative_model",
+        default="gpt",
+        choices=["gpt", "t5"],
+        help="which model to use for text generation. Models supported are: GPT and T5",
+    )
+    parser.add_argument(
         "--auth-token",
         default=None,
         help=(

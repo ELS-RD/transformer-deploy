@@ -31,12 +31,14 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoModelForQuestionAnswering,
+    AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
     AutoModelForTokenClassification,
     AutoTokenizer,
     PretrainedConfig,
     PreTrainedModel,
     PreTrainedTokenizer,
+    TensorType,
 )
 
 from transformer_deploy.backends.ort_utils import (
@@ -175,19 +177,35 @@ def main(commands: argparse.Namespace):
         model_pytorch = AutoModelForCausalLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
     elif commands.task == "text-generation" and commands.generative_model == "t5":
+        model_pytorch = AutoModelForSeq2SeqLM.from_pretrained(commands.model, use_auth_token=auth_token)
         input_names = ["input_ids"]
     else:
         raise Exception(f"unknown task: {commands.task}")
 
     logging.info(f"axis: {input_names}")
 
+    model_pytorch.eval()
+    tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
+
+    if run_on_cuda:
+        model_pytorch.cuda()
+    # create onnx model and compare results
+    inputs_pytorch: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
     if commands.task == "text-generation" and commands.generative_model == "t5":
+        input_ids: torch.Tensor = tokenizer(
+            'translate English to French: Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in natural language processing (NLP). The effectiveness of transfer learning has given rise to a diversity of approaches, methodology, and practice. In this paper, we explore the landscape of transfer learning techniques for NLP by introducing a unified framework that converts all text-based language problems into a text-to-text format. Our systematic study compares pre-training objectives, architectures, unlabeled data sets, transfer approaches, and other factors on dozens of language understanding tasks. By combining the insights from our exploration with scale and our new "Colossal Clean Crawled Corpus", we achieve state-of-the-art results on many benchmarks covering summarization, question answering, text classification, and more. To facilitate future work on transfer learning for NLP, we release our data set, pre-trained models, and code.',
+            return_tensors=TensorType.PYTORCH,
+        ).input_ids
+        input_ids = input_ids.type(torch.int32)
         convert_t5_to_onnx(
-            tokenizer=tokenizer, model_name=commands.model, path_dir=commands.output, auth_token=auth_token
+            tokenizer=tokenizer,
+            model_name=commands.model,
+            path_dir=commands.output,
+            auth_token=auth_token,
+            input_ids=input_ids,
         )
+        inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
     else:
-        model_pytorch.eval()
-        tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
         # take optimial size
         inputs_pytorch = generate_multiple_inputs(
             batch_size=tensor_shapes[1][0],
@@ -196,10 +214,6 @@ def main(commands: argparse.Namespace):
             device=commands.device,
             nb_inputs_to_gen=commands.warmup,
         )
-
-        if run_on_cuda:
-            model_pytorch.cuda()
-        # create onnx model and compare results
         convert_to_onnx(
             model_pytorch=model_pytorch,
             output_path=onnx_model_path,

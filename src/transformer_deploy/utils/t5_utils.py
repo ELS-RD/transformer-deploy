@@ -1,15 +1,17 @@
 import gc
 import os
 import random
+import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import numpy as np
 import onnx
 import torch
 from onnxruntime import InferenceSession, IOBinding
 from torch.nn import Linear
-from transformers import AutoModelForSeq2SeqLM, PreTrainedModel, PreTrainedTokenizer, TensorType
+from transformers import AutoModelForSeq2SeqLM, PretrainedConfig, PreTrainedModel, PreTrainedTokenizer, TensorType
+from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
 from transformers.models.t5.modeling_t5 import T5Stack
 
@@ -44,6 +46,143 @@ class ExportT5(torch.nn.Module):
         out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (self.model_dim ** -0.5)
         out_dec["last_hidden_state"] = self.lm_head(out_dec["last_hidden_state"])
         return out_dec
+
+
+# https://github.com/NVIDIA/TensorRT/blob/main/demo/HuggingFace/T5/export.py
+class ExtT5(torch.nn.Module, GenerationMixin):
+    def __init__(
+        self,
+        config: PretrainedConfig,
+        device: torch.device,
+        encoder_path: str,
+        decoder_path: str,
+    ):
+        super(ExtT5, self).__init__()
+        self.main_input_name = "input_ids"  # https://github.com/huggingface/transformers/pull/14803
+        self.config: PretrainedConfig = config
+        self.device: torch.device = device
+
+        provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
+        self.encoder_onnx = create_model_for_provider(encoder_path, provider, log_severity=3)
+        self.decoder_onnx = create_model_for_provider(decoder_path, provider, log_severity=3)
+        self.use_cache = True
+        self.timings = list()
+
+    def encoder_onnx_inference(self, input_ids: torch.Tensor, **_) -> BaseModelOutputWithPastAndCrossAttentions:
+        last_hidden_state = inference_onnx_binding(
+            model_onnx=self.encoder_onnx,  # noqa: F821
+            inputs={"input_ids": input_ids},
+            device="cuda",
+            binding=self.encoder_onnx.io_binding(),
+        )["output"]
+        return BaseModelOutputWithPastAndCrossAttentions(last_hidden_state=last_hidden_state.type(torch.float16))
+
+    def decoder_onnx_inference(
+        self,
+        decoder_input_ids: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
+        enable_cache: torch.Tensor,
+        num_layers: int,
+        past_key_values: Optional[torch.Tensor],
+    ):
+        inputs_onnx_dict = {
+            "input_ids": decoder_input_ids,
+            "encoder_hidden_states": encoder_hidden_states,
+            "enable_cache": enable_cache,
+        }
+
+        if past_key_values is not None:
+            for index, (k_dec, v_dec, k_enc, v_enc) in enumerate(past_key_values):
+                inputs_onnx_dict[f"past_key_values.{index}.decoder.key"] = k_dec
+                inputs_onnx_dict[f"past_key_values.{index}.decoder.value"] = v_dec
+                inputs_onnx_dict[f"past_key_values.{index}.encoder.key"] = k_enc
+                inputs_onnx_dict[f"past_key_values.{index}.encoder.value"] = v_enc
+
+        result_dict = inference_onnx_binding(
+            model_onnx=self.decoder_onnx,
+            inputs=inputs_onnx_dict,
+            binding=self.decoder_onnx.io_binding(),  # recycle the binding
+            device="cuda",
+            clone_tensor=False,  # no memory copy -> best perf and lowest memory footprint!
+        )
+        past_states = list()
+        for index in range(num_layers):
+            kv = (
+                result_dict[f"present.{index}.decoder.key"],
+                result_dict[f"present.{index}.decoder.value"],
+                result_dict[f"present.{index}.encoder.key"],
+                result_dict[f"present.{index}.encoder.value"],
+            )
+            past_states.append(kv)
+        return BaseModelOutputWithPastAndCrossAttentions(
+            last_hidden_state=result_dict["logits"],
+            past_key_values=past_states,
+        )
+
+    def get_encoder(self):
+        return self.encoder_onnx_inference
+
+    def get_decoder(self):
+        return self.decoder_onnx_inference
+
+    def set_cache(self, enable: bool) -> None:
+        self.use_cache = enable
+
+    # from transformers library (modeling_t5.py)
+    def _reorder_cache(self, past, beam_idx):
+        reordered_decoder_past = ()
+        for layer_past_states in past:
+            # get the correct batch idx from layer past batch dim
+            # batch dim of `past` is at 2nd position
+            reordered_layer_past_states = ()
+            for layer_past_state in layer_past_states:
+                # need to set correct `past` for each of the four key / value states
+                reordered_layer_past_states = reordered_layer_past_states + (
+                    layer_past_state.index_select(0, beam_idx),
+                )
+
+            assert reordered_layer_past_states[0].shape == layer_past_states[0].shape
+            assert len(reordered_layer_past_states) == len(layer_past_states)
+
+            reordered_decoder_past = reordered_decoder_past + (reordered_layer_past_states,)
+        return reordered_decoder_past
+
+    def prepare_inputs_for_generation(self, input_ids, past=None, use_cache=None, **kwargs) -> Dict[str, torch.Tensor]:
+        params = {
+            "encoder_hidden_states": kwargs["encoder_outputs"]["last_hidden_state"],
+        }
+        if past is None:  # this is the 1st inferred token
+            self.timings = list()
+        if not self.use_cache:
+            past = None
+        if past is None:
+            params[self.main_input_name] = input_ids
+            params["enable_cache"] = torch.tensor([False], device="cuda", dtype=torch.bool)
+        else:
+            params[self.main_input_name] = input_ids[:, -1:]
+            params["enable_cache"] = torch.tensor([True], device="cuda", dtype=torch.bool)
+            params["past_key_values"] = past
+
+        return params
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
+        enable_cache: torch.Tensor,
+        past_key_values: Optional[torch.Tensor] = None,
+        **_,
+    ):
+        start_timer = time.monotonic()
+        dec_output = self.get_decoder()(
+            decoder_input_ids=input_ids,
+            encoder_hidden_states=encoder_hidden_states,
+            enable_cache=enable_cache,
+            past_key_values=past_key_values,
+            num_layers=self.config.num_layers,
+        )
+        self.timings.append(time.monotonic() - start_timer)
+        return Seq2SeqLMOutput(logits=dec_output.last_hidden_state, past_key_values=dec_output.past_key_values)
 
 
 def export_t5_decoder_to_onnx(
@@ -147,50 +286,6 @@ def decoder_pytorch_inference(decoder_input_ids: torch.Tensor, encoder_hidden_st
         return model_decoder(input_ids=decoder_input_ids, encoder_hidden_states=encoder_hidden_states)
 
 
-def decoder_onnx_inference(
-    model_pytorch: PreTrainedModel,
-    decoder_input_ids: torch.Tensor,
-    encoder_hidden_states: torch.Tensor,
-    enable_cache: torch.Tensor,
-    decoder_onnx: InferenceSession,
-    decoder_onnx_binding: IOBinding,
-    past_key_values: Optional[torch.Tensor],
-):
-    inputs_onnx_dict = {
-        "input_ids": decoder_input_ids,
-        "encoder_hidden_states": encoder_hidden_states,
-        "enable_cache": enable_cache,
-    }
-
-    if past_key_values is not None:
-        for index, (k_dec, v_dec, k_enc, v_enc) in enumerate(past_key_values):
-            inputs_onnx_dict[f"past_key_values.{index}.decoder.key"] = k_dec
-            inputs_onnx_dict[f"past_key_values.{index}.decoder.value"] = v_dec
-            inputs_onnx_dict[f"past_key_values.{index}.encoder.key"] = k_enc
-            inputs_onnx_dict[f"past_key_values.{index}.encoder.value"] = v_enc
-
-    result_dict = inference_onnx_binding(
-        model_onnx=decoder_onnx,
-        inputs=inputs_onnx_dict,
-        binding=decoder_onnx_binding,  # recycle the binding
-        device=decoder_input_ids.device.type,
-        clone_tensor=False,  # no memory copy -> best perf and lowest memory footprint!
-    )
-    past_states = list()
-    for index in range(model_pytorch.config.num_layers):
-        kv = (
-            result_dict[f"present.{index}.decoder.key"],
-            result_dict[f"present.{index}.decoder.value"],
-            result_dict[f"present.{index}.encoder.key"],
-            result_dict[f"present.{index}.encoder.value"],
-        )
-        past_states.append(kv)
-    return BaseModelOutputWithPastAndCrossAttentions(
-        last_hidden_state=result_dict["logits"],
-        past_key_values=past_states,
-    )
-
-
 def are_equal(a: torch.Tensor, b: torch.Tensor, atol: float = fp16_default_tolerance) -> None:
     assert np.allclose(a=a.detach().cpu().numpy(), b=b.detach().cpu().numpy(), atol=atol), f"{a}\n\nVS\n\n{b}"
 
@@ -249,8 +344,50 @@ def get_random_input_cache() -> Dict[str, torch.Tensor]:
     complement = torch.randint(low=0, high=vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
     inputs["input_ids"] = torch.concat(tensors=[inputs["input_ids"], complement], dim=1)
     inputs["enable_cache"] = torch.tensor([True], device="cuda")
-    # del decoder_if_ort_model
     return inputs
+
+
+def decoder_onnx_inference(
+    decoder_input_ids: torch.Tensor,
+    encoder_hidden_states: torch.Tensor,
+    enable_cache: torch.Tensor,
+    decoder_onnx: InferenceSession,
+    num_layers: int,
+    past_key_values: Optional[torch.Tensor],
+):
+    inputs_onnx_dict = {
+        "input_ids": decoder_input_ids,
+        "encoder_hidden_states": encoder_hidden_states,
+        "enable_cache": enable_cache,
+    }
+
+    if past_key_values is not None:
+        for index, (k_dec, v_dec, k_enc, v_enc) in enumerate(past_key_values):
+            inputs_onnx_dict[f"past_key_values.{index}.decoder.key"] = k_dec
+            inputs_onnx_dict[f"past_key_values.{index}.decoder.value"] = v_dec
+            inputs_onnx_dict[f"past_key_values.{index}.encoder.key"] = k_enc
+            inputs_onnx_dict[f"past_key_values.{index}.encoder.value"] = v_enc
+
+    result_dict = inference_onnx_binding(
+        model_onnx=decoder_onnx,
+        inputs=inputs_onnx_dict,
+        binding=decoder_onnx.io_binding(),  # recycle the binding
+        device=decoder_input_ids.device.type,
+        clone_tensor=False,  # no memory copy -> best perf and lowest memory footprint!
+    )
+    past_states = list()
+    for index in range(num_layers):
+        kv = (
+            result_dict[f"present.{index}.decoder.key"],
+            result_dict[f"present.{index}.decoder.value"],
+            result_dict[f"present.{index}.encoder.key"],
+            result_dict[f"present.{index}.encoder.value"],
+        )
+        past_states.append(kv)
+    return BaseModelOutputWithPastAndCrossAttentions(
+        last_hidden_state=result_dict["logits"],
+        past_key_values=past_states,
+    )
 
 
 def convert_t5_to_onnx(
@@ -261,14 +398,14 @@ def convert_t5_to_onnx(
     global decoder_if_model_path
     vocab_size = tokenizer.vocab_size
     # prepare sub-folders for t5 onnx models (encoder and decoders)
-    encoder_model_path, encoder_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "test-enc"))
+    encoder_model_path, encoder_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "t5-encoder"))
     decoder_cache_model_path, decoder_cache_fp16_model_path = prepare_folder(
-        path=os.path.join(path_dir, "test-dec-cache")
+        path=os.path.join(path_dir, "t5-decoder-cache")
     )
     decoder_no_cache_model_path, decoder_no_cache_fp16_model_path = prepare_folder(
-        path=os.path.join(path_dir, "test-dec-no-cache")
+        path=os.path.join(path_dir, "t5-decoder-no-cache")
     )
-    decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "test-dec-if"))
+    decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "t5-dec-if-node"))
     model_pytorch = AutoModelForSeq2SeqLM.from_pretrained(model_name, use_auth_token=auth_token)
     # create original outputs to compare it with converted model results:
     encoder_outputs: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
@@ -409,7 +546,7 @@ def convert_t5_to_onnx(
     torch.cuda.empty_cache()
     gc.collect()
 
-    decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
+    # decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
     """keep_fp32_cache = search_fp32_nodes(
         original_model=decoder_if_model_path,
         modified_model_session=decoder_if_ort_model,
@@ -479,20 +616,15 @@ def convert_t5_to_onnx(
             input_ids=input_ids, encoder_hidden_states=out_encoder_pytorch.last_hidden_state
         )
     model_pytorch = model_pytorch.cpu()
-    model_decoder = model_decoder.cpu()
     torch.cuda.empty_cache()
-    encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
-    encoder_fp16_onnx_binding: IOBinding = encoder_fp16_onnx.io_binding()
     decoder_onnx = create_model_for_provider(decoder_if_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
-    decoder_onnx_binding: IOBinding = decoder_onnx.io_binding()
     out_decoder_onnx_no_cache = decoder_onnx_inference(
-        model_pytorch=model_pytorch,
         decoder_input_ids=input_ids,
         encoder_hidden_states=out_encoder_pytorch.last_hidden_state.half(),
         enable_cache=torch.tensor([False], device="cuda", dtype=torch.bool),
         past_key_values=None,
         decoder_onnx=decoder_onnx,
-        decoder_onnx_binding=decoder_onnx_binding,
+        num_layers=model_pytorch.config.num_layers,
     )
     are_equal(
         a=out_decoder_onnx_no_cache.last_hidden_state[:, -1:, :],
@@ -514,13 +646,12 @@ def convert_t5_to_onnx(
     out_encoder_pytorch.last_hidden_state = out_encoder_pytorch.last_hidden_state.half()
 
     out_decoder_onnx_cache = decoder_onnx_inference(
-        model_pytorch=model_pytorch,
         decoder_input_ids=input_ids[:, -1:],
         encoder_hidden_states=out_encoder_pytorch.last_hidden_state,
         enable_cache=torch.tensor([True], device="cuda", dtype=torch.bool),
         past_key_values=previous_step_pytorch.past_key_values,
         decoder_onnx=decoder_onnx,
-        decoder_onnx_binding=decoder_onnx_binding,
+        num_layers=model_pytorch.config.num_layers,
     )
 
     are_equal(

@@ -23,7 +23,7 @@ import gc
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple, Type, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch
@@ -40,6 +40,7 @@ from transformers import (
     PreTrainedTokenizer,
     TensorType,
 )
+from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 from transformer_deploy.backends.ort_utils import (
     cpu_quantization,
@@ -68,7 +69,7 @@ from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import convert_t5_to_onnx
+from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx
 
 
 def check_accuracy(
@@ -156,8 +157,6 @@ def main(commands: argparse.Namespace):
         auth_token = None
     run_on_cuda: bool = commands.device.startswith("cuda")
     Path(commands.output).mkdir(parents=True, exist_ok=True)
-    onnx_model_path = os.path.join(commands.output, "model-original.onnx")
-    onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
     tensorrt_path = os.path.join(commands.output, "model.plan")
     if run_on_cuda:
         assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
@@ -197,16 +196,17 @@ def main(commands: argparse.Namespace):
             return_tensors=TensorType.PYTORCH,
         ).input_ids
         input_ids = input_ids.type(torch.int32)
-        convert_t5_to_onnx(
+        """convert_t5_to_onnx(
             tokenizer=tokenizer,
             model_name=commands.model,
             path_dir=commands.output,
             auth_token=auth_token,
             input_ids=input_ids,
-        )
+        )"""
         inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
     else:
-        # take optimial size
+        onnx_model_path = os.path.join(commands.output, "model-original.onnx")
+        # take optimal size
         inputs_pytorch = generate_multiple_inputs(
             batch_size=tensor_shapes[1][0],
             seq_len=tensor_shapes[1][1],
@@ -226,6 +226,8 @@ def main(commands: argparse.Namespace):
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
+        if commands.generative_model == "t5":
+            return infer_classification_pytorch(model=model, run_on_cuda=cuda, generate_text=True)
         if task in ["classification", "text-generation", "token-classification", "question-answering"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
@@ -365,41 +367,97 @@ def main(commands: argparse.Namespace):
     if "onnx" in commands.backend:
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
-        optimize_onnx(
-            onnx_path=onnx_model_path,
-            onnx_optim_model_path=onnx_optim_model_path,
-            fp16=run_on_cuda,
-            use_cuda=run_on_cuda,
-            num_attention_heads=num_attention_heads,
-            hidden_size=hidden_size,
-            architecture=model_config.model_type,
-        )
+        if commands.generative_model != "t5":
+            onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
+            optimize_onnx(
+                onnx_path=onnx_model_path,
+                onnx_optim_model_path=onnx_optim_model_path,
+                fp16=run_on_cuda,
+                use_cuda=run_on_cuda,
+                num_attention_heads=num_attention_heads,
+                hidden_size=hidden_size,
+                architecture=model_config.model_type,
+            )
+        else:
+            for model_path in [
+                os.path.join(commands.output, "t5-encoder") + path for path in ["/model_fp16.onnx", "/model.onnx"]
+            ]:
+                optim_model_path = model_path[:-5] + "_optim.onnx"
+                optimize_onnx(
+                    onnx_path=model_path,
+                    onnx_optim_model_path=optim_model_path,
+                    fp16=run_on_cuda,
+                    use_cuda=run_on_cuda,
+                    num_attention_heads=num_attention_heads,
+                    hidden_size=hidden_size,
+                    architecture=model_config.model_type,
+                )
+
         if commands.device == "cpu" and commands.quantization:
             cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)
 
         ort_provider = "CUDAExecutionProvider" if run_on_cuda else "CPUExecutionProvider"
-        for provider, model_path, benchmark_name in [
-            (ort_provider, onnx_model_path, "ONNX Runtime (FP32)"),
-            (ort_provider, onnx_optim_model_path, "ONNX Runtime (optimized)"),
+        for provider, is_optimized, benchmark_name in [
+            (ort_provider, False, "ONNX Runtime (FP32)"),
+            (ort_provider, True, "ONNX Runtime (optimized)"),
         ]:
             logging.info("preparing %s benchmark", benchmark_name)
-            ort_model = create_model_for_provider(
-                path=model_path,
-                provider_to_use=provider,
-                nb_threads=commands.nb_threads,
-            )
+            if commands.generative_model == "t5":
+                encoder_path = os.path.join(commands.output, "t5-encoder") + (
+                    "/model_fp16_optim.onnx" if is_optimized else "/model.onnx"
+                )
+                decoder_path = os.path.join(commands.output, "t5-dec-if-node") + (
+                    "/model_fp16_optim.onnx" if is_optimized else "/model.onnx"
+                )
+                ort_model = (
+                    ExtT5(
+                        config=model_pytorch.config,
+                        device="cuda",
+                        encoder_path=encoder_path,
+                        decoder_path=decoder_path,
+                    )
+                    .cuda()
+                    .eval()
+                )
+            else:
+                model_path = onnx_model_path if is_optimized else onnx_optim_model_path
+                ort_model = create_model_for_provider(
+                    path=model_path,
+                    provider_to_use=provider,
+                    nb_threads=commands.nb_threads,
+                )
 
             def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
-                results = inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
-                return results["output"] if "output" in results else (results["start_logits"], results["end_logits"])
+                results = (
+                    inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
+                    if commands.generative_model != "t5"
+                    else ort_model.generate(
+                        inputs=input_ids.to("cuda"),
+                        min_length=commands.seq_len[2],
+                        max_length=commands.seq_len[2],
+                        num_beams=2,
+                        no_repeat_ngram_size=2,
+                    )[0]
+                )
+                if commands.generative_model == "t5":
+                    return results
+                elif "output" in results:
+                    return results["output"]
+                else:
+                    return results["start_logits"], results["end_logits"]
 
             logging.info("running %s benchmark", benchmark_name)
-            ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=inputs_pytorch, nb_measures=commands.nb_measures
-            )
+            type_inputs = torch.float16 if is_optimized else torch.float
+            inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
+            [
+                inputs.append({key: value.type(type_inputs)})
+                for input_pytorch in inputs_pytorch
+                for key, value in input_pytorch.items()
+            ]
+            ort_output, time_buffer = launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures)
             check_accuracy(
                 engine_name=benchmark_name,
-                pytorch_output=pytorch_output,
+                pytorch_output=pytorch_output[0] if commands.generative_model == "t5" else pytorch_output,
                 engine_output=ort_output,
                 tolerance=commands.atol,
             )
@@ -407,12 +465,12 @@ def main(commands: argparse.Namespace):
             del ort_model
             gc.collect()
 
-        triton_conf.create_configs(
+        """triton_conf.create_configs(
             tokenizer=tokenizer,
             model_path=onnx_optim_model_path,
             config=model_config,
             engine_type=EngineType.ONNX,
-        )
+        )"""
 
     if run_on_cuda:
         from torch.cuda import get_device_name

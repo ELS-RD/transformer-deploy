@@ -335,6 +335,10 @@ def main(commands: argparse.Namespace):
                 int8=commands.quantization,
             )
             save_engine(engine=encoder_engine, engine_file_path=tensorrt_encoder_path)
+            # check encoder engine has been correctly serialized
+            tensorrt_encoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+                runtime=runtime, engine_file_path=tensorrt_encoder_path
+            )
             decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
             tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
             tensor_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
@@ -350,9 +354,7 @@ def main(commands: argparse.Namespace):
                 int8=commands.quantization,
             )
             save_engine(engine=decoder_engine, engine_file_path=tensorrt_decoder_path)
-            tensorrt_encoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
-                runtime=runtime, engine_file_path=tensorrt_encoder_path
-            )
+            # check decoder engine has been correctly serialized
             tensorrt_decoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
                 runtime=runtime, engine_file_path=tensorrt_decoder_path
             )
@@ -388,7 +390,7 @@ def main(commands: argparse.Namespace):
                     "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
                     "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
                 }
-                decoder_outputs = decoder_engine(inputs)
+                decoder_outputs = tensorrt_decoder(inputs)
                 return decoder_outputs[0]
 
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = t5_tensorrt_inference

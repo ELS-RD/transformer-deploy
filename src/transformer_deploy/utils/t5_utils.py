@@ -1,16 +1,15 @@
 import gc
 import os
-import random
 import time
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import onnx
 import torch
 from onnxruntime import InferenceSession, IOBinding
 from torch.nn import Linear
-from transformers import AutoModelForSeq2SeqLM, PretrainedConfig, PreTrainedModel, PreTrainedTokenizer, TensorType
+from transformers import PretrainedConfig, PreTrainedModel, PreTrainedTokenizer
 from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
 from transformers.models.t5.modeling_t5 import T5Stack
@@ -22,9 +21,9 @@ from transformer_deploy.backends.ort_utils import (
     create_model_for_provider,
     get_keep_fp32_nodes,
     inference_onnx_binding,
-    search_fp32_nodes,
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
+from transformer_deploy.backends.trt_utils import TensorRTShape
 
 
 fp16_default_tolerance = 0.1
@@ -391,7 +390,7 @@ def decoder_onnx_inference(
 
 
 def convert_t5_to_onnx(
-    tokenizer: PreTrainedTokenizer, model_name: str, input_ids: torch.Tensor, path_dir: str, auth_token: str
+    tokenizer: PreTrainedTokenizer, model_pytorch: torch.nn.Module, input_ids: torch.Tensor, path_dir: str
 ):
     global vocab_size
     global encoder_fp16_model_path
@@ -406,7 +405,6 @@ def convert_t5_to_onnx(
         path=os.path.join(path_dir, "t5-decoder-no-cache")
     )
     decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "t5-dec-if-node"))
-    model_pytorch = AutoModelForSeq2SeqLM.from_pretrained(model_name, use_auth_token=auth_token)
     # create original outputs to compare it with converted model results:
     encoder_outputs: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
     t5_outputs: Seq2SeqLMOutput = model_pytorch(input_ids=input_ids, decoder_input_ids=input_ids)
@@ -546,8 +544,8 @@ def convert_t5_to_onnx(
     torch.cuda.empty_cache()
     gc.collect()
 
-    # decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
-    """keep_fp32_cache = search_fp32_nodes(
+    """decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
+    keep_fp32_cache = search_fp32_nodes(
         original_model=decoder_if_model_path,
         modified_model_session=decoder_if_ort_model,
         get_input=get_random_input_cache,
@@ -668,3 +666,71 @@ def convert_t5_to_onnx(
         are_equal(a=o_dev_v, b=p_dev_v)
         are_equal(a=o_enc_k, b=p_enc_k)
         are_equal(a=o_enc_v, b=p_enc_v)
+
+
+def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: int) -> List[str]:
+    input_ids_shape = input_ids.shape[0]
+    input_id_shape = TensorRTShape(
+        min_shape=[input_ids_shape, 1],
+        optimal_shape=[input_ids_shape, 1],
+        max_shape=[input_ids_shape, 256],
+        input_name="input_ids",
+    )
+    encoder_hidden_states_shape = TensorRTShape(
+        min_shape=[input_ids_shape, 1, 512],
+        optimal_shape=[input_ids_shape, 10, 512],
+        max_shape=[input_ids_shape, 200, 512],
+        input_name="encoder_hidden_states",
+    )
+
+    final_seq_len = TensorRTShape(
+        min_shape=[1],
+        optimal_shape=[1],
+        max_shape=[1],
+        input_name="final_seq_len",
+    )
+
+    input_shapes = [input_id_shape, encoder_hidden_states_shape, final_seq_len]
+    for i in range(num_layers):
+        input_shapes.append(
+            TensorRTShape(
+                min_shape=[input_ids_shape, 8, 0, 64],
+                optimal_shape=[input_ids_shape, 8, 100, 64],
+                max_shape=[input_ids_shape, 8, 200, 64],
+                input_name=f"past_key_values.{i}.decoder.key",
+            )
+        )
+        input_shapes.append(
+            TensorRTShape(
+                min_shape=[input_ids_shape, 8, 0, 64],
+                optimal_shape=[input_ids_shape, 8, 100, 64],
+                max_shape=[input_ids_shape, 8, 200, 64],
+                input_name=f"past_key_values.{i}.decoder.value",
+            )
+        )
+        input_shapes.append(
+            TensorRTShape(
+                min_shape=[input_ids_shape, 8, 0, 64],
+                optimal_shape=[input_ids_shape, 8, 10, 64],
+                max_shape=[input_ids_shape, 8, 200, 64],
+                input_name=f"past_key_values.{i}.encoder.key",
+            )
+        )
+        input_shapes.append(
+            TensorRTShape(
+                min_shape=[input_ids_shape, 8, 0, 64],
+                optimal_shape=[input_ids_shape, 8, 10, 64],
+                max_shape=[input_ids_shape, 8, 200, 64],
+                input_name=f"past_key_values.{i}.encoder.value",
+            )
+        )
+
+    min_shapes = []
+    opt_shapes = []
+    max_shapes = []
+    for i in input_shapes:
+        min_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.min_shape])}")
+        opt_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.optimal_shape])}")
+        max_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.max_shape])}")
+
+    return [min_shapes, opt_shapes, max_shapes]

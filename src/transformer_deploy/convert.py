@@ -23,7 +23,7 @@ import gc
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Callable, Dict, List, Tuple, Type, Union
 
 import numpy as np
 import torch
@@ -40,7 +40,6 @@ from transformers import (
     PreTrainedTokenizer,
     TensorType,
 )
-from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
 from transformer_deploy.backends.ort_utils import (
     cpu_quantization,
@@ -69,7 +68,7 @@ from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx
+from transformer_deploy.utils.t5_utils import ExtT5
 
 
 def check_accuracy(
@@ -198,9 +197,8 @@ def main(commands: argparse.Namespace):
         input_ids = input_ids.type(torch.int32)
         """convert_t5_to_onnx(
             tokenizer=tokenizer,
-            model_name=commands.model,
+            model_pytorch=model_pytorch,
             path_dir=commands.output,
-            auth_token=auth_token,
             input_ids=input_ids,
         )"""
         inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
@@ -311,6 +309,8 @@ def main(commands: argparse.Namespace):
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
 
             from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
+            from transformer_deploy.utils.t5_utils import prepare_input_shapes_tensorrt_decoder
+
         except ImportError:
             raise ImportError(
                 "It seems that TensorRT is not yet installed. "
@@ -320,27 +320,78 @@ def main(commands: argparse.Namespace):
             )
         trt_logger: Logger = trt.Logger(trt.Logger.VERBOSE if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
-        engine: ICudaEngine = build_engine(
-            runtime=runtime,
-            onnx_file_path=onnx_model_path,
-            logger=trt_logger,
-            min_shape=tensor_shapes[0],
-            optimal_shape=tensor_shapes[1],
-            max_shape=tensor_shapes[2],
-            workspace_size=commands.workspace_size * 1024 * 1024,
-            fp16=not commands.quantization,
-            int8=commands.quantization,
-        )
-        save_engine(engine=engine, engine_file_path=tensorrt_path)
-        # important to check the engine has been correctly serialized
-        tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
-            runtime=runtime, engine_file_path=tensorrt_path
-        )
+        if commands.generative_model == "t5":
+            encoder_onnx_path = os.path.join(commands.output, "t5-encoder") + "/model.onnx"
+            tensorrt_encoder_path = os.path.join(commands.output, "t5-encoder") + "/model.plan"
+            encoder_engine: ICudaEngine = build_engine(
+                runtime=runtime,
+                onnx_file_path=encoder_onnx_path,
+                logger=trt_logger,
+                min_shape=tensor_shapes[0],
+                optimal_shape=tensor_shapes[1],
+                max_shape=tensor_shapes[2],
+                workspace_size=commands.workspace_size * 1024 * 1024,
+                fp16=not commands.quantization,
+                int8=commands.quantization,
+            )
+            save_engine(engine=encoder_engine, engine_file_path=tensorrt_encoder_path)
+            decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
+            tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
+            tensor_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
+            decoder_engine: ICudaEngine = build_engine(
+                runtime=runtime,
+                onnx_file_path=decoder_onnx_path,
+                logger=trt_logger,
+                min_shape=tensor_shapes[0],
+                optimal_shape=tensor_shapes[1],
+                max_shape=tensor_shapes[2],
+                workspace_size=commands.workspace_size * 1024 * 1024,
+                fp16=not commands.quantization,
+                int8=commands.quantization,
+            )
+            save_engine(engine=decoder_engine, engine_file_path=tensorrt_decoder_path)
+            tensorrt_encoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+                runtime=runtime, engine_file_path=tensorrt_encoder_path
+            )
+            tensorrt_decoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+                runtime=runtime, engine_file_path=tensorrt_decoder_path
+            )
+        else:
+            engine: ICudaEngine = build_engine(
+                runtime=runtime,
+                onnx_file_path=onnx_model_path,
+                logger=trt_logger,
+                min_shape=tensor_shapes[0],
+                optimal_shape=tensor_shapes[1],
+                max_shape=tensor_shapes[2],
+                workspace_size=commands.workspace_size * 1024 * 1024,
+                fp16=not commands.quantization,
+                int8=commands.quantization,
+            )
+            save_engine(engine=engine, engine_file_path=tensorrt_path)
+            # important to check the engine has been correctly serialized
+            tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+                runtime=runtime, engine_file_path=tensorrt_path
+            )
 
         if commands.task == "question-answering":
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], List[torch.Tensor]] = lambda x: list(
                 tensorrt_model(x).values()
             )
+        elif commands.generative_model == "t5":
+
+            def t5_tensorrt_inference(x):
+                encoder_outputs = tensorrt_encoder(x)
+                inputs = {
+                    "input_ids": input_ids,
+                    "encoder_hidden_states": encoder_outputs.last_hidden_states,
+                    "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
+                    "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
+                }
+                decoder_outputs = decoder_engine(inputs)
+                return decoder_outputs[0]
+
+            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = t5_tensorrt_inference
         else:
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
                 tensorrt_model(x).values()

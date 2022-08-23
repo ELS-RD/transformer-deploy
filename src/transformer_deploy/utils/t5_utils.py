@@ -725,12 +725,4 @@ def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: i
             )
         )
 
-    min_shapes = []
-    opt_shapes = []
-    max_shapes = []
-    for i in input_shapes:
-        min_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.min_shape])}")
-        opt_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.optimal_shape])}")
-        max_shapes.append(f"{i.input_name}:{'x'.join([str(s) for s in i.max_shape])}")
-
-    return [min_shapes, opt_shapes, max_shapes]
+    return input_shapes

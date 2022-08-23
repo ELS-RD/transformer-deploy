@@ -341,14 +341,12 @@ def main(commands: argparse.Namespace):
             )
             decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
             tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
-            tensor_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
+            input_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
             decoder_engine: ICudaEngine = build_engine(
                 runtime=runtime,
                 onnx_file_path=decoder_onnx_path,
                 logger=trt_logger,
-                min_shape=tensor_shapes[0],
-                optimal_shape=tensor_shapes[1],
-                max_shape=tensor_shapes[2],
+                input_shapes=input_shapes,
                 workspace_size=commands.workspace_size * 1024 * 1024,
                 fp16=not commands.quantization,
                 int8=commands.quantization,

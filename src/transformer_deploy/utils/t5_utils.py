@@ -24,6 +24,10 @@ from transformer_deploy.backends.ort_utils import (
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
 from transformer_deploy.backends.trt_utils import TensorRTShape
+from transformer_deploy.convert import get_triton_output_shape
+from transformer_deploy.triton.configuration import EngineType
+from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
+from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
 
 
 fp16_default_tolerance = 0.1
@@ -55,11 +59,13 @@ class ExtT5(torch.nn.Module, GenerationMixin):
         device: torch.device,
         encoder_path: str,
         decoder_path: str,
+        torch_type: torch.dtype = torch.float32,
     ):
         super(ExtT5, self).__init__()
         self.main_input_name = "input_ids"  # https://github.com/huggingface/transformers/pull/14803
         self.config: PretrainedConfig = config
         self.device: torch.device = device
+        self.torch_type = torch_type
 
         provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
         self.encoder_onnx = create_model_for_provider(encoder_path, provider, log_severity=3)
@@ -74,7 +80,7 @@ class ExtT5(torch.nn.Module, GenerationMixin):
             device="cuda",
             binding=self.encoder_onnx.io_binding(),
         )["output"]
-        return BaseModelOutputWithPastAndCrossAttentions(last_hidden_state=last_hidden_state.type(torch.float16))
+        return BaseModelOutputWithPastAndCrossAttentions(last_hidden_state=last_hidden_state.type(self.torch_type))
 
     def decoder_onnx_inference(
         self,
@@ -406,6 +412,7 @@ def convert_t5_to_onnx(
     )
     decoder_if_model_path, decoder_if_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "t5-dec-if-node"))
     # create original outputs to compare it with converted model results:
+    input_ids = input_ids.to("cuda")
     encoder_outputs: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
     t5_outputs: Seq2SeqLMOutput = model_pytorch(input_ids=input_ids, decoder_input_ids=input_ids)
     # I. Export to ONNX
@@ -666,6 +673,61 @@ def convert_t5_to_onnx(
         are_equal(a=o_dev_v, b=p_dev_v)
         are_equal(a=o_enc_k, b=p_enc_k)
         are_equal(a=o_enc_v, b=p_enc_v)
+
+
+def create_triton_configs(
+    tokenizer: PreTrainedTokenizer,
+    model_config: PretrainedConfig,
+    model_output: torch.Tensor,
+    engine_type: EngineType,
+    task: str,
+    nb_instances: int,
+    input_names: List[str],
+    output: str,
+    device: str,
+):
+    conf_class = ConfigurationEnc
+    triton_encoder_conf = conf_class(
+        model_name_base="t5-encoder",
+        dim_output=get_triton_output_shape(
+            output=model_output[0] if type(model_output[0]) == torch.Tensor else model_output[0][0],
+            task=task,
+        ),
+        nb_instance=nb_instances,
+        tensor_input_names=input_names,
+        working_directory=output,
+        device=device,
+    )
+    encoder_path = os.path.join(output, "t5-encoder") + (
+        "/model_fp16_optim.onnx" if engine_type == EngineType.ONNX else "/model.plan"
+    )
+    triton_encoder_conf.create_configs(
+        tokenizer=tokenizer,
+        model_path=encoder_path,
+        config=model_config,
+        engine_type=engine_type,
+    )
+    conf_class = ConfigurationT5Decoder
+    triton_encoder_conf = conf_class(
+        model_name_base="t5-dec-if-node",
+        dim_output=get_triton_output_shape(
+            output=model_output[0] if type(model_output[0]) == torch.Tensor else model_output[0][0],
+            task=task,
+        ),
+        nb_instance=nb_instances,
+        tensor_input_names=input_names,
+        working_directory=output,
+        device=device,
+    )
+    decoder_path = os.path.join(output, "t5-dec-if-node") + (
+        "/model_fp16.onnx" if engine_type == EngineType.ONNX else "/model.plan"
+    )
+    triton_encoder_conf.create_configs(
+        tokenizer=tokenizer,
+        model_path=decoder_path,
+        config=model_config,
+        engine_type=EngineType.ONNX,
+    )
 
 
 def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: int) -> List[str]:

@@ -66,9 +66,10 @@ from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
+from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import ExtT5
+from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs
 
 
 def check_accuracy(
@@ -135,6 +136,7 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 
 
 def main(commands: argparse.Namespace):
+    torch.cuda.empty_cache()
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
     logging.info("running with commands: %s", commands)
     if commands.device == "cpu" and "tensorrt" in commands.backend:
@@ -384,14 +386,16 @@ def main(commands: argparse.Namespace):
                 encoder_outputs = tensorrt_encoder(x)
                 inputs = {
                     "input_ids": input_ids,
-                    "encoder_hidden_states": encoder_outputs.last_hidden_states,
+                    "encoder_hidden_states": encoder_outputs.last_hidden_state,
                     "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
                     "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
                 }
                 decoder_outputs = tensorrt_decoder(inputs)
                 return decoder_outputs[0]
 
-            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = t5_tensorrt_inference
+            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
+                t5_tensorrt_inference(x).values()
+            )[0]
         else:
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
                 tensorrt_model(x).values()
@@ -411,9 +415,22 @@ def main(commands: argparse.Namespace):
         timings[engine_name] = time_buffer
         del engine, tensorrt_model, runtime  # delete all tensorrt objects
         gc.collect()
-        triton_conf.create_configs(
-            tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
-        )
+        if commands.generative_model == "t5":
+            create_triton_configs(
+                tokenizer,
+                model_config,
+                pytorch_output,
+                EngineType.TensorRT,
+                commands.task,
+                commands.nb_instances,
+                input_names,
+                commands.output,
+                commands.device,
+            )
+        else:
+            triton_conf.create_configs(
+                tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
+            )
 
     if "onnx" in commands.backend:
         num_attention_heads, hidden_size = get_model_size(path=commands.model)
@@ -453,12 +470,13 @@ def main(commands: argparse.Namespace):
             (ort_provider, True, "ONNX Runtime (optimized)"),
         ]:
             logging.info("preparing %s benchmark", benchmark_name)
+            torch_type = torch.float16 if is_optimized else torch.float32
             if commands.generative_model == "t5":
                 encoder_path = os.path.join(commands.output, "t5-encoder") + (
                     "/model_fp16_optim.onnx" if is_optimized else "/model.onnx"
                 )
                 decoder_path = os.path.join(commands.output, "t5-dec-if-node") + (
-                    "/model_fp16_optim.onnx" if is_optimized else "/model.onnx"
+                    "/model_fp16.onnx" if is_optimized else "/model.onnx"
                 )
                 ort_model = (
                     ExtT5(
@@ -466,10 +484,22 @@ def main(commands: argparse.Namespace):
                         device="cuda",
                         encoder_path=encoder_path,
                         decoder_path=decoder_path,
+                        torch_type=torch_type,
                     )
                     .cuda()
                     .eval()
                 )
+                # warmup generative model:
+                [
+                    ort_model.generate(
+                        inputs=input_ids.to("cuda"),
+                        min_length=commands.seq_len[2],
+                        max_length=commands.seq_len[2],
+                        num_beams=2,
+                        no_repeat_ngram_size=2,
+                    )
+                    for _ in range(5)
+                ]
             else:
                 model_path = onnx_model_path if is_optimized else onnx_optim_model_path
                 ort_model = create_model_for_provider(
@@ -498,10 +528,9 @@ def main(commands: argparse.Namespace):
                     return results["start_logits"], results["end_logits"]
 
             logging.info("running %s benchmark", benchmark_name)
-            type_inputs = torch.float16 if is_optimized else torch.float
             inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
             [
-                inputs.append({key: value.type(type_inputs)})
+                inputs.append({key: value.type(torch_type)})
                 for input_pytorch in inputs_pytorch
                 for key, value in input_pytorch.items()
             ]
@@ -516,12 +545,25 @@ def main(commands: argparse.Namespace):
             del ort_model
             gc.collect()
 
-        """triton_conf.create_configs(
-            tokenizer=tokenizer,
-            model_path=onnx_optim_model_path,
-            config=model_config,
-            engine_type=EngineType.ONNX,
-        )"""
+        if commands.generative_model == "t5":
+            create_triton_configs(
+                tokenizer,
+                model_config,
+                pytorch_output,
+                EngineType.ONNX,
+                commands.task,
+                commands.nb_instances,
+                input_names,
+                commands.output,
+                commands.device,
+            )
+        else:
+            triton_conf.create_configs(
+                tokenizer=tokenizer,
+                model_path=onnx_optim_model_path,
+                config=model_config,
+                engine_type=EngineType.ONNX,
+            )
 
     if run_on_cuda:
         from torch.cuda import get_device_name

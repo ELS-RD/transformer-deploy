@@ -23,8 +23,7 @@ from transformer_deploy.backends.ort_utils import (
     inference_onnx_binding,
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
-
-# from transformer_deploy.backends.trt_utils import TensorRTShape
+from transformer_deploy.backends.trt_utils import TensorRTShape
 from transformer_deploy.triton.configuration import EngineType
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder

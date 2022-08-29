@@ -43,11 +43,12 @@ class ConfigurationT5Decoder(Configuration):
 
 input [
     {{
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
+        name: "input_ids"
+        data_type: TYPE_FP32
+        dims: [ -1, -1 ]
     }}
 ]
+# TODO: add encoder outputs as inputs for decoder
 
 output [
     {{

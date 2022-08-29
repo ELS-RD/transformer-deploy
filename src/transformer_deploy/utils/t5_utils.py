@@ -23,8 +23,8 @@ from transformer_deploy.backends.ort_utils import (
     inference_onnx_binding,
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
-from transformer_deploy.backends.trt_utils import TensorRTShape
-from transformer_deploy.convert import get_triton_output_shape
+
+# from transformer_deploy.backends.trt_utils import TensorRTShape
 from transformer_deploy.triton.configuration import EngineType
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
@@ -673,6 +673,14 @@ def convert_t5_to_onnx(
         are_equal(a=o_dev_v, b=p_dev_v)
         are_equal(a=o_enc_k, b=p_enc_k)
         are_equal(a=o_enc_v, b=p_enc_v)
+
+
+def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
+    triton_output_shape = list(output.shape)
+    triton_output_shape[0] = -1  # dynamic batch size
+    if task in ["text-generation", "token-classification", "question-answering"]:
+        triton_output_shape[1] = -1  # dynamic sequence size
+    return triton_output_shape
 
 
 def create_triton_configs(

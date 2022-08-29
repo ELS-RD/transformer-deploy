@@ -69,7 +69,7 @@ from transformer_deploy.triton.configuration_question_answering import Configura
 from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs
+from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs, get_triton_output_shape
 
 
 def check_accuracy(
@@ -125,14 +125,6 @@ def launch_inference(
         with track_infer_time(time_buffer):
             _ = infer(inputs[0])
     return outputs, time_buffer
-
-
-def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
-    triton_output_shape = list(output.shape)
-    triton_output_shape[0] = -1  # dynamic batch size
-    if task in ["text-generation", "token-classification", "question-answering"]:
-        triton_output_shape[1] = -1  # dynamic sequence size
-    return triton_output_shape
 
 
 def main(commands: argparse.Namespace):
@@ -197,13 +189,13 @@ def main(commands: argparse.Namespace):
             return_tensors=TensorType.PYTORCH,
         ).input_ids
         input_ids = input_ids.type(torch.int32)
-        """convert_t5_to_onnx(
+        inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
+        convert_t5_to_onnx(
             tokenizer=tokenizer,
             model_pytorch=model_pytorch,
             path_dir=commands.output,
             input_ids=input_ids,
-        )"""
-        inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
+        )
     else:
         onnx_model_path = os.path.join(commands.output, "model-original.onnx")
         # take optimal size
@@ -234,6 +226,8 @@ def main(commands: argparse.Namespace):
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
         raise Exception(f"unknown task: {task}")
 
+    if run_on_cuda:
+        model_pytorch = model_pytorch.to("cuda")
     with torch.inference_mode():
         logging.info("running Pytorch (FP32) benchmark")
         pytorch_output, time_buffer = launch_inference(

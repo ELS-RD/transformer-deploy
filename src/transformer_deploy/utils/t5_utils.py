@@ -466,7 +466,7 @@ def convert_t5_to_onnx(
         inputs={"input_ids": input_ids},
         device=input_ids.device.type,
     )["output"]
-    # are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
+    are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
 
     # 2. Convert decoder part
     # Conversion of the decoder module without cache support
@@ -550,7 +550,7 @@ def convert_t5_to_onnx(
     torch.cuda.empty_cache()
     gc.collect()
 
-    """decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
+    decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
     keep_fp32_cache = search_fp32_nodes(
         original_model=decoder_if_model_path,
         modified_model_session=decoder_if_ort_model,
@@ -564,7 +564,7 @@ def convert_t5_to_onnx(
 
     del decoder_if_ort_model
     torch.cuda.empty_cache()
-    gc.collect()"""
+    gc.collect()
 
     onnx_model_cache_fp16 = convert_fp16(onnx_model=decoder_cache_model_path, nodes_to_exclude=list())
     save_onnx(proto=onnx_model_cache_fp16, model_path=decoder_cache_fp16_model_path, clean=False)

@@ -49,7 +49,7 @@ class STransformerWrapper(nn.Module):
         return outputs["sentence_embedding"]
 
 
-def load_sentence_transformers(path: str) -> STransformerWrapper:
+def load_sentence_transformers(path: str, use_auth_token: str = None) -> STransformerWrapper:
     """
     Load sentence-transformers model and wrap it to make it behave like any other transformers model
     :param path: path to the model
@@ -61,5 +61,5 @@ def load_sentence_transformers(path: str) -> STransformerWrapper:
         raise Exception(
             "sentence-transformers library is not present, please install it: pip install sentence-transformers"
         )
-    model: SentenceTransformer = SentenceTransformer(path)
+    model: SentenceTransformer = SentenceTransformer(model_name_or_path=path, use_auth_token=use_auth_token)
     return STransformerWrapper(model=model)

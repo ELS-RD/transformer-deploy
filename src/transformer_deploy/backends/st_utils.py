@@ -53,13 +53,23 @@ def load_sentence_transformers(path: str, use_auth_token: str = None) -> STransf
     """
     Load sentence-transformers model and wrap it to make it behave like any other transformers model
     :param path: path to the model
+    :param use_auth_token: authentication token used to access private models
     :return: wrapped sentence-transformers model
     """
     try:
-        from sentence_transformers import SentenceTransformer
+        import sentence_transformers
     except ImportError:
         raise Exception(
-            "sentence-transformers library is not present, please install it: pip install sentence-transformers"
+            "sentence-transformers library is not present, you can install it using: "
+            "pip install sentence-transformers==2.2.0 (or a greater version)"
         )
-    model: SentenceTransformer = SentenceTransformer(model_name_or_path=path, use_auth_token=use_auth_token)
+    from packaging import version
+
+    assert version.parse(sentence_transformers.__version__) >= version.parse("2.2.0"), (
+        f"sentence-transformers library's version is {sentence_transformers.__version__}, "
+        f"you need at least the V2.2.0 version"
+    )
+    model: SentenceTransformer = sentence_transformers.SentenceTransformer(
+        model_name_or_path=path, use_auth_token=use_auth_token
+    )
     return STransformerWrapper(model=model)

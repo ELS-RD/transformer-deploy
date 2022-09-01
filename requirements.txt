@@ -15,3 +15,4 @@ black[jupyter]
 isort
 flake8
 onnxoptimizer
+packaging

@@ -274,9 +274,8 @@ More examples of inference can be found in demo/question-answering/
 
 Feature extraction in NLP is the task to convert text to dense embeddings.  
 It has gained some traction as a robust way to improve search engine relevancy (increase recall).  
-This project supports models from [sentence-transformers](https://github.com/UKPLab/sentence-transformers).
-If you want to use private models from sentence-transformers, you'll need at least the V2.2.0 version.
-
+This project supports models from [sentence-transformers](https://github.com/UKPLab/sentence-transformers) and it requires 
+a version >= V2.2.0 of sentence-transformers library.
 #### Optimize existing model
 
 ```shell

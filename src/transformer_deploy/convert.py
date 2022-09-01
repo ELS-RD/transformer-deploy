@@ -160,10 +160,14 @@ def main(commands: argparse.Namespace):
         assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
-    model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
+    model_config: PretrainedConfig = AutoConfig.from_pretrained(
+        pretrained_model_name_or_path=commands.model, use_auth_token=auth_token
+    )
     input_names: List[str] = tokenizer.model_input_names
     if commands.task == "embedding":
-        model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
+        model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(
+            commands.model, use_auth_token=auth_token
+        )
     elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "token-classification":

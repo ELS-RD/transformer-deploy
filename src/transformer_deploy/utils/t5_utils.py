@@ -330,28 +330,6 @@ def get_random_input_no_cache() -> Dict[str, torch.Tensor]:
     return inputs
 
 
-def get_random_input_cache() -> Dict[str, torch.Tensor]:
-    inputs = get_random_input_no_cache()
-    inputs["enable_cache"] = torch.tensor([False], device="cuda")
-    decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
-    decoder_past_states = inference_onnx_binding(
-        model_onnx=decoder_if_ort_model,
-        inputs=inputs,
-        device="cuda",
-        clone_tensor=False,
-    )
-    for k, v in decoder_past_states.items():
-        if "present" not in k:
-            continue
-        new_k = k.replace("present", "past_key_values")
-        inputs[new_k] = v
-    batch, _ = inputs["input_ids"].shape
-    complement = torch.randint(low=0, high=vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
-    inputs["input_ids"] = torch.concat(tensors=[inputs["input_ids"], complement], dim=1)
-    inputs["enable_cache"] = torch.tensor([True], device="cuda")
-    return inputs
-
-
 def decoder_onnx_inference(
     decoder_input_ids: torch.Tensor,
     encoder_hidden_states: torch.Tensor,
@@ -552,11 +530,32 @@ def convert_t5_to_onnx(
     gc.collect()
 
     decoder_if_ort_model = create_model_for_provider(decoder_if_model_path, "CUDAExecutionProvider", log_severity=3)
+
+    def get_random_input_cache() -> Dict[str, torch.Tensor]:
+        inputs = get_random_input_no_cache()
+        inputs["enable_cache"] = torch.tensor([False], device="cuda")
+        decoder_past_states = inference_onnx_binding(
+            model_onnx=decoder_if_ort_model,
+            inputs=inputs,
+            device="cuda",
+            clone_tensor=False,
+        )
+        for k, v in decoder_past_states.items():
+            if "present" not in k:
+                continue
+            new_k = k.replace("present", "past_key_values")
+            inputs[new_k] = v
+        batch, _ = inputs["input_ids"].shape
+        complement = torch.randint(low=0, high=vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
+        inputs["input_ids"] = torch.concat(tensors=[inputs["input_ids"], complement], dim=1)
+        inputs["enable_cache"] = torch.tensor([True], device="cuda")
+        return inputs
+
     keep_fp32_cache = search_fp32_nodes(
         original_model=decoder_if_model_path,
         modified_model_session=decoder_if_ort_model,
         get_input=get_random_input_cache,
-        early_stop=1,
+        early_stop=100,
     )
 
     # the output node names are those from the decoder module without cache support
@@ -567,7 +566,7 @@ def convert_t5_to_onnx(
     torch.cuda.empty_cache()
     gc.collect()
 
-    onnx_model_cache_fp16 = convert_fp16(onnx_model=decoder_cache_model_path, nodes_to_exclude=list())
+    onnx_model_cache_fp16 = convert_fp16(onnx_model=decoder_cache_model_path, nodes_to_exclude=keep_fp32_cache)
     save_onnx(proto=onnx_model_cache_fp16, model_path=decoder_cache_fp16_model_path, clean=False)
 
     del onnx_model_cache_fp16

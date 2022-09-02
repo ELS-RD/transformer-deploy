@@ -21,6 +21,7 @@ from transformer_deploy.backends.ort_utils import (
     create_model_for_provider,
     get_keep_fp32_nodes,
     inference_onnx_binding,
+    search_fp32_nodes,
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
 from transformer_deploy.backends.trt_utils import TensorRTShape

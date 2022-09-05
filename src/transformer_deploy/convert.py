@@ -315,8 +315,8 @@ def main(commands: argparse.Namespace):
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
         trt_logger: Logger = trt.Logger(trt.Logger.VERBOSE if commands.verbose else trt.Logger.WARNING)
-        runtime: Runtime = trt.Runtime(trt_logger)
         if commands.generative_model == "t5":
+            runtime: Runtime = trt.Runtime(trt_logger)
             encoder_onnx_path = os.path.join(commands.output, "t5-encoder") + "/model.onnx"
             tensorrt_encoder_path = os.path.join(commands.output, "t5-encoder") + "/model.plan"
             encoder_engine: ICudaEngine = build_engine(
@@ -335,9 +335,11 @@ def main(commands: argparse.Namespace):
             tensorrt_encoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
                 runtime=runtime, engine_file_path=tensorrt_encoder_path
             )
+            del encoder_engine, runtime
             decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
             tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
             input_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
+            runtime: Runtime = trt.Runtime(trt_logger)
             decoder_engine: ICudaEngine = build_engine(
                 runtime=runtime,
                 onnx_file_path=decoder_onnx_path,

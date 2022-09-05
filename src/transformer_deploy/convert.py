@@ -189,7 +189,8 @@ def main(commands: argparse.Namespace):
             return_tensors=TensorType.PYTORCH,
         ).input_ids
         input_ids = input_ids.type(torch.int32)
-        inputs_pytorch.append({"input_ids": input_ids.to("cuda")})
+        input_ids = input_ids.to("cuda")
+        inputs_pytorch.append({"input_ids": input_ids})
         convert_t5_to_onnx(
             tokenizer=tokenizer,
             model_pytorch=model_pytorch,
@@ -315,8 +316,8 @@ def main(commands: argparse.Namespace):
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
         trt_logger: Logger = trt.Logger(trt.Logger.VERBOSE if commands.verbose else trt.Logger.WARNING)
+        runtime: Runtime = trt.Runtime(trt_logger)
         if commands.generative_model == "t5":
-            runtime: Runtime = trt.Runtime(trt_logger)
             encoder_onnx_path = os.path.join(commands.output, "t5-encoder") + "/model.onnx"
             tensorrt_encoder_path = os.path.join(commands.output, "t5-encoder") + "/model.plan"
             encoder_engine: ICudaEngine = build_engine(

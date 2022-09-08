@@ -17,6 +17,7 @@ Generate Nvidia Triton server configuration files for decoder based model (GPT-2
 """
 import inspect
 from pathlib import Path
+from typing import List
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
@@ -38,6 +39,32 @@ class ConfigurationT5Decoder(Configuration):
         Generate sequence configuration.
         :return: Generate sequence configuration
         """
+        result: List[str] = list()
+        for i in range(self.num_layers):
+            text = f"""
+        {{
+            name: "past_key_values.{i}.decoder.key"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.decoder.value"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.encoder.key"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.encoder.value"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }}
+        """
+            result.append(text)
+        decoder_inputs = ",\n".join(result)
         return f"""
 {self._get_header(name=self.python_folder_name, backend="python")}
 
@@ -46,15 +73,25 @@ input [
         name: "input_ids"
         data_type: TYPE_FP32
         dims: [ -1, -1 ]
-    }}
+    }},
+    {{
+        name: "encoder_hidden_states"
+        data_type: TYPE_FP16
+        dims: [ -1, -1, 512 ]
+    }},
+    {{
+        name: "enable_cache"
+        data_type: TYPE_BOOL
+        dims: [ 1 ]
+    }},
+    {decoder_inputs}
 ]
-# TODO: add encoder outputs as inputs for decoder
 
 output [
     {{
-        name: "output"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
+        name: "logits"
+        data_type: TYPE_FP16
+        dims: [ -1, -1, {self.vocab_size} ]
     }}
 ]
 
@@ -68,6 +105,36 @@ parameters: {{
 }}
 """.strip()
 
+    def get_model_conf(self) -> str:
+        """
+        Generate model configuration.
+        :return: model configuration
+        """
+        return f"""
+            name: "{self.model_folder_name}"
+            max_batch_size: 0
+            platform: "{self.inference_platform}"
+            default_model_filename: "model.bin"
+        
+            input [
+            {self._get_tokens()}
+            ]
+        
+            output [
+                {{
+                    name: "start_logits"
+                    data_type: TYPE_FP32
+                    dims: {str(self.dim_output)}
+                }},
+                {{
+                    name: "end_logits"
+                    data_type: TYPE_FP32
+                    dims: {str(self.dim_output)}
+                }}
+            ]
+            {self._instance_group()}
+            """.strip()
+
     def create_configs(
         self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType
     ) -> None:
@@ -75,7 +142,7 @@ parameters: {{
 
         wd_path = Path(self.working_dir)
         for path, conf_content in [
-            (wd_path.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_model_conf()),
+            (wd_path.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_generation_conf()),
             (wd_path.joinpath(self.python_folder_name).joinpath("config.pbtxt"), self.get_generation_conf()),
         ]:  # type: Path, str
             path.parent.mkdir(parents=True, exist_ok=True)

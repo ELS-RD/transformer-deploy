@@ -134,16 +134,19 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 def main(commands: argparse.Namespace):
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
     logging.info("running with commands: %s", commands)
+
+    if commands.device is None:
+        commands.device = "cuda" if torch.cuda.is_available() else "cpu"
+
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
+
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
         logging.warning("having different sequence lengths may make TensorRT slower")
 
     torch.manual_seed(commands.seed)
     np.random.seed(commands.seed)
     torch.set_num_threads(commands.nb_threads)
-    if commands.device is None:
-        commands.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True

@@ -89,7 +89,7 @@ def convert_to_onnx(
     quantization: bool,
     var_output_seq: bool,
     output_names: List[str],
-    load_external_data: bool = False
+    load_external_data: bool = False,
 ) -> None:
     """
     Convert a Pytorch model to an ONNX graph by tracing the provided input inside the Pytorch code.

@@ -46,6 +46,13 @@ def parse_args(commands: List[str] = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "-l",
+        "--load-external-data",
+        default=False,
+        help="whether to load external data. It may be used for loading large models (> 2 Gb).",
+        type=bool
+    )
+    parser.add_argument(
         "-b",
         "--batch-size",
         default=[1, 1, 1],

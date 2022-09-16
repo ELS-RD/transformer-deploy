@@ -207,6 +207,7 @@ def main(commands: argparse.Namespace):
         quantization=commands.quantization,
         var_output_seq=commands.task in ["text-generation", "token-classification", "question-answering"],
         output_names=["output"] if commands.task != "question-answering" else ["start_logits", "end_logits"],
+        load_external_data=commands.load_external_data
     )
 
     timings = {}

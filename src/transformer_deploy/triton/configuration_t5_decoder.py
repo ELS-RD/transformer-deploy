@@ -76,7 +76,7 @@ input [
     }},
     {{
         name: "encoder_hidden_states"
-        data_type: TYPE_FP16
+        data_type: TYPE_FP32
         dims: [ -1, -1, 512 ]
     }},
     {{
@@ -90,7 +90,7 @@ input [
 output [
     {{
         name: "logits"
-        data_type: TYPE_FP16
+        data_type: TYPE_FP32
         dims: [ -1, -1, {self.vocab_size} ]
     }}
 ]
@@ -110,30 +110,65 @@ parameters: {{
         Generate model configuration.
         :return: model configuration
         """
+        result: List[str] = list()
+        for i in range(self.num_layers):
+            text = f"""
+        {{
+            name: "past_key_values.{i}.decoder.key"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.decoder.value"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.encoder.key"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }},
+        {{
+            name: "past_key_values.{i}.encoder.value"
+            data_type: TYPE_FP16
+            dims: [-1, 8, -1, 64]
+        }}
+        """
+            result.append(text)
+        decoder_inputs = ",\n".join(result)
         return f"""
-            name: "{self.model_folder_name}"
-            max_batch_size: 0
-            platform: "{self.inference_platform}"
-            default_model_filename: "model.bin"
-        
-            input [
-            {self._get_tokens()}
-            ]
-        
-            output [
-                {{
-                    name: "start_logits"
-                    data_type: TYPE_FP32
-                    dims: {str(self.dim_output)}
-                }},
-                {{
-                    name: "end_logits"
-                    data_type: TYPE_FP32
-                    dims: {str(self.dim_output)}
-                }}
-            ]
-            {self._instance_group()}
-            """.strip()
+name: "{self.model_folder_name}"
+max_batch_size: 0
+platform: "{self.inference_platform}"
+default_model_filename: "model.bin"
+
+input [
+    {{
+        name: "input_ids"
+        data_type: TYPE_FP32
+        dims: [ -1, -1 ]
+    }},
+    {{
+        name: "encoder_hidden_states"
+        data_type: TYPE_FP32
+        dims: [ -1, -1, 512 ]
+    }},
+    {{
+        name: "enable_cache"
+        data_type: TYPE_BOOL
+        dims: [ 1 ]
+    }},
+    {decoder_inputs}
+]
+output [
+    {{
+        name: "logits"
+        data_type: TYPE_FP32
+        dims: [ -1, -1, {self.vocab_size} ]
+    }}
+]
+{self._instance_group()}
+""".strip()
 
     def create_configs(
         self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType

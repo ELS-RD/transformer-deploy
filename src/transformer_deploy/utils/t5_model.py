@@ -24,7 +24,7 @@ import numpy as np
 import torch
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
-from transformer_deploy.utils.t5_utils import ExtT5
+from transformer_deploy.utils.t5_inference_utils import ExtT5
 
 
 try:
@@ -69,8 +69,8 @@ class TritonPythonModel:
         self.device = "cpu" if args["model_instance_kind"] == "CPU" else "cuda"
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
         model_config = AutoConfig.from_pretrained(current_path)
-        encoder_model = args["model_name"].replace("_generate", "_model")
-        decoder_model = args["model_name"].replace("_inference", "_model")
+        encoder_model = "t5-encoder_onnx_model"
+        decoder_model = "t5-dec-if-node_onnx_model"
 
         def inference_triton(input_ids: torch.Tensor) -> torch.Tensor:
             input_ids = input_ids.type(dtype=torch.int32)
@@ -85,13 +85,13 @@ class TritonPythonModel:
                 encoder_output = pb_utils.get_output_tensor_by_name(encoder_inference_response, "output")
                 decoder_inputs = [inputs, encoder_output]
                 decoder_inference_request = pb_utils.InferenceRequest(
-                    model_name=decoder_model, requested_output_names=["output"], inputs=decoder_inputs
+                    model_name=decoder_model, requested_output_names=["logits"], inputs=decoder_inputs
                 )
                 decoder_inference_response = decoder_inference_request.exec()
                 if decoder_inference_response.has_error():
-                    raise pb_utils.TritonModelException(encoder_inference_response.error().message())
+                    raise pb_utils.TritonModelException(decoder_inference_response.error().message())
                 else:
-                    output = pb_utils.get_output_tensor_by_name(decoder_inference_response, "output")
+                    output = pb_utils.get_output_tensor_by_name(decoder_inference_response, "logits")
                     tensor: torch.Tensor = torch.from_dlpack(output.to_dlpack())
                     tensor = tensor.cuda()
                     return tensor
@@ -99,10 +99,10 @@ class TritonPythonModel:
         self.model = ExtT5Triton(
             config=model_config,
             device=self.device,
-            encoder_path=args["encoder_path"],
-            decoder_path=args["decoder_path"],
+            encoder_path=encoder_model,
+            decoder_path=decoder_model,
             inference=inference_triton,
-            torch_type=args["torch_type"],
+            torch_type=torch.int32,
         )
         if self.device == "cuda":
             self.model = self.model.cuda()

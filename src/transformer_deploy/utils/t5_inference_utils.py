@@ -49,8 +49,8 @@ class ExtT5(torch.nn.Module, GenerationMixin):
         self.torch_type = torch_type
 
         provider = "CUDAExecutionProvider" if device == "cuda" else "CPUExecutionProvider"
-        self.encoder_onnx = create_model_for_provider(encoder_path, provider, log_severity=3)
-        self.decoder_onnx = create_model_for_provider(decoder_path, provider, log_severity=3)
+        #self.encoder_onnx = create_model_for_provider(encoder_path, provider, log_severity=3)
+        #self.decoder_onnx = create_model_for_provider(decoder_path, provider, log_severity=3)
         self.use_cache = True
         self.timings = list()
 

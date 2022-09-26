@@ -364,7 +364,7 @@ def convert_t5_to_onnx(
         model_no_cache_path=decoder_no_cache_model_fp32_all_nodes_path,
         output_path=decoder_if_model_path,
     )
-    del decoder_cache_model_fp32_all_nodes, decoder_no_cache_model, decoder_cache_model
+    del decoder_cache_model_fp32_all_nodes, decoder_no_cache_model
     torch.cuda.empty_cache()
     gc.collect()
 

@@ -43,67 +43,104 @@ class ConfigurationT5Decoder(Configuration):
         for i in range(self.num_layers):
             text = f"""
         {{
-            name: "past_key_values.{i}.decoder.key"
-            data_type: TYPE_FP16
-            dims: [-1, 8, -1, 64]
+            key: "past_key_values.{i}.decoder.key"
+            value: "past_key_values.{i}.decoder.key"
         }},
         {{
-            name: "past_key_values.{i}.decoder.value"
-            data_type: TYPE_FP16
-            dims: [-1, 8, -1, 64]
+            key: "past_key_values.{i}.decoder.value"
+            value: "past_key_values.{i}.decoder.value"
         }},
         {{
-            name: "past_key_values.{i}.encoder.key"
-            data_type: TYPE_FP16
-            dims: [-1, 8, -1, 64]
+            key: "past_key_values.{i}.encoder.key"
+            value: "past_key_values.{i}.encoder.key"
         }},
         {{
-            name: "past_key_values.{i}.encoder.value"
-            data_type: TYPE_FP16
-            dims: [-1, 8, -1, 64]
+            key: "past_key_values.{i}.encoder.value"
+            value: "past_key_values.{i}.encoder.value"
         }}
         """
             result.append(text)
-        decoder_inputs = ",\n".join(result)
+
+        decoder_past_keys_inputs = ",\n".join(result)
+        output_map_blocks = list()
+        for input_name in self.tensor_input_names:
+            output_map_text = f"""
+    {{
+        key: "{input_name}"
+        value: "{input_name}"
+    }}
+    """.strip()
+            output_map_blocks.append(output_map_text)
+
         return f"""
-{self._get_header(name=self.python_folder_name, backend="python")}
+    {self._get_header(name=self.inference_folder_name, platform="ensemble")}
 
-input [
+    input [
     {{
-        name: "input_ids"
-        data_type: TYPE_FP32
-        dims: [ -1, -1 ]
-    }},
-    {{
-        name: "encoder_hidden_states"
-        data_type: TYPE_FP32
-        dims: [ -1, -1, 512 ]
-    }},
-    {{
-        name: "enable_cache"
-        data_type: TYPE_BOOL
-        dims: [ 1 ]
-    }},
-    {decoder_inputs}
-]
+        name: "TEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
+    }}
+    ]
 
-output [
-    {{
+    output {{
         name: "logits"
         data_type: TYPE_FP32
-        dims: [ -1, -1, {self.vocab_size} ]
+        dims: {str(self.dim_output)}
     }}
-]
 
-{self._instance_group()}
-
-parameters: {{
-  key: "FORCE_CPU_ONLY_INPUT_TENSORS"
-  value: {{
-    string_value:"no"
-  }}
-}}
-""".strip()
+    ensemble_scheduling {{
+        step [
+            {{
+                model_name: "transformer_onnx_tokenize"
+                model_version: -1
+                input_map {{
+                    key: "TEXT"
+                    value: "TEXT"
+                }}
+                output_map {{
+                    key: "input_ids"
+                    value: "input_ids"
+                }}
+            }},
+            {{
+                model_name: "transformer_onnx_encoder"
+                model_version: -1
+                input_map {{
+                        key: "input_ids"
+                        value: "input_ids"
+                    }}
+                output_map {{
+                    key: "output"
+                    value: "encoder_hidden_states"
+                }}
+            }},
+            {{
+                model_name: "transformer_onnx_decoder"
+                model_version: -1
+                input_map [
+                {{
+                    key: "input_ids"
+                    value: "input_ids"
+                }},
+                {{
+                    key: "encoder_hidden_states"
+                    value: "encoder_hidden_states"
+                }},
+                {{
+                    key: "enable_cache"
+                    value: "enable_cache"
+                }},
+                {decoder_past_keys_inputs}
+                ]
+                output_map {{
+                    key: "logits"
+                    value: "logits"
+                }}
+            }}
+        ]
+    }}
+    """.strip()
 
     def get_model_conf(self) -> str:
         """
@@ -115,27 +152,28 @@ parameters: {{
             text = f"""
         {{
             name: "past_key_values.{i}.decoder.key"
-            data_type: TYPE_FP16
+            data_type: TYPE_FP32
             dims: [-1, 8, -1, 64]
         }},
         {{
             name: "past_key_values.{i}.decoder.value"
-            data_type: TYPE_FP16
+            data_type: TYPE_FP32
             dims: [-1, 8, -1, 64]
         }},
         {{
             name: "past_key_values.{i}.encoder.key"
-            data_type: TYPE_FP16
+            data_type: TYPE_FP32
             dims: [-1, 8, -1, 64]
         }},
         {{
             name: "past_key_values.{i}.encoder.value"
-            data_type: TYPE_FP16
+            data_type: TYPE_FP32
             dims: [-1, 8, -1, 64]
         }}
         """
             result.append(text)
-        decoder_inputs = ",\n".join(result)
+
+        decoder_past_keys_inputs = ",\n".join(result)
         return f"""
 name: "{self.model_folder_name}"
 max_batch_size: 0
@@ -145,7 +183,7 @@ default_model_filename: "model.bin"
 input [
     {{
         name: "input_ids"
-        data_type: TYPE_FP32
+        data_type: TYPE_INT32
         dims: [ -1, -1 ]
     }},
     {{
@@ -158,7 +196,7 @@ input [
         data_type: TYPE_BOOL
         dims: [ 1 ]
     }},
-    {decoder_inputs}
+    {decoder_past_keys_inputs}
 ]
 output [
     {{
@@ -177,7 +215,7 @@ output [
 
         wd_path = Path(self.working_dir)
         for path, conf_content in [
-            (wd_path.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_generation_conf()),
+            (wd_path.joinpath(self.model_folder_name).joinpath("config.pbtxt"), self.get_model_conf()),
             (wd_path.joinpath(self.python_folder_name).joinpath("config.pbtxt"), self.get_generation_conf()),
         ]:  # type: Path, str
             path.parent.mkdir(parents=True, exist_ok=True)

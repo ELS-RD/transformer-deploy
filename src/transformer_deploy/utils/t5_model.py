@@ -130,6 +130,6 @@ class TritonPythonModel:
                 input_ids = input_ids.to("cuda")
             output_seq: torch.Tensor = self.model.generate(input_ids, max_length=32)
             decoded_texts: List[str] = [self.tokenizer.decode(seq, skip_special_tokens=True) for seq in output_seq]
-            tensor_output = [pb_utils.Tensor("output", np.array(t, dtype=object)) for t in decoded_texts]
+            tensor_output = [pb_utils.Tensor("TEXT", np.array(t, dtype=object)) for t in decoded_texts]
             responses.append(pb_utils.InferenceResponse(tensor_output))
         return responses

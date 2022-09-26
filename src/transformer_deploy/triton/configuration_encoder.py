@@ -86,7 +86,7 @@ input [
 
 output {{
     name: "output"
-    data_type: TYPE_FP32
+    data_type: TYPE_INT32
     dims: {str(self.dim_output)}
 }}
 

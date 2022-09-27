@@ -52,6 +52,7 @@ setup(
     entry_points={
         "console_scripts": [
             "convert_model = transformer_deploy.convert:entrypoint",
+            "convert_t5_model = transformer_deploy.convert_t5:entrypoint"
         ],
     },
 )

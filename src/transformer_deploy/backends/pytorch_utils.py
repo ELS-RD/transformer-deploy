@@ -26,7 +26,7 @@ from transformer_deploy.backends.onnx_utils import save_onnx
 
 
 def infer_classification_pytorch(
-    model: PreTrainedModel, run_on_cuda: bool
+    model: PreTrainedModel, run_on_cuda: bool, generate_text: bool = False,
 ) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for classification task
@@ -36,13 +36,20 @@ def infer_classification_pytorch(
     """
 
     def infer(inputs: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        model_output = model(**inputs)  # noqa: F821
-        if "logits" in model_output:
-            model_output = model_output.logits.detach()
-        elif "start_logits" in model_output and "end_logits" in model_output:
-            start_logits = model_output.start_logits.detach()
-            end_logits = model_output.end_logits.detach()
-            model_output = (start_logits, end_logits)
+        model_output = model.generate(
+            **inputs,
+            min_length=10,
+            max_length=128,
+            num_beams=2,
+            no_repeat_ngram_size=2,
+        ) if generate_text else model(**inputs)  # noqa: F821
+        if type(model_output) == dict:
+            if "logits" in model_output:
+                model_output = model_output.logits.detach()
+            elif "start_logits" in model_output and "end_logits" in model_output:
+                start_logits = model_output.start_logits.detach()
+                end_logits = model_output.end_logits.detach()
+                model_output = (start_logits, end_logits)
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output

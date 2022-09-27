@@ -40,6 +40,8 @@ class Configuration(ABC):
 
     engine_type: Optional[EngineType]
     python_code: Optional[str]
+    num_layers: Optional[int]
+    vocab_size: Optional[int]
 
     def __init__(
         self,
@@ -172,6 +174,8 @@ output {{
         :param engine_type: type of inference engine (ONNX or TensorRT)
         """
         self.engine_type = engine_type
+        self.num_layers = config.num_layers
+        self.vocab_size = tokenizer.vocab_size
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)
         target.joinpath("model.py").write_text(self.python_code)

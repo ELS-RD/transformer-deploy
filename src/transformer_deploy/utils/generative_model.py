@@ -24,7 +24,7 @@ import numpy as np
 import torch
 from torch.nn import Module
 from transformers.generation_utils import GenerationMixin
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions, Seq2SeqLMOutput
 
 
 try:
@@ -59,6 +59,38 @@ class GPTModelWrapper(Module, GenerationMixin):
     def forward(self, input_ids, **_):
         logits = self.inference(input_ids)
         return CausalLMOutputWithCrossAttentions(logits=logits)
+
+
+class EncoderDecoderModelWrapper(Module, GenerationMixin):
+    def __init__(
+            self, config: PretrainedConfig, device: torch.device, encoder_inference: Callable, decoder_inference: Callable
+    ):
+        super().__init__()
+        self.config: PretrainedConfig = config
+        self.device: torch.device = device
+        self.encoder_inference = encoder_inference
+        self.decoder_inference = decoder_inference
+        self.main_input_name = "input_ids"  # https://github.com/huggingface/transformers/pull/14803
+
+    def get_encoder(self):
+        return self.encoder_inference
+
+    def get_decoder(self):
+        return self.decoder_inference
+
+    def prepare_inputs_for_generation(self, input_ids: torch.Tensor, **kwargs):
+        params = {
+            "encoder_hidden_states": kwargs["encoder_outputs"]["last_hidden_state"],
+            "input_ids": input_ids
+        }
+        return params
+
+    def forward(self, input_ids: torch.Tensor, encoder_hidden_states: torch.Tensor, **_, ):
+        logits = self.get_decoder()(
+            decoder_input_ids=input_ids,
+            encoder_hidden_states=encoder_hidden_states,
+        )
+        return Seq2SeqLMOutput(logits=logits) # Should be updated based on Decoder Output
 
 
 class TritonPythonModel:

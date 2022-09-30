@@ -106,7 +106,7 @@ def main(commands: argparse.Namespace):
         model_pytorch.cuda()
         input_ids = input_ids.to("cuda")
     # convert t5 model to onnx format
-    convert_t5_to_onnx(tokenizer=tokenizer, model_pytorch=model_pytorch, path_dir=commands.output, input_ids=input_ids)
+    """convert_t5_to_onnx(tokenizer=tokenizer, model_pytorch=model_pytorch, path_dir=commands.output, input_ids=input_ids)"""
 
     timings = {}
     inputs_pytorch: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = [{"input_ids": input_ids}]
@@ -156,7 +156,7 @@ def main(commands: argparse.Namespace):
             os.path.join(commands.output, "t5-encoder") + path for path in ["/model_fp16.onnx", "/model.onnx"]
         ]:
             optim_model_path = model_path[:-5] + "_optim.onnx"
-            optimize_onnx(
+            """optimize_onnx(
                 onnx_path=model_path,
                 onnx_optim_model_path=optim_model_path,
                 fp16=run_on_cuda,
@@ -164,7 +164,7 @@ def main(commands: argparse.Namespace):
                 num_attention_heads=num_attention_heads,
                 hidden_size=hidden_size,
                 architecture=model_config.model_type,
-            )
+            )"""
 
         ort_provider = "CUDAExecutionProvider" if run_on_cuda else "CPUExecutionProvider"
 

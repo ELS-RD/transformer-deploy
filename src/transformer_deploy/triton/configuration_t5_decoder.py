@@ -39,105 +39,29 @@ class ConfigurationT5Decoder(Configuration):
         Generate sequence configuration.
         :return: Generate sequence configuration
         """
-        result: List[str] = list()
-        for i in range(self.num_layers):
-            text = f"""
-        {{
-            key: "past_key_values.{i}.decoder.key"
-            value: "past_key_values.{i}.decoder.key"
-        }},
-        {{
-            key: "past_key_values.{i}.decoder.value"
-            value: "past_key_values.{i}.decoder.value"
-        }},
-        {{
-            key: "past_key_values.{i}.encoder.key"
-            value: "past_key_values.{i}.encoder.key"
-        }},
-        {{
-            key: "past_key_values.{i}.encoder.value"
-            value: "past_key_values.{i}.encoder.value"
-        }}
-        """
-            result.append(text)
-
-        decoder_past_keys_inputs = ",\n".join(result)
-        output_map_blocks = list()
-        for input_name in self.tensor_input_names:
-            output_map_text = f"""
-    {{
-        key: "{input_name}"
-        value: "{input_name}"
-    }}
-    """.strip()
-            output_map_blocks.append(output_map_text)
-
         return f"""
-    {self._get_header(name=self.inference_folder_name, platform="ensemble")}
-    input [
-    {{
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }}
-    ]
-    output {{
-        name: "logits"
-        data_type: TYPE_FP32
-        dims: {str(self.dim_output)}
-    }}
-    ensemble_scheduling {{
-        step [
-            {{
-                model_name: "transformer_onnx_tokenize"
-                model_version: -1
-                input_map {{
-                    key: "TEXT"
-                    value: "TEXT"
-                }}
-                output_map {{
-                    key: "input_ids"
-                    value: "input_ids"
-                }}
-            }},
-            {{
-                model_name: "transformer_onnx_encoder"
-                model_version: -1
-                input_map {{
-                        key: "input_ids"
-                        value: "input_ids"
-                    }}
-                output_map {{
-                    key: "output"
-                    value: "encoder_hidden_states"
-                }}
-            }},
-            {{
-                model_name: "transformer_onnx_decoder"
-                model_version: -1
-                input_map [
-                {{
-                    key: "input_ids"
-                    value: "input_ids"
-                }},
-                {{
-                    key: "encoder_hidden_states"
-                    value: "encoder_hidden_states"
-                }},
-                {{
-                    key: "enable_cache"
-                    value: "enable_cache"
-                }},
-                {decoder_past_keys_inputs}
-                ]
-                output_map {{
-                    key: "logits"
-                    value: "logits"
-                }}
-            }}
-        ]
-    }}
-    """.strip()
+    {self._get_header(name=self.inference_folder_name, backend="python")}
+input [
+{{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
+]
+output {{
+    name: "OUTPUT_TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
+{self._instance_group()}
+
+parameters: {{
+  key: "FORCE_CPU_ONLY_INPUT_TENSORS"
+  value: {{
+    string_value:"no"
+  }}
+}}
+""".strip()
 
     def get_model_conf(self) -> str:
         """

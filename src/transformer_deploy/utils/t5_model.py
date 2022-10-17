@@ -86,7 +86,12 @@ class ExtT5Triton(torch.nn.Module, GenerationMixin):
                 decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.decoder.value", torch.to_dlpack(v_dec)))
                 decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.encoder.key", torch.to_dlpack(k_enc)))
                 decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.encoder.value", torch.to_dlpack(v_enc)))
-
+        else:
+            for index in range(num_layers):
+                decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.decoder.key", torch.to_dlpack(torch.zeros(size=(decoder_input_ids.size()[0], 8, 100, 64), dtype=decoder_input_ids.type(), device="cuda"))))
+                decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.decoder.value", torch.to_dlpack(torch.zeros(size=(decoder_input_ids.size()[0], 8, 100, 64), dtype=decoder_input_ids.type(), device="cuda"))))
+                decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.encoder.key", torch.to_dlpack(torch.zeros(size=(decoder_input_ids.size()[0], 8, 10, 64), dtype=decoder_input_ids.type(), device="cuda"))))
+                decoder_inputs.append(pb_utils.Tensor.from_dlpack(f"past_key_values.{index}.encoder.value", torch.to_dlpack(torch.zeros(size=(decoder_input_ids.size()[0], 8, 10, 64), dtype=decoder_input_ids.type(), device="cuda"))))
         decoder_inference_request = pb_utils.InferenceRequest(
             model_name=self.decoder_name, requested_output_names=["logits"], inputs=decoder_inputs
         )

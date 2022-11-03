@@ -15,7 +15,7 @@
 """
 Utils related to Pytorch inference.
 """
-from typing import Callable, Dict, List, Tuple, Union, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import onnx
 import torch

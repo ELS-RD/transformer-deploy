@@ -15,7 +15,7 @@
 """
 Utils related to Pytorch inference.
 """
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import onnx
 import torch
@@ -69,13 +69,14 @@ def infer_feature_extraction_pytorch(
     return infer
 
 
-def get_model_size(path: str) -> Tuple[int, int]:
+def get_model_size(path: str, auth_token: Optional[str] = None) -> Tuple[int, int]:
     """
     Find number of attention heads and hidden layer size of a model
     :param path: path to model
+    :param auth_token: auth token to access model
     :return: tupple of # of attention heads and hidden layer size (0 if not found)
     """
-    config = AutoConfig.from_pretrained(pretrained_model_name_or_path=path)
+    config = AutoConfig.from_pretrained(pretrained_model_name_or_path=path, use_auth_token=auth_token)
     num_attention_heads = getattr(config, "num_attention_heads", 0)
     hidden_size = getattr(config, "hidden_size", 0)
     return num_attention_heads, hidden_size

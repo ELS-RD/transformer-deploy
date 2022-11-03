@@ -350,7 +350,7 @@ def main(commands: argparse.Namespace):
         )
 
     if "onnx" in commands.backend:
-        num_attention_heads, hidden_size = get_model_size(path=commands.model)
+        num_attention_heads, hidden_size = get_model_size(path=commands.model, auth_token=auth_token)
         # create optimized onnx model and compare results
         optimize_onnx(
             onnx_path=onnx_model_path,

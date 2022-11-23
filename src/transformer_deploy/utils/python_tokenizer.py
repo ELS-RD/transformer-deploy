@@ -29,11 +29,12 @@ try:
 except ImportError:
     pass  # triton_python_backend_utils exists only inside Triton Python backend.
 
-from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType
+from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType, AutoConfig
 
 
 class TritonPythonModel:
     tokenizer: PreTrainedTokenizer
+    model_input_names: List[str]
 
     def initialize(self, args: Dict[str, str]) -> None:
         """
@@ -44,6 +45,13 @@ class TritonPythonModel:
 
         path: str = str(Path(args["model_repository"]).parent.absolute())
         self.tokenizer = AutoTokenizer.from_pretrained(path)
+        model_config = AutoConfig.from_pretrained(path)
+        self.model_input_names = self.tokenizer.model_input_names
+        if hasattr(model_config, "type_vocab_size") and model_config.type_vocab_size == 0:
+            try:
+                self.model_input_names.remove("token_type_ids")
+            except ValueError:
+                pass
 
     def execute(self, requests) -> "List[List[pb_utils.Tensor]]":
         """
@@ -63,7 +71,7 @@ class TritonPythonModel:
             tokens_dict = {k: v.astype(np.int32) for k, v in tokens.items()}
             # communicate the tokenization results to Triton server
             outputs = list()
-            for input_name in self.tokenizer.model_input_names:
+            for input_name in self.model_input_names:
                 tensor_input = pb_utils.Tensor(input_name, tokens_dict[input_name])
                 outputs.append(tensor_input)
 

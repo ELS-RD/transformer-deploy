@@ -29,7 +29,7 @@ try:
 except ImportError:
     pass  # triton_python_backend_utils exists only inside Triton Python backend.
 
-from transformers import AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType, AutoConfig
+from transformers import AutoConfig, AutoTokenizer, BatchEncoding, PreTrainedTokenizer, TensorType
 
 
 class TritonPythonModel:

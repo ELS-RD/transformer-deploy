@@ -372,7 +372,7 @@ def convert_t5_to_onnx(
 
     def get_random_input_cache() -> Dict[str, torch.Tensor]:
         inputs = get_random_input_no_cache()
-        inputs["enable_cache"] = torch.tensor([False], device="cuda")
+        inputs["enable_cache"] = torch.tensor([0], device="cuda", dtype=torch.int32)
         decoder_past_states = inference_onnx_binding(
             model_onnx=decoder_if_ort_model,
             inputs=inputs,
@@ -387,7 +387,7 @@ def convert_t5_to_onnx(
         batch, _ = inputs["input_ids"].shape
         complement = torch.randint(low=0, high=vocab_size, size=(batch, 1), dtype=torch.int32, device="cuda")
         inputs["input_ids"] = torch.concat(tensors=[inputs["input_ids"], complement], dim=1)
-        inputs["enable_cache"] = torch.tensor([True], device="cuda")
+        inputs["enable_cache"] = torch.tensor([1], device="cuda", dtype=torch.int32)
         return inputs
 
     keep_fp32_cache = search_fp32_nodes(
@@ -464,7 +464,7 @@ def convert_t5_to_onnx(
     out_decoder_onnx_no_cache = decoder_onnx_inference(
         decoder_input_ids=input_ids,
         encoder_hidden_states=out_encoder_pytorch.last_hidden_state.half(),
-        enable_cache=torch.tensor([False], device="cuda", dtype=torch.bool),
+        enable_cache=torch.tensor([0], device="cuda", dtype=torch.int32),
         past_key_values=None,
         decoder_onnx=decoder_onnx,
         num_layers=model_pytorch.config.num_layers,
@@ -491,7 +491,7 @@ def convert_t5_to_onnx(
     out_decoder_onnx_cache = decoder_onnx_inference(
         decoder_input_ids=input_ids[:, -1:],
         encoder_hidden_states=out_encoder_pytorch.last_hidden_state,
-        enable_cache=torch.tensor([True], device="cuda", dtype=torch.bool),
+        enable_cache=torch.tensor([1], device="cuda", dtype=torch.int32),
         past_key_values=previous_step_pytorch.past_key_values,
         decoder_onnx=decoder_onnx,
         num_layers=model_pytorch.config.num_layers,

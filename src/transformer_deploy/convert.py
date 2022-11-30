@@ -66,7 +66,6 @@ from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
-from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
 from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs, get_triton_output_shape

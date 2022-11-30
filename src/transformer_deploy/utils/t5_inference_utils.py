@@ -143,10 +143,10 @@ class ExtT5(torch.nn.Module, GenerationMixin):
             past = None
         if past is None:
             params[self.main_input_name] = input_ids
-            params["enable_cache"] = torch.tensor([False], device="cuda", dtype=torch.bool)
+            params["enable_cache"] = torch.tensor([0], device="cuda", dtype=torch.int32)
         else:
             params[self.main_input_name] = input_ids[:, -1:]
-            params["enable_cache"] = torch.tensor([True], device="cuda", dtype=torch.bool)
+            params["enable_cache"] = torch.tensor([1], device="cuda", dtype=torch.int32)
             params["past_key_values"] = past
 
         return params

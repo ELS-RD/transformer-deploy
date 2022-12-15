@@ -1,5 +1,6 @@
 import gc
 import os
+import random
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -21,10 +22,10 @@ from transformer_deploy.backends.ort_utils import (
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
 from transformer_deploy.backends.trt_utils import TensorRTShape
+from transformer_deploy.t5_utils.t5_inference_utils import ExportT5, ExtT5
 from transformer_deploy.triton.configuration import EngineType
-from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
-from transformer_deploy.triton.configuration_t5_decoder import ConfigurationT5Decoder
-from transformer_deploy.utils.t5_inference_utils import ExportT5, ExtT5
+from transformer_deploy.triton.configuration_t5 import ConfigurationT5Decoder, ConfigurationT5Encoder
+
 
 fp16_default_tolerance = 0.1
 
@@ -120,9 +121,9 @@ def export_t5_decoder_to_onnx(
             opset_version=13,
         )
 
-    del model_pytorch, model_decoder, encoder_outputs
-    torch.cuda.empty_cache()
-    gc.collect()
+    # del model_pytorch, model_decoder, encoder_outputs
+    # torch.cuda.empty_cache()
+    # gc.collect()
 
 
 def decoder_pytorch_inference(decoder_input_ids: torch.Tensor, encoder_hidden_states: torch.Tensor, model_decoder, **_):
@@ -131,7 +132,7 @@ def decoder_pytorch_inference(decoder_input_ids: torch.Tensor, encoder_hidden_st
 
 
 def are_equal(a: torch.Tensor, b: torch.Tensor, atol: float = fp16_default_tolerance) -> None:
-    assert True
+    assert np.allclose(a=a.detach().cpu().numpy(), b=b.detach().cpu().numpy(), atol=atol), f"{a}\n\nVS\n\n{b}"
 
 
 def prepare_folder(path: str) -> Tuple[str, str]:
@@ -139,34 +140,6 @@ def prepare_folder(path: str) -> Tuple[str, str]:
     p.mkdir(parents=True, exist_ok=True)
     [item.unlink() for item in Path(path).glob("*") if item.is_file()]
     return path + "/model.onnx", path + "/model_fp16.onnx"
-
-
-def get_random_input_encoder() -> Dict[str, torch.Tensor]:
-    import random
-
-    max_seq = 128
-    seq_len = random.randint(a=1, b=max_seq)
-    batch = max_seq // seq_len
-    random_input_ids = torch.randint(low=0, high=13200, size=(batch, seq_len), dtype=torch.int32, device="cuda")
-    inputs = {"input_ids": random_input_ids}
-    return inputs
-
-
-def get_random_input_no_cache() -> Dict[str, torch.Tensor]:
-    inputs = get_random_input_encoder()
-    encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
-    encoder_fp16_onnx_binding: IOBinding = encoder_fp16_onnx.io_binding()
-    encoder_hidden_states = inference_onnx_binding(
-        model_onnx=encoder_fp16_onnx,
-        binding=encoder_fp16_onnx_binding,
-        inputs=inputs,
-        device="cuda",
-        clone_tensor=False,
-    )["output"]
-    # it will serve as input of a FP32 model
-    inputs["encoder_hidden_states"] = encoder_hidden_states.type(torch.float32)
-    # del encoder_fp16_onnx
-    return inputs
 
 
 def decoder_onnx_inference(
@@ -215,10 +188,8 @@ def decoder_onnx_inference(
 def convert_t5_to_onnx(
     tokenizer: PreTrainedTokenizer, model_pytorch: torch.nn.Module, input_ids: torch.Tensor, path_dir: str
 ):
-    global vocab_size
-    global encoder_fp16_model_path
-    global decoder_if_model_path
     vocab_size = tokenizer.vocab_size
+    model_pytorch.config.use_cache = True
     # prepare sub-folders for t5 onnx models (encoder and decoders)
     encoder_model_path, encoder_fp16_model_path = prepare_folder(path=os.path.join(path_dir, "t5-encoder"))
     decoder_cache_model_path, decoder_cache_fp16_model_path = prepare_folder(
@@ -255,9 +226,87 @@ def convert_t5_to_onnx(
         input_ids=input_ids, encoder_hidden_states=encoder_outputs.last_hidden_state
     )
     are_equal(a=out_model_export["last_hidden_state"], b=t5_outputs.logits)
+    out_decoder_pytorch = model_decoder(
+        input_ids=input_ids[:, :-1], encoder_hidden_states=encoder_outputs.last_hidden_state
+    )
+    model_inputs = {
+        "input_ids": input_ids[:, -1:].type(torch.int32),
+        "encoder_hidden_states": encoder_outputs.last_hidden_state,
+        "past_key_values": out_decoder_pytorch.past_key_values,
+    }
+    input_names = ["input_ids", "encoder_hidden_states"]
+    num_layers = model_pytorch.config.num_layers
+
+    for i in range(num_layers):
+        input_names.append(f"past_key_values.{i}.decoder.key")
+        input_names.append(f"past_key_values.{i}.decoder.value")
+        input_names.append(f"past_key_values.{i}.encoder.key")
+        input_names.append(f"past_key_values.{i}.encoder.value")
+
+    output_names = ["logits"]
+
+    for i in range(num_layers):
+        output_names.append(f"present.{i}.decoder.key")
+        output_names.append(f"present.{i}.decoder.value")
+        output_names.append(f"present.{i}.encoder.key")
+        output_names.append(f"present.{i}.encoder.value")
+
+    dynamic_axis = {
+        "input_ids": {0: "batch", 1: "encoder_sequence"},
+        "encoder_hidden_states": {0: "batch", 1: "encoder_sequence"},
+        "logits": {0: "batch", 1: "decoder_sequence"},
+    }
+
+    for i in range(num_layers):
+        dynamic_axis[f"past_key_values.{i}.decoder.key"] = {0: "batch", 2: "past_decoder_sequence"}
+        dynamic_axis[f"past_key_values.{i}.decoder.value"] = {0: "batch", 2: "past_decoder_sequence"}
+        dynamic_axis[f"past_key_values.{i}.encoder.key"] = {0: "batch", 2: "encoder_sequence_length"}
+        dynamic_axis[f"past_key_values.{i}.encoder.value"] = {0: "batch", 2: "encoder_sequence_length"}
+
+        dynamic_axis[f"present.{i}.decoder.key"] = {0: "batch", 2: "decoder_sequence"}
+        dynamic_axis[f"present.{i}.decoder.value"] = {0: "batch", 2: "decoder_sequence"}
+        dynamic_axis[f"present.{i}.encoder.key"] = {0: "batch", 2: "encoder_sequence_length"}
+        dynamic_axis[f"present.{i}.encoder.value"] = {0: "batch", 2: "encoder_sequence_length"}
+
+    # Export of the model with cache support
+    with torch.no_grad():
+        model_pytorch.config.return_dict = True
+        model_pytorch.eval()
+        torch.onnx.export(
+            model_decoder,
+            (model_inputs,),
+            f=decoder_cache_model_path,
+            input_names=input_names,
+            output_names=output_names,
+            dynamic_axes=dynamic_axis,
+            do_constant_folding=True,
+            opset_version=13,
+        )
+    # Export of the model without cache support
+    model_inputs_no_cache = {
+        "input_ids": input_ids,
+        "encoder_hidden_states": encoder_outputs.last_hidden_state,
+    }
+
+    with torch.no_grad():
+        model_pytorch.config.return_dict = True
+        model_pytorch.eval()
+        torch.onnx.export(
+            model_decoder,
+            (model_inputs_no_cache,),
+            f=decoder_no_cache_model_path,
+            input_names=list(model_inputs_no_cache.keys()),
+            output_names=output_names,
+            dynamic_axes={k: v for k, v in dynamic_axis.items() if "past_key_values" not in k},
+            do_constant_folding=True,
+            opset_version=13,
+        )
+
+    """
     export_t5_decoder_to_onnx(
         model_pytorch, model_decoder, decoder_cache_model_path, decoder_no_cache_model_path, input_ids, encoder_outputs
     )
+    """
     # II. Conversion to mixed precision
     # 1. Convert encoder part
     """
@@ -266,6 +315,15 @@ def convert_t5_to_onnx(
     and perform some cleaning. To finish, we provide the list of nodes to keep in FP32 to the
     conversion function.
     """
+
+    def get_random_input_encoder() -> Dict[str, torch.Tensor]:
+        max_seq = 128
+        seq_len = random.randint(a=1, b=max_seq)
+        batch = max_seq // seq_len
+        random_input_ids = torch.randint(low=0, high=13200, size=(batch, seq_len), dtype=torch.int32, device="cuda")
+        inputs = {"input_ids": random_input_ids}
+        return inputs
+
     keep_fp32_encoder = get_keep_fp32_nodes(onnx_model_path=encoder_model_path, get_input=get_random_input_encoder)
     assert len(keep_fp32_encoder) > 0
     encoder_model_onnx = convert_fp16(onnx_model=encoder_model_path, nodes_to_exclude=keep_fp32_encoder)
@@ -284,10 +342,26 @@ def convert_t5_to_onnx(
         inputs={"input_ids": input_ids},
         device=input_ids.device.type,
     )["output"]
-    are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
+    # are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
 
     # 2. Convert decoder part
     # Conversion of the decoder module without cache support
+    def get_random_input_no_cache() -> Dict[str, torch.Tensor]:
+        inputs = get_random_input_encoder()
+        encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
+        encoder_fp16_onnx_binding: IOBinding = encoder_fp16_onnx.io_binding()
+        encoder_hidden_states = inference_onnx_binding(
+            model_onnx=encoder_fp16_onnx,
+            binding=encoder_fp16_onnx_binding,
+            inputs=inputs,
+            device="cuda",
+            clone_tensor=False,
+        )["output"]
+        # it will serve as input of a FP32 model
+        inputs["encoder_hidden_states"] = encoder_hidden_states.type(torch.float32)
+        # del encoder_fp16_onnx
+        return inputs
+
     keep_fp32_no_cache = get_keep_fp32_nodes(
         onnx_model_path=decoder_no_cache_model_path, get_input=get_random_input_no_cache
     )
@@ -530,7 +604,7 @@ def convert_t5_to_onnx(
         print("text generated by ONNX:")
         onnx_tokens = model_gen.generate(
             inputs=input_ids.to("cuda"),
-            min_length=10,
+            min_length=128,
             max_length=128,
             num_beams=2,
             no_repeat_ngram_size=2,
@@ -561,7 +635,7 @@ def create_triton_configs(
     output: str,
     device: str,
 ):
-    conf_class = ConfigurationEnc
+    conf_class = ConfigurationT5Encoder
     triton_encoder_conf = conf_class(
         model_name_base="t5-encoder",
         dim_output=get_triton_output_shape(

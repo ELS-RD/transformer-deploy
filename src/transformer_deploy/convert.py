@@ -22,6 +22,7 @@ import argparse
 import gc
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Type, Union
 
@@ -62,13 +63,13 @@ from transformer_deploy.benchmarks.utils import (
     to_numpy,
     track_infer_time,
 )
+from transformer_deploy.t5_utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs, get_triton_output_shape
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
 from transformer_deploy.utils.args import parse_args
-from transformer_deploy.utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs, get_triton_output_shape
 
 
 def check_accuracy(
@@ -305,7 +306,7 @@ def main(commands: argparse.Namespace):
             from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
 
             from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
-            from transformer_deploy.utils.t5_utils import prepare_input_shapes_tensorrt_decoder
+            from transformer_deploy.t5_utils import prepare_input_shapes_tensorrt_decoder
 
         except ImportError:
             raise ImportError(
@@ -461,18 +462,19 @@ def main(commands: argparse.Namespace):
             cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)
 
         ort_provider = "CUDAExecutionProvider" if run_on_cuda else "CPUExecutionProvider"
-        for provider, is_optimized, benchmark_name in [
+        for provider, is_fp16, benchmark_name in [
             (ort_provider, False, "ONNX Runtime (FP32)"),
-            (ort_provider, True, "ONNX Runtime (optimized)"),
+            (ort_provider, True, "ONNX Runtime (FP16)"),
         ]:
             logging.info("preparing %s benchmark", benchmark_name)
-            torch_type = torch.float16 if is_optimized else torch.float32
+            torch_type = torch.float16 if is_fp16 else torch.float32
             if commands.generative_model == "t5":
+                input_ids.to("cuda")
                 encoder_path = os.path.join(commands.output, "t5-encoder") + (
-                    "/model_fp16_optim.onnx" if is_optimized else "/model.onnx"
+                    "/model_fp16.onnx" if is_fp16 else "/model.onnx"
                 )
                 decoder_path = os.path.join(commands.output, "t5-dec-if-node") + (
-                    "/model_fp16.onnx" if is_optimized else "/model.onnx"
+                    "/model_fp16.onnx" if is_fp16 else "/model.onnx"
                 )
                 ort_model = (
                     ExtT5(
@@ -486,18 +488,17 @@ def main(commands: argparse.Namespace):
                     .eval()
                 )
                 # warmup generative model:
-                [
-                    ort_model.generate(
-                        inputs=input_ids.to("cuda"),
-                        min_length=commands.seq_len[2],
-                        max_length=commands.seq_len[2],
-                        num_beams=2,
-                        no_repeat_ngram_size=2,
-                    )
-                    for _ in range(5)
-                ]
+                timings_test = list()
+                for _ in range(5):
+                    _ = ort_model.get_encoder()(input_ids)
+                    ort_model.generate(inputs=input_ids, max_length=128, num_beams=2, min_length=128)
+                for _ in range(5):
+                    time_start = time.monotonic()
+                    ort_model.generate(inputs=input_ids, max_length=128, num_beams=2, min_length=128)
+                    timings_test.append(time.monotonic() - time_start)
+                print_timings("warmup", timings_test)
             else:
-                model_path = onnx_model_path if is_optimized else onnx_optim_model_path
+                model_path = onnx_model_path if is_fp16 else onnx_optim_model_path
                 ort_model = create_model_for_provider(
                     path=model_path,
                     provider_to_use=provider,
@@ -509,11 +510,10 @@ def main(commands: argparse.Namespace):
                     inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
                     if commands.generative_model != "t5"
                     else ort_model.generate(
-                        inputs=input_ids.to("cuda"),
-                        min_length=commands.seq_len[2],
-                        max_length=commands.seq_len[2],
+                        inputs=inputs,
+                        min_length=256,
+                        max_length=256,
                         num_beams=2,
-                        no_repeat_ngram_size=2,
                     )[0]
                 )
                 if commands.generative_model == "t5":
@@ -526,11 +526,20 @@ def main(commands: argparse.Namespace):
             logging.info("running %s benchmark", benchmark_name)
             inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
             [
-                inputs.append({key: value.type(torch_type)})
+                inputs.append({key: torch.tensor(value, dtype=torch.int32, device="cuda")})
                 for input_pytorch in inputs_pytorch
                 for key, value in input_pytorch.items()
             ]
-            ort_output, time_buffer = launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures)
+            text_test = ort_model.generate(
+                inputs=input_ids,
+                min_length=256,
+                max_length=256,
+                num_beams=2,
+            )[0]
+            print(tokenizer.decode(text_test, skip_special_tokens=True, clean_up_tokenization_spaces=True))
+            ort_output, time_buffer = launch_inference(
+                infer=infer_ort, inputs=[inputs[0]["input_ids"]], nb_measures=commands.nb_measures
+            )
             """check_accuracy(
                 engine_name=benchmark_name,
                 pytorch_output=pytorch_output[0] if commands.generative_model == "t5" else pytorch_output,

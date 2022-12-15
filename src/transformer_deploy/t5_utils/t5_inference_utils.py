@@ -8,10 +8,7 @@ from transformers.generation_utils import GenerationMixin
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
 from transformers.models.t5.modeling_t5 import T5Stack
 
-from transformer_deploy.backends.ort_utils import (
-    create_model_for_provider,
-    inference_onnx_binding,
-)
+from transformer_deploy.backends.ort_utils import create_model_for_provider, inference_onnx_binding
 
 
 class ExportT5(torch.nn.Module):
@@ -169,4 +166,3 @@ class ExtT5(torch.nn.Module, GenerationMixin):
         )
         self.timings.append(time.monotonic() - start_timer)
         return Seq2SeqLMOutput(logits=dec_output.last_hidden_state, past_key_values=dec_output.past_key_values)
-

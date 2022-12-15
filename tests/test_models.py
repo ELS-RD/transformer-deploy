@@ -246,3 +246,26 @@ def test_qa_gpu():
     ]
     args = parse_args(commands=commands)
     main(commands=args)
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
+def test_t5_gpu():
+    commands = [
+        "--model",
+        "t5-small",
+        "--task",
+        "text-generation",
+        "--backend",
+        "onnx",
+        "--seq-len",
+        "16",
+        "16",
+        "16",
+        "--output",
+        tempfile.mkdtemp(),
+        "--generative-model",
+        "t5",
+        "--nb-measures",
+        "5"
+    ]
+    args = parse_args(commands=commands)
+    main(commands=args)

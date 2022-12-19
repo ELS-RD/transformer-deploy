@@ -1,6 +1,8 @@
 import json
 import struct
 
+import requests
+
 
 text: str = "My name is Wolfgang and I live in Berlin"
 
@@ -39,7 +41,6 @@ curl -X POST  http://localhost:8000/v2/models/t5-dec-if-node_onnx_generate/versi
   --header "Inference-Header-Content-Length: {len(json.dumps(request_data).encode())}"
 """
 print(curl)
-import requests
 
 
 res = requests.post(

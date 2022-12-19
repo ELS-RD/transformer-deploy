@@ -247,6 +247,7 @@ def test_qa_gpu():
     args = parse_args(commands=commands)
     main(commands=args)
 
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_t5_gpu():
     commands = [
@@ -265,7 +266,7 @@ def test_t5_gpu():
         "--generative-model",
         "t5",
         "--nb-measures",
-        "5"
+        "5",
     ]
     args = parse_args(commands=commands)
     main(commands=args)

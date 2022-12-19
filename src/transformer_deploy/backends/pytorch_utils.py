@@ -26,24 +26,17 @@ from transformer_deploy.backends.onnx_utils import save_onnx
 
 
 def infer_classification_pytorch(
-    model: PreTrainedModel, run_on_cuda: bool, generate_text: bool = False
+    model: PreTrainedModel, run_on_cuda: bool
 ) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
     """
     Perform Pytorch inference for classification task
     :param model: Pytorch model (transformers)
     :param run_on_cuda: True if should be ran on GPU
-    :param generate_text: True if we are testing a generative model (T5 model)
     :return: a function to perform inference
     """
 
     def infer(inputs: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        if generate_text:
-            model_outputs = model.generate(inputs=inputs["input_ids"], max_length=256, num_beams=1, min_length=256)
-            if run_on_cuda:
-                torch.cuda.synchronize()
-            return model_outputs
-        else:
-            model_output = model(**inputs)  # noqa: F821
+        model_output = model(**inputs)  # noqa: F821
         if "logits" in model_output:
             model_output = model_output.logits.detach()
         elif "start_logits" in model_output and "end_logits" in model_output:
@@ -53,6 +46,25 @@ def infer_classification_pytorch(
         if run_on_cuda:
             torch.cuda.synchronize()
         return model_output
+
+    return infer
+
+
+def infer_text_generation(
+    model: PreTrainedModel, run_on_cuda: bool
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
+    """
+    Perform Pytorch inference for T5 text generation task
+    :param model: Text generation model
+    :param run_on_cuda: True if should be ran on GPU
+    :return: a function to perform inference
+    """
+
+    def infer(inputs: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        model_outputs = model.generate(inputs=inputs["input_ids"], max_length=256, num_beams=1, min_length=256)
+        if run_on_cuda:
+            torch.cuda.synchronize()
+        return model_outputs
 
     return infer
 

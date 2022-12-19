@@ -22,7 +22,6 @@ import argparse
 import gc
 import logging
 import os
-import time
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Type, Union
 
@@ -53,6 +52,7 @@ from transformer_deploy.backends.pytorch_utils import (
     get_model_size,
     infer_classification_pytorch,
     infer_feature_extraction_pytorch,
+    infer_text_generation,
 )
 from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
 from transformer_deploy.benchmarks.utils import (
@@ -63,7 +63,13 @@ from transformer_deploy.benchmarks.utils import (
     to_numpy,
     track_infer_time,
 )
-from transformer_deploy.t5_utils.t5_utils import ExtT5, convert_t5_to_onnx, create_triton_configs, get_triton_output_shape
+from transformer_deploy.t5_utils.t5_utils import (
+    ExtT5,
+    convert_t5_to_onnx,
+    create_triton_configs,
+    get_triton_output_shape,
+    onnx_to_tensorrt_model,
+)
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
@@ -131,31 +137,34 @@ def main(commands: argparse.Namespace):
     torch.cuda.empty_cache()
     setup_logging(level=logging.INFO if commands.verbose else logging.WARNING)
     logging.info("running with commands: %s", commands)
+    # set seeds:
+    torch.manual_seed(commands.seed)
+    np.random.seed(commands.seed)
+    torch.set_num_threads(commands.nb_threads)
+    # set device
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
         logging.warning("having different sequence lengths may make TensorRT slower")
-
-    torch.manual_seed(commands.seed)
-    np.random.seed(commands.seed)
-    torch.set_num_threads(commands.nb_threads)
     if commands.device is None:
         commands.device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    run_on_cuda: bool = commands.device.startswith("cuda")
+    if run_on_cuda:
+        assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
+    # set authentication
     if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True
     elif isinstance(commands.auth_token, str):
         auth_token = commands.auth_token
     else:
         auth_token = None
-    run_on_cuda: bool = commands.device.startswith("cuda")
+
     Path(commands.output).mkdir(parents=True, exist_ok=True)
-    tensorrt_path = os.path.join(commands.output, "model.plan")
-    if run_on_cuda:
-        assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
     tokenizer_path = commands.tokenizer if commands.tokenizer else commands.model
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_auth_token=auth_token)
-    model_config: PretrainedConfig = AutoConfig.from_pretrained(pretrained_model_name_or_path=commands.model)
+    model_config: PretrainedConfig = AutoConfig.from_pretrained(
+        pretrained_model_name_or_path=commands.model, use_auth_token=auth_token
+    )
     input_names: List[str] = tokenizer.model_input_names
     if commands.task == "embedding":
         model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
@@ -177,20 +186,26 @@ def main(commands: argparse.Namespace):
     logging.info(f"axis: {input_names}")
 
     model_pytorch.eval()
-    tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
-
     if run_on_cuda:
         model_pytorch.cuda()
+
+    tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # create onnx model and compare results
-    inputs_pytorch: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
     if commands.task == "text-generation" and commands.generative_model == "t5":
         input_ids: torch.Tensor = tokenizer(
-            'translate English to French: Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in natural language processing (NLP). The effectiveness of transfer learning has given rise to a diversity of approaches, methodology, and practice. In this paper, we explore the landscape of transfer learning techniques for NLP by introducing a unified framework that converts all text-based language problems into a text-to-text format. Our systematic study compares pre-training objectives, architectures, unlabeled data sets, transfer approaches, and other factors on dozens of language understanding tasks. By combining the insights from our exploration with scale and our new "Colossal Clean Crawled Corpus", we achieve state-of-the-art results on many benchmarks covering summarization, question answering, text classification, and more. To facilitate future work on transfer learning for NLP, we release our data set, pre-trained models, and code.',
+            "translate English to French: Transfer learning, where a model is first pre-trained "
+            "on a data-rich task before being fine-tuned on a downstream task, has emerged as a "
+            "powerful technique in natural language processing (NLP). The effectiveness of transfer "
+            "learning has given rise to a diversity of approaches, methodology, and practice. "
+            "In this paper, we explore the landscape of transfer learning techniques for NLP by "
+            "introducing a unified framework that converts all text-based language problems into "
+            "a text-to-text format.nd more.",
             return_tensors=TensorType.PYTORCH,
         ).input_ids
         input_ids = input_ids.type(torch.int32)
-        input_ids = input_ids.to("cuda")
-        inputs_pytorch.append({"input_ids": input_ids})
+        if run_on_cuda:
+            input_ids = input_ids.to("cuda")
+        inputs_pytorch: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = [{"input_ids": input_ids}]
         convert_t5_to_onnx(
             tokenizer=tokenizer,
             model_pytorch=model_pytorch,
@@ -219,42 +234,20 @@ def main(commands: argparse.Namespace):
     timings = {}
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
-        if commands.generative_model == "t5":
-            return infer_classification_pytorch(model=model, run_on_cuda=cuda, generate_text=True)
+        if task == "text-generation" and commands.generative_model == "t5":
+            return infer_text_generation(model=model, run_on_cuda=cuda)
         if task in ["classification", "text-generation", "token-classification", "question-answering"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
             return infer_feature_extraction_pytorch(model=model, run_on_cuda=cuda)
         raise Exception(f"unknown task: {task}")
 
-    if run_on_cuda:
-        model_pytorch = model_pytorch.to("cuda")
     with torch.inference_mode():
         logging.info("running Pytorch (FP32) benchmark")
         pytorch_output, time_buffer = launch_inference(
             infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
             inputs=inputs_pytorch,
             nb_measures=commands.nb_measures,
-        )
-        if commands.task == "text-generation":
-            conf_class: Type[Configuration] = ConfigurationDec
-        elif commands.task == "token-classification":
-            conf_class: Type[Configuration] = ConfigurationTokenClassifier
-        elif commands.task == "question-answering":
-            conf_class: Type[Configuration] = ConfigurationQuestionAnswering
-        else:
-            conf_class = ConfigurationEnc
-
-        triton_conf = conf_class(
-            model_name_base=commands.name,
-            dim_output=get_triton_output_shape(
-                output=pytorch_output[0] if type(pytorch_output[0]) == torch.Tensor else pytorch_output[0][0],
-                task=commands.task,
-            ),
-            nb_instance=commands.nb_instances,
-            tensor_input_names=input_names,
-            working_directory=commands.output,
-            device=commands.device,
         )
         timings["Pytorch (FP32)"] = time_buffer
         if run_on_cuda and not commands.fast:
@@ -292,6 +285,29 @@ def main(commands: argparse.Namespace):
                 tolerance=commands.atol,
             )
             timings[engine_name] = time_buffer
+
+    # create triton conf for models different from T5
+    if commands.generative_model != "t5":
+        if commands.task == "text-generation" and commands.generative_model == "gpt":
+            conf_class: Type[Configuration] = ConfigurationDec
+        elif commands.task == "token-classification":
+            conf_class: Type[Configuration] = ConfigurationTokenClassifier
+        elif commands.task == "question-answering":
+            conf_class: Type[Configuration] = ConfigurationQuestionAnswering
+        else:
+            conf_class = ConfigurationEnc
+
+        triton_conf = conf_class(
+            model_name_base=commands.name,
+            dim_output=get_triton_output_shape(
+                output=pytorch_output[0] if type(pytorch_output[0]) == torch.Tensor else pytorch_output[0][0],
+                task=commands.task,
+            ),
+            nb_instance=commands.nb_instances,
+            tensor_input_names=input_names,
+            working_directory=commands.output,
+            device=commands.device,
+        )
     model_pytorch.cpu()
 
     logging.info("cleaning up")
@@ -303,10 +319,9 @@ def main(commands: argparse.Namespace):
         logging.info("preparing TensorRT (FP16) benchmark")
         try:
             import tensorrt as trt
-            from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
+            from tensorrt.tensorrt import Logger, Runtime
 
-            from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
-            from transformer_deploy.t5_utils import prepare_input_shapes_tensorrt_decoder
+            from transformer_deploy.t5_utils.t5_utils import prepare_input_shapes_tensorrt_decoder
 
         except ImportError:
             raise ImportError(
@@ -320,64 +335,45 @@ def main(commands: argparse.Namespace):
         if commands.generative_model == "t5":
             encoder_onnx_path = os.path.join(commands.output, "t5-encoder") + "/model.onnx"
             tensorrt_encoder_path = os.path.join(commands.output, "t5-encoder") + "/model.plan"
-            encoder_engine: ICudaEngine = build_engine(
+            tensorrt_encoder = onnx_to_tensorrt_model(
                 runtime=runtime,
-                onnx_file_path=encoder_onnx_path,
-                logger=trt_logger,
-                min_shape=tensor_shapes[0],
-                optimal_shape=tensor_shapes[1],
-                max_shape=tensor_shapes[2],
-                workspace_size=commands.workspace_size * 1024 * 1024,
-                fp16=not commands.quantization,
-                int8=commands.quantization,
+                onnx_model_path=encoder_onnx_path,
+                trt_logger=trt_logger,
+                tensor_shapes=tensor_shapes,
+                workspace_size=commands.workspace_size,
+                quantization=commands.quantization,
+                tensorrt_model_path=tensorrt_encoder_path,
             )
-            save_engine(engine=encoder_engine, engine_file_path=tensorrt_encoder_path)
-            # check encoder engine has been correctly serialized
-            tensorrt_encoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
-                runtime=runtime, engine_file_path=tensorrt_encoder_path
-            )
-            del encoder_engine, runtime
+
             decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
             tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
             input_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
-            runtime: Runtime = trt.Runtime(trt_logger)
-            decoder_engine: ICudaEngine = build_engine(
+            tensorrt_decoder = onnx_to_tensorrt_model(
                 runtime=runtime,
-                onnx_file_path=decoder_onnx_path,
-                logger=trt_logger,
-                input_shapes=input_shapes,
-                workspace_size=commands.workspace_size * 1024 * 1024,
-                fp16=not commands.quantization,
-                int8=commands.quantization,
-            )
-            save_engine(engine=decoder_engine, engine_file_path=tensorrt_decoder_path)
-            # check decoder engine has been correctly serialized
-            tensorrt_decoder: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
-                runtime=runtime, engine_file_path=tensorrt_decoder_path
+                onnx_model_path=decoder_onnx_path,
+                trt_logger=trt_logger,
+                tensor_shapes=input_shapes,
+                workspace_size=commands.workspace_size,
+                quantization=commands.quantization,
+                tensorrt_model_path=tensorrt_decoder_path,
             )
         else:
-            engine: ICudaEngine = build_engine(
+            tensorrt_path = os.path.join(commands.output, "model.plan")
+            tensorrt_model = onnx_to_tensorrt_model(
                 runtime=runtime,
-                onnx_file_path=onnx_model_path,
-                logger=trt_logger,
-                min_shape=tensor_shapes[0],
-                optimal_shape=tensor_shapes[1],
-                max_shape=tensor_shapes[2],
-                workspace_size=commands.workspace_size * 1024 * 1024,
-                fp16=not commands.quantization,
-                int8=commands.quantization,
-            )
-            save_engine(engine=engine, engine_file_path=tensorrt_path)
-            # important to check the engine has been correctly serialized
-            tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
-                runtime=runtime, engine_file_path=tensorrt_path
+                onnx_model_path=onnx_model_path,
+                trt_logger=trt_logger,
+                tensor_shapes=tensor_shapes,
+                workspace_size=commands.workspace_size,
+                quantization=commands.quantization,
+                tensorrt_model_path=tensorrt_path,
             )
 
         if commands.task == "question-answering":
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], List[torch.Tensor]] = lambda x: list(
                 tensorrt_model(x).values()
             )
-        elif commands.generative_model == "t5":
+        elif commands.task == "text-generation" and commands.generative_model == "t5":
 
             def t5_tensorrt_inference(x):
                 encoder_outputs = tensorrt_encoder(x)
@@ -410,9 +406,9 @@ def main(commands: argparse.Namespace):
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer
-        del engine, tensorrt_model, runtime  # delete all tensorrt objects
+        del tensorrt_model, runtime  # delete all tensorrt objects
         gc.collect()
-        if commands.generative_model == "t5":
+        if commands.task == "text-generation" and commands.generative_model == "t5":
             create_triton_configs(
                 tokenizer,
                 model_config,
@@ -488,15 +484,11 @@ def main(commands: argparse.Namespace):
                     .eval()
                 )
                 # warmup generative model:
-                timings_test = list()
                 for _ in range(5):
                     _ = ort_model.get_encoder()(input_ids)
-                    ort_model.generate(inputs=input_ids, max_length=128, num_beams=2, min_length=128)
-                for _ in range(5):
-                    time_start = time.monotonic()
-                    ort_model.generate(inputs=input_ids, max_length=128, num_beams=2, min_length=128)
-                    timings_test.append(time.monotonic() - time_start)
-                print_timings("warmup", timings_test)
+                    ort_model.generate(
+                        inputs=input_ids, min_length=commands.seq_len[0], max_length=commands.seq_len[1], num_beams=2
+                    )
             else:
                 model_path = onnx_model_path if is_fp16 else onnx_optim_model_path
                 ort_model = create_model_for_provider(
@@ -507,14 +499,14 @@ def main(commands: argparse.Namespace):
 
             def infer_ort(inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
                 results = (
-                    inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
-                    if commands.generative_model != "t5"
-                    else ort_model.generate(
+                    ort_model.generate(
                         inputs=inputs,
-                        min_length=256,
-                        max_length=256,
+                        min_length=commands.seq_len[0],
+                        max_length=commands.seq_len[1],
                         num_beams=2,
                     )[0]
+                    if commands.generative_model == "t5"
+                    else inference_onnx_binding(model_onnx=ort_model, inputs=inputs, device=commands.device)
                 )
                 if commands.generative_model == "t5":
                     return results
@@ -532,20 +524,20 @@ def main(commands: argparse.Namespace):
             ]
             text_test = ort_model.generate(
                 inputs=input_ids,
-                min_length=256,
-                max_length=256,
+                min_length=commands.seq_len[0],
+                max_length=commands.seq_len[1],
                 num_beams=2,
             )[0]
             print(tokenizer.decode(text_test, skip_special_tokens=True, clean_up_tokenization_spaces=True))
             ort_output, time_buffer = launch_inference(
                 infer=infer_ort, inputs=[inputs[0]["input_ids"]], nb_measures=commands.nb_measures
             )
-            """check_accuracy(
+            check_accuracy(
                 engine_name=benchmark_name,
                 pytorch_output=pytorch_output[0] if commands.generative_model == "t5" else pytorch_output,
                 engine_output=ort_output,
                 tolerance=commands.atol,
-            )"""
+            )
             timings[benchmark_name] = time_buffer
             del ort_model
             gc.collect()

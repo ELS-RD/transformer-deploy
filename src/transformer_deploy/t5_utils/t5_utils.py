@@ -2,7 +2,7 @@ import gc
 import os
 import random
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import onnx
@@ -336,13 +336,12 @@ def convert_t5_to_onnx(
     # Compare the output of the ONNX FP16 model with Pytorch one
     encoder_fp16_onnx = create_model_for_provider(encoder_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
     encoder_fp16_onnx_binding = encoder_fp16_onnx.io_binding()
-    encoder_onnx_out = inference_onnx_binding(
+    _ = inference_onnx_binding(
         model_onnx=encoder_fp16_onnx,
         binding=encoder_fp16_onnx_binding,
         inputs={"input_ids": input_ids},
         device=input_ids.device.type,
     )["output"]
-    # are_equal(a=encoder_onnx_out, b=encoder_outputs.last_hidden_state)
 
     # 2. Convert decoder part
     # Conversion of the decoder module without cache support
@@ -737,3 +736,38 @@ def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: i
         )
 
     return input_shapes
+
+
+def onnx_to_tensorrt_model(
+    runtime, onnx_model_path, trt_logger, tensor_shapes, workspace_size, quantization, tensorrt_model_path
+) -> Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]]:
+    try:
+        from tensorrt.tensorrt import ICudaEngine
+
+        from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
+
+    except ImportError:
+        raise ImportError(
+            "It seems that TensorRT is not yet installed. "
+            "It is required when you declare TensorRT backend."
+            "Please find installation instruction on "
+            "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
+        )
+    model_engine: ICudaEngine = build_engine(
+        runtime=runtime,
+        onnx_file_path=onnx_model_path,
+        logger=trt_logger,
+        min_shape=tensor_shapes[0],
+        optimal_shape=tensor_shapes[1],
+        max_shape=tensor_shapes[2],
+        workspace_size=workspace_size * 1024 * 1024,
+        fp16=not quantization,
+        int8=quantization,
+    )
+    save_engine(engine=model_engine, engine_file_path=tensorrt_model_path)
+    # check encoder engine has been correctly serialized
+    tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+        runtime=runtime, engine_file_path=tensorrt_model_path
+    )
+    del model_engine
+    return tensorrt_model

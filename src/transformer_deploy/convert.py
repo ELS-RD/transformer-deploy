@@ -357,6 +357,18 @@ def main(commands: argparse.Namespace):
                 quantization=commands.quantization,
                 tensorrt_model_path=tensorrt_decoder_path,
             )
+
+            def tensorrt_model(x):
+                encoder_outputs = tensorrt_encoder(x)
+                inputs = {
+                    "input_ids": input_ids,
+                    "encoder_hidden_states": encoder_outputs.last_hidden_state,
+                    "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
+                    "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
+                }
+                decoder_outputs = tensorrt_decoder(inputs)
+                return decoder_outputs[0]
+
         else:
             tensorrt_path = os.path.join(commands.output, "model.plan")
             tensorrt_model = onnx_to_tensorrt_model(
@@ -373,22 +385,6 @@ def main(commands: argparse.Namespace):
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], List[torch.Tensor]] = lambda x: list(
                 tensorrt_model(x).values()
             )
-        elif commands.task == "text-generation" and commands.generative_model == "t5":
-
-            def t5_tensorrt_inference(x):
-                encoder_outputs = tensorrt_encoder(x)
-                inputs = {
-                    "input_ids": input_ids,
-                    "encoder_hidden_states": encoder_outputs.last_hidden_state,
-                    "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
-                    "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
-                }
-                decoder_outputs = tensorrt_decoder(inputs)
-                return decoder_outputs[0]
-
-            tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
-                t5_tensorrt_inference(x).values()
-            )[0]
         else:
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], torch.Tensor] = lambda x: list(
                 tensorrt_model(x).values()
@@ -426,36 +422,33 @@ def main(commands: argparse.Namespace):
             )
 
     if "onnx" in commands.backend:
-        num_attention_heads, hidden_size = get_model_size(path=commands.model)
         # create optimized onnx model and compare results
-        if commands.generative_model != "t5":
-            onnx_optim_model_path = os.path.join(commands.output, "model.onnx")
+        num_attention_heads, hidden_size = get_model_size(path=commands.model)
+        model_paths = (
+            [os.path.join(commands.output, "t5-encoder") + path for path in ["/model_fp16.onnx", "/model.onnx"]]
+            if commands.generative_model == "t5"
+            else [onnx_model_path]
+        )
+        optim_model_paths = (
+            [model_path[:-5] + "_optim.onnx" for model_path in model_paths]
+            if commands.generative_model == "t5"
+            else os.path.join(commands.output, "model.onnx")
+        )
+        [
             optimize_onnx(
-                onnx_path=onnx_model_path,
-                onnx_optim_model_path=onnx_optim_model_path,
+                onnx_path=model_path,
+                onnx_optim_model_path=optim_model_paths[idx],
                 fp16=run_on_cuda,
                 use_cuda=run_on_cuda,
                 num_attention_heads=num_attention_heads,
                 hidden_size=hidden_size,
                 architecture=model_config.model_type,
             )
-        else:
-            for model_path in [
-                os.path.join(commands.output, "t5-encoder") + path for path in ["/model_fp16.onnx", "/model.onnx"]
-            ]:
-                optim_model_path = model_path[:-5] + "_optim.onnx"
-                optimize_onnx(
-                    onnx_path=model_path,
-                    onnx_optim_model_path=optim_model_path,
-                    fp16=run_on_cuda,
-                    use_cuda=run_on_cuda,
-                    num_attention_heads=num_attention_heads,
-                    hidden_size=hidden_size,
-                    architecture=model_config.model_type,
-                )
+            for idx, model_path in enumerate(model_paths)
+        ]
 
         if commands.device == "cpu" and commands.quantization:
-            cpu_quantization(input_model_path=onnx_optim_model_path, output_model_path=onnx_optim_model_path)
+            cpu_quantization(input_model_path=optim_model_paths[0], output_model_path=optim_model_paths[0])
 
         ort_provider = "CUDAExecutionProvider" if run_on_cuda else "CPUExecutionProvider"
         for provider, is_fp16, benchmark_name in [
@@ -465,7 +458,6 @@ def main(commands: argparse.Namespace):
             logging.info("preparing %s benchmark", benchmark_name)
             torch_type = torch.float16 if is_fp16 else torch.float32
             if commands.generative_model == "t5":
-                input_ids.to("cuda")
                 encoder_path = os.path.join(commands.output, "t5-encoder") + (
                     "/model_fp16.onnx" if is_fp16 else "/model.onnx"
                 )
@@ -490,7 +482,7 @@ def main(commands: argparse.Namespace):
                         inputs=input_ids, min_length=commands.seq_len[0], max_length=commands.seq_len[1], num_beams=2
                     )
             else:
-                model_path = onnx_model_path if is_fp16 else onnx_optim_model_path
+                model_path = onnx_model_path if is_fp16 else optim_model_paths[0]
                 ort_model = create_model_for_provider(
                     path=model_path,
                     provider_to_use=provider,
@@ -557,7 +549,7 @@ def main(commands: argparse.Namespace):
         else:
             triton_conf.create_configs(
                 tokenizer=tokenizer,
-                model_path=onnx_optim_model_path,
+                model_path=optim_model_paths[0],
                 config=model_config,
                 engine_type=EngineType.ONNX,
             )

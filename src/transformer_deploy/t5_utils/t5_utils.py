@@ -302,11 +302,6 @@ def convert_t5_to_onnx(
             opset_version=13,
         )
 
-    """
-    export_t5_decoder_to_onnx(
-        model_pytorch, model_decoder, decoder_cache_model_path, decoder_no_cache_model_path, input_ids, encoder_outputs
-    )
-    """
     # II. Conversion to mixed precision
     # 1. Convert encoder part
     """
@@ -612,6 +607,8 @@ def convert_t5_to_onnx(
         print("\n")
 
     del model_gen
+    model_pytorch.to("cuda")
+    input_ids.to("cuda")
     gc.collect()
 
 
@@ -626,7 +623,8 @@ def get_triton_output_shape(output: torch.Tensor, task: str) -> List[int]:
 def create_triton_configs(
     tokenizer: PreTrainedTokenizer,
     model_config: PretrainedConfig,
-    model_output: torch.Tensor,
+    encoder_output: torch.Tensor,
+    decoder_output: torch.Tensor,
     engine_type: EngineType,
     task: str,
     nb_instances: int,
@@ -638,12 +636,12 @@ def create_triton_configs(
     triton_encoder_conf = conf_class(
         model_name_base="t5-encoder",
         dim_output=get_triton_output_shape(
-            output=model_output[0] if type(model_output[0]) == torch.Tensor else model_output[0][0],
+            output=encoder_output[0],
             task=task,
         ),
         nb_instance=nb_instances,
         tensor_input_names=input_names,
-        working_directory=output,
+        working_directory=os.path.join(output, "triton_configs"),
         device=device,
     )
     encoder_path = os.path.join(output, "t5-encoder") + (
@@ -656,21 +654,21 @@ def create_triton_configs(
         engine_type=engine_type,
     )
     conf_class = ConfigurationT5Decoder
-    triton_encoder_conf = conf_class(
+    triton_decoder_conf = conf_class(
         model_name_base="t5-dec-if-node",
         dim_output=get_triton_output_shape(
-            output=model_output[0] if type(model_output[0]) == torch.Tensor else model_output[0][0],
+            output=decoder_output[0],
             task=task,
         ),
         nb_instance=nb_instances,
         tensor_input_names=input_names,
-        working_directory=output,
+        working_directory=os.path.join(output, "triton_configs"),
         device=device,
     )
     decoder_path = os.path.join(output, "t5-dec-if-node") + (
         "/model.onnx" if engine_type == EngineType.ONNX else "/model.plan"
     )
-    triton_encoder_conf.create_configs(
+    triton_decoder_conf.create_configs(
         tokenizer=tokenizer,
         model_path=decoder_path,
         config=model_config,

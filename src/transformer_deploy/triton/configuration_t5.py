@@ -21,8 +21,9 @@ from typing import List
 
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
+from transformer_deploy.t5_utils import t5_model
 from transformer_deploy.triton.configuration import Configuration, EngineType
-from transformer_deploy.utils import generative_model, python_tokenizer
+from transformer_deploy.utils import python_tokenizer
 
 
 class ConfigurationT5Encoder(Configuration):
@@ -87,7 +88,7 @@ input [
 
 output {{
     name: "output"
-    data_type: TYPE_INT32
+    data_type: TYPE_FP32
     dims: {str(self.dim_output)}
 }}
 
@@ -137,40 +138,61 @@ ensemble_scheduling {{
 class ConfigurationT5Decoder(Configuration):
     @property
     def python_code(self):
-        return inspect.getsource(generative_model)
+        return inspect.getsource(t5_model)
 
     @property
     def python_folder_name(self) -> str:
-        return f"{self.model_name}_generate"
+        return "t5_model_generate"
 
     def get_generation_conf(self) -> str:
         """
         Generate sequence configuration.
         :return: Generate sequence configuration
         """
-        result: List[str] = list()
+        all_past_keys: List[str] = list()
+        all_present_keys: List[str] = list()
         for i in range(self.num_layers):
-            text = f"""
-        {{
-            key: "past_key_values.{i}.decoder.key"
-            value: "past_key_values.{i}.decoder.key"
-        }},
-        {{
-            key: "past_key_values.{i}.decoder.value"
-            value: "past_key_values.{i}.decoder.value"
-        }},
-        {{
-            key: "past_key_values.{i}.encoder.key"
-            value: "past_key_values.{i}.encoder.key"
-        }},
-        {{
-            key: "past_key_values.{i}.encoder.value"
-            value: "past_key_values.{i}.encoder.value"
-        }}
-        """
-            result.append(text)
+            past_keys = f"""
+    {{
+        key: "past_key_values.{i}.decoder.key"
+        value: "past_key_values.{i}.decoder.key"
+    }},
+    {{
+        key: "past_key_values.{i}.decoder.value"
+        value: "past_key_values.{i}.decoder.value"
+    }},
+    {{
+        key: "past_key_values.{i}.encoder.key"
+        value: "past_key_values.{i}.encoder.key"
+    }},
+    {{
+        key: "past_key_values.{i}.encoder.value"
+        value: "past_key_values.{i}.encoder.value"
+    }}
+    """
+            all_past_keys.append(past_keys)
+            present_keys = f"""
+    {{
+        key: "present.{i}.decoder.key"
+        value: "present.{i}.decoder.key"
+    }},
+    {{
+        key: "present.{i}.decoder.value"
+        value: "present.{i}.decoder.value"
+    }},
+    {{
+        key: "present.{i}.encoder.key"
+        value: "present.{i}.encoder.key"
+    }},
+    {{
+        key: "present.{i}.encoder.value"
+        value: "present.{i}.encoder.value"
+    }}
+    """
+            all_present_keys.append(present_keys)
 
-        decoder_past_keys_inputs = ",\n".join(result)
+        decoder_past_keys_inputs = ",\n".join(all_past_keys)
+        decoder_present_keys_outputs = ",\n".join(all_present_keys)
         output_map_blocks = list()
         for input_name in self.tensor_input_names:
             output_map_text = f"""
@@ -193,9 +215,9 @@ class ConfigurationT5Decoder(Configuration):
     ]
 
     output {{
-        name: "logits"
-        data_type: TYPE_FP32
-        dims: {str(self.dim_output)}
+        name: "OUTPUT_TEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ]
     }}
 
     ensemble_scheduling {{
@@ -242,10 +264,13 @@ class ConfigurationT5Decoder(Configuration):
                 }},
                 {decoder_past_keys_inputs}
                 ]
-                output_map {{
-                    key: "logits"
-                    value: "logits"
-                }}
+                output_map [
+                {{
+                    key: "output_text"
+                    value: "output_text"
+                }},
+                {decoder_present_keys_outputs}
+                ]
             }}
         ]
     }}
@@ -256,9 +281,10 @@ class ConfigurationT5Decoder(Configuration):
         Generate model configuration.
         :return: model configuration
         """
-        result: List[str] = list()
+        all_past_keys: List[str] = list()
+        all_present_keys: List[str] = list()
         for i in range(self.num_layers):
-            text = f"""
+            past_keys = f"""
         {{
             name: "past_key_values.{i}.decoder.key"
             data_type: TYPE_FP32
@@ -280,9 +306,33 @@ class ConfigurationT5Decoder(Configuration):
             dims: [-1, 8, -1, 64]
         }}
         """
-            result.append(text)
+            all_past_keys.append(past_keys)
+            present_keys = f"""
+        {{
+            name: "present.{i}.decoder.key"
+            data_type: TYPE_FP32
+            dims: [-1, -1, -1, -1]
+        }},
+        {{
+            name: "present.{i}.decoder.value"
+            data_type: TYPE_FP32
+            dims: [-1, -1, -1, -1]
+        }},
+        {{
+            name: "present.{i}.encoder.key"
+            data_type: TYPE_FP32
+            dims: [-1, -1, -1, -1]
+        }},
+        {{
+            name: "present.{i}.encoder.value"
+            data_type: TYPE_FP32
+            dims: [-1, -1, -1, -1]
+        }}
+        """
+            all_present_keys.append(present_keys)
 
-        decoder_past_keys_inputs = ",\n".join(result)
+        decoder_past_keys_inputs = ",\n".join(all_past_keys)
+        decoder_present_keys_outputs = ",\n".join(all_present_keys)
         return f"""
 name: "{self.model_folder_name}"
 max_batch_size: 0
@@ -302,7 +352,7 @@ input [
     }},
     {{
         name: "enable_cache"
-        data_type: TYPE_BOOL
+        data_type: TYPE_INT32
         dims: [ 1 ]
     }},
     {decoder_past_keys_inputs}
@@ -311,8 +361,9 @@ output [
     {{
         name: "logits"
         data_type: TYPE_FP32
-        dims: [ -1, -1, {self.vocab_size} ]
-    }}
+        dims: {str(self.dim_output)}
+    }},
+    {decoder_present_keys_outputs}
 ]
 {self._instance_group()}
 """.strip()

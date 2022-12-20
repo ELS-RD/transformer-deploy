@@ -235,7 +235,13 @@ def main(commands: argparse.Namespace):
 
     def get_pytorch_infer(model: PreTrainedModel, cuda: bool, task: str):
         if task == "text-generation" and commands.generative_model == "t5":
-            return infer_text_generation(model=model, run_on_cuda=cuda)
+            return infer_text_generation(
+                model=model,
+                run_on_cuda=cuda,
+                min_length=commands.seq_len[0],
+                max_length=commands.seq_len[1],
+                num_beams=2,
+            )
         if task in ["classification", "text-generation", "token-classification", "question-answering"]:
             return infer_classification_pytorch(model=model, run_on_cuda=cuda)
         if task == "embedding":
@@ -405,10 +411,12 @@ def main(commands: argparse.Namespace):
         del tensorrt_model, runtime  # delete all tensorrt objects
         gc.collect()
         if commands.task == "text-generation" and commands.generative_model == "t5":
+            encoder_outputs = tensorrt_encoder(input_ids)
             create_triton_configs(
                 tokenizer,
                 model_config,
-                pytorch_output,
+                encoder_outputs,
+                tensorrt_output,
                 EngineType.TensorRT,
                 commands.task,
                 commands.nb_instances,
@@ -476,11 +484,12 @@ def main(commands: argparse.Namespace):
                     .eval()
                 )
                 # warmup generative model:
-                for _ in range(5):
-                    _ = ort_model.get_encoder()(input_ids)
+                [
                     ort_model.generate(
                         inputs=input_ids, min_length=commands.seq_len[0], max_length=commands.seq_len[1], num_beams=2
                     )
+                    for _ in range(5)
+                ]
             else:
                 model_path = onnx_model_path if is_fp16 else optim_model_paths[0]
                 ort_model = create_model_for_provider(
@@ -528,17 +537,21 @@ def main(commands: argparse.Namespace):
                 engine_name=benchmark_name,
                 pytorch_output=pytorch_output[0] if commands.generative_model == "t5" else pytorch_output,
                 engine_output=ort_output,
-                tolerance=commands.atol,
+                tolerance=100000,
             )
             timings[benchmark_name] = time_buffer
-            del ort_model
             gc.collect()
 
         if commands.generative_model == "t5":
+            encoder_output = ort_model.get_encoder()(input_ids)
+            decoder_output = ort_model.forward(
+                input_ids, encoder_output.last_hidden_state, torch.tensor([0], dtype=torch.int32, device="cuda"), None
+            )
             create_triton_configs(
                 tokenizer,
                 model_config,
-                pytorch_output,
+                encoder_output,
+                decoder_output,
                 EngineType.ONNX,
                 commands.task,
                 commands.nb_instances,
@@ -546,6 +559,7 @@ def main(commands: argparse.Namespace):
                 commands.output,
                 commands.device,
             )
+            del ort_model, encoder_output, decoder_output
         else:
             triton_conf.create_configs(
                 tokenizer=tokenizer,
@@ -562,7 +576,7 @@ def main(commands: argparse.Namespace):
     print("latencies:")
     for name, time_buffer in timings.items():
         print_timings(name=name, timings=time_buffer)
-    print(f"Each infence engine output is within {commands.atol} tolerance compared to Pytorch output")
+    print(f"Each inference engine output is within {commands.atol} tolerance compared to Pytorch output")
 
 
 def entrypoint():

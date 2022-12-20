@@ -460,14 +460,14 @@ docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g
   -v $PWD/triton_models/triton_configs:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
   bash -c "pip install onnx onnxruntime-gpu transformers==4.21.3 torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
   tritonserver --model-repository=/models"
+```
+To test text generation, you can try this request:
+```shell
+curl -X POST http://localhost:8000/v2/models/t5_model_generate/versions/1/infer --data-binary "@src/transformer_deploy/t5_utils/t5_query_body.bin" --header "Inference-Header-Content-Length: 181"
 
 # output:
-# ...
-# I0207 10:29:19.091191 1 grpc_server.cc:4195] Started GRPCInferenceService at 0.0.0.0:8001
-# I0207 10:29:19.091417 1 http_server.cc:2857] Started HTTPService at 0.0.0.0:8000
-# I0207 10:29:19.132902 1 http_server.cc:167] Started Metrics Service at 0.0.0.0:8002
+# {"model_name":"t5_model_generate","model_version":"1","outputs":[{"name":"OUTPUT_TEXT","datatype":"BYTES","shape":[],"data":["Mein Name mein Wolfgang Wolfgang und ich wohne in Berlin."]}]}
 ```
-
 #### Query inference
 
 Replace `transformer_onnx_generate` by `transformer_tensorrt_generate` to query `TensorRT` engine.

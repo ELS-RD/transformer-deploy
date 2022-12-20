@@ -432,21 +432,24 @@ docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/tr
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 
-#### T5-small example
-In this section we will present the t5-small model conversion.
+#### T5-base example
+In this section we will present the t5-base model conversion.
 
 #### Optimize existing large model
 
-To optimize models run the script as follows:
+To optimize model run the script as follows:
 
 ```shell
 docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
   -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.0 \
   bash -c "cd /project && \
-    convert_model -m t5-small \
-    --backend tensorrt onnx \
-    --seq-len 6 256 256 \
-    --task seq2seq"
+    convert_model -m t5-base \
+    --backend onnx \
+    --seq-len 16 256 256 \
+    --task text-generation \
+    --nb-measures 100 \
+    --generative-model t5 \
+    --output t5_triton_models"
 ```
 #### Run Nvidia Triton inference server
 
@@ -454,8 +457,8 @@ To run decoding algorithm server side, we need to install `Pytorch` on `Triton` 
 
 ```shell
 docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g \
-  -v $PWD/triton_models:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
-  bash -c "pip install transformers torch -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
+  -v $PWD/triton_models/triton_configs:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install onnx onnxruntime-gpu transformers==4.21.3 torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html && \
   tritonserver --model-repository=/models"
 
 # output:

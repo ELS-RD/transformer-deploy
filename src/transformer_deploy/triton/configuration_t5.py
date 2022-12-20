@@ -149,131 +149,30 @@ class ConfigurationT5Decoder(Configuration):
         Generate sequence configuration.
         :return: Generate sequence configuration
         """
-        all_past_keys: List[str] = list()
-        all_present_keys: List[str] = list()
-        for i in range(self.num_layers):
-            past_keys = f"""
-    {{
-        key: "past_key_values.{i}.decoder.key"
-        value: "past_key_values.{i}.decoder.key"
-    }},
-    {{
-        key: "past_key_values.{i}.decoder.value"
-        value: "past_key_values.{i}.decoder.value"
-    }},
-    {{
-        key: "past_key_values.{i}.encoder.key"
-        value: "past_key_values.{i}.encoder.key"
-    }},
-    {{
-        key: "past_key_values.{i}.encoder.value"
-        value: "past_key_values.{i}.encoder.value"
-    }}
-    """
-            all_past_keys.append(past_keys)
-            present_keys = f"""
-    {{
-        key: "present.{i}.decoder.key"
-        value: "present.{i}.decoder.key"
-    }},
-    {{
-        key: "present.{i}.decoder.value"
-        value: "present.{i}.decoder.value"
-    }},
-    {{
-        key: "present.{i}.encoder.key"
-        value: "present.{i}.encoder.key"
-    }},
-    {{
-        key: "present.{i}.encoder.value"
-        value: "present.{i}.encoder.value"
-    }}
-    """
-            all_present_keys.append(present_keys)
-
-        decoder_past_keys_inputs = ",\n".join(all_past_keys)
-        decoder_present_keys_outputs = ",\n".join(all_present_keys)
-        output_map_blocks = list()
-        for input_name in self.tensor_input_names:
-            output_map_text = f"""
-    {{
-        key: "{input_name}"
-        value: "{input_name}"
-    }}
-    """.strip()
-            output_map_blocks.append(output_map_text)
-
         return f"""
-    {self._get_header(name=self.inference_folder_name, platform="ensemble")}
+    {self._get_header(name=self.python_folder_name, backend="python")}
 
-    input [
-    {{
-        name: "TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }}
-    ]
+input [
+{{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
+]
 
-    output {{
-        name: "OUTPUT_TEXT"
-        data_type: TYPE_STRING
-        dims: [ -1 ]
-    }}
+output {{
+    name: "OUTPUT_TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+}}
+{self._instance_group()}
 
-    ensemble_scheduling {{
-        step [
-            {{
-                model_name: "transformer_onnx_tokenize"
-                model_version: -1
-                input_map {{
-                    key: "TEXT"
-                    value: "TEXT"
-                }}
-                output_map {{
-                    key: "input_ids"
-                    value: "input_ids"
-                }}
-            }},
-            {{
-                model_name: "transformer_onnx_encoder"
-                model_version: -1
-                input_map {{
-                        key: "input_ids"
-                        value: "input_ids"
-                    }}
-                output_map {{
-                    key: "output"
-                    value: "encoder_hidden_states"
-                }}
-            }},
-            {{
-                model_name: "transformer_onnx_decoder"
-                model_version: -1
-                input_map [
-                {{
-                    key: "input_ids"
-                    value: "input_ids"
-                }},
-                {{
-                    key: "encoder_hidden_states"
-                    value: "encoder_hidden_states"
-                }},
-                {{
-                    key: "enable_cache"
-                    value: "enable_cache"
-                }},
-                {decoder_past_keys_inputs}
-                ]
-                output_map [
-                {{
-                    key: "output_text"
-                    value: "output_text"
-                }},
-                {decoder_present_keys_outputs}
-                ]
-            }}
-        ]
+parameters: {{
+    key: "FORCE_CPU_ONLY_INPUT_TENSORS"
+    value: {{
+        string_value:"no"
     }}
+}}
     """.strip()
 
     def get_model_conf(self) -> str:
@@ -285,50 +184,50 @@ class ConfigurationT5Decoder(Configuration):
         all_present_keys: List[str] = list()
         for i in range(self.num_layers):
             past_keys = f"""
-        {{
-            name: "past_key_values.{i}.decoder.key"
-            data_type: TYPE_FP32
-            dims: [-1, 8, -1, 64]
-        }},
-        {{
-            name: "past_key_values.{i}.decoder.value"
-            data_type: TYPE_FP32
-            dims: [-1, 8, -1, 64]
-        }},
-        {{
-            name: "past_key_values.{i}.encoder.key"
-            data_type: TYPE_FP32
-            dims: [-1, 8, -1, 64]
-        }},
-        {{
-            name: "past_key_values.{i}.encoder.value"
-            data_type: TYPE_FP32
-            dims: [-1, 8, -1, 64]
-        }}
-        """
+{{
+    name: "past_key_values.{i}.decoder.key"
+    data_type: TYPE_FP32
+    dims: [-1, 8, -1, 64]
+}},
+{{
+    name: "past_key_values.{i}.decoder.value"
+    data_type: TYPE_FP32
+    dims: [-1, 8, -1, 64]
+}},
+{{
+    name: "past_key_values.{i}.encoder.key"
+    data_type: TYPE_FP32
+    dims: [-1, 8, -1, 64]
+}},
+{{
+    name: "past_key_values.{i}.encoder.value"
+    data_type: TYPE_FP32
+    dims: [-1, 8, -1, 64]
+}}
+"""
             all_past_keys.append(past_keys)
             present_keys = f"""
-        {{
-            name: "present.{i}.decoder.key"
-            data_type: TYPE_FP32
-            dims: [-1, -1, -1, -1]
-        }},
-        {{
-            name: "present.{i}.decoder.value"
-            data_type: TYPE_FP32
-            dims: [-1, -1, -1, -1]
-        }},
-        {{
-            name: "present.{i}.encoder.key"
-            data_type: TYPE_FP32
-            dims: [-1, -1, -1, -1]
-        }},
-        {{
-            name: "present.{i}.encoder.value"
-            data_type: TYPE_FP32
-            dims: [-1, -1, -1, -1]
-        }}
-        """
+{{
+    name: "present.{i}.decoder.key"
+    data_type: TYPE_FP32
+    dims: [-1, -1, -1, -1]
+}},
+{{
+    name: "present.{i}.decoder.value"
+    data_type: TYPE_FP32
+    dims: [-1, -1, -1, -1]
+}},
+{{
+    name: "present.{i}.encoder.key"
+    data_type: TYPE_FP32
+    dims: [-1, -1, -1, -1]
+}},
+{{
+    name: "present.{i}.encoder.value"
+    data_type: TYPE_FP32
+    dims: [-1, -1, -1, -1]
+}}
+"""
             all_present_keys.append(present_keys)
 
         decoder_past_keys_inputs = ",\n".join(all_past_keys)

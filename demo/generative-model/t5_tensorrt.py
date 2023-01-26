@@ -34,6 +34,8 @@ from transformer_deploy.backends.trt_utils import TensorRTShape, build_engine, l
 # TODO pre allocate the largest possible past states and reuse it with tensorrt
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#reusing-input-buffers
 # https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/index.html#empty-tensors
+# load_external_data should be set to True for large models (> 2Gb)
+load_external_data = False
 model_name = "t5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 input_ids: torch.Tensor = tokenizer(
@@ -61,6 +63,7 @@ convert_to_onnx(
     var_output_seq=True,
     quantization=False,
     output_names=["output"],
+    load_external_data=load_external_data,
 )
 
 enc_onnx = create_model_for_provider("test-enc.onnx", "CUDAExecutionProvider")

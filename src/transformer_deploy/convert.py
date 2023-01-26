@@ -142,15 +142,20 @@ def main(commands: argparse.Namespace):
     np.random.seed(commands.seed)
     torch.set_num_threads(commands.nb_threads)
     # set device
-    if commands.device == "cpu" and "tensorrt" in commands.backend:
-        raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
-    if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
-        logging.warning("having different sequence lengths may make TensorRT slower")
+
     if commands.device is None:
         commands.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    if commands.device == "cpu" and "tensorrt" in commands.backend:
+        raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
+
+    if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
+        logging.warning("having different sequence lengths may make TensorRT slower")
+
     run_on_cuda: bool = commands.device.startswith("cuda")
     if run_on_cuda:
         assert torch.cuda.is_available(), "CUDA/GPU is not available on Pytorch. Please check your CUDA installation"
+
     # set authentication
     if isinstance(commands.auth_token, str) and commands.auth_token.lower() in ["true", "t"]:
         auth_token = True
@@ -167,7 +172,9 @@ def main(commands: argparse.Namespace):
     )
     input_names: List[str] = tokenizer.model_input_names
     if commands.task == "embedding":
-        model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(commands.model)
+        model_pytorch: Union[PreTrainedModel, STransformerWrapper] = load_sentence_transformers(
+            commands.model, use_auth_token=auth_token
+        )
     elif commands.task == "classification":
         model_pytorch = AutoModelForSequenceClassification.from_pretrained(commands.model, use_auth_token=auth_token)
     elif commands.task == "token-classification":
@@ -431,7 +438,7 @@ def main(commands: argparse.Namespace):
 
     if "onnx" in commands.backend:
         # create optimized onnx model and compare results
-        num_attention_heads, hidden_size = get_model_size(path=commands.model)
+        num_attention_heads, hidden_size = get_model_size(path=commands.model, auth_token=auth_token)
         model_paths = (
             [os.path.join(commands.output, "t5-encoder") + path for path in ["/model_fp16.onnx", "/model.onnx"]]
             if commands.generative_model == "t5"

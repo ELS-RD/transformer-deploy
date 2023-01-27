@@ -183,6 +183,13 @@ def main(commands: argparse.Namespace):
     else:
         raise Exception(f"unknown task: {commands.task}")
 
+    if hasattr(model_config, "type_vocab_size") and model_config.type_vocab_size == 0:
+        try:
+            input_names.remove("token_type_ids")
+            logging.warning("Model doesn't have `token_type_ids`, removing them from `input_names`")
+        except ValueError:
+            pass
+
     logging.info(f"axis: {input_names}")
 
     model_pytorch.eval()

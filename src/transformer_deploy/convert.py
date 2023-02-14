@@ -38,7 +38,6 @@ from transformers import (
     PretrainedConfig,
     PreTrainedModel,
     PreTrainedTokenizer,
-    TensorType,
 )
 
 from transformer_deploy.backends.ort_utils import (
@@ -57,6 +56,7 @@ from transformer_deploy.backends.pytorch_utils import (
 from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
+    generate_input_for_t5,
     generate_multiple_inputs,
     print_timings,
     setup_logging,
@@ -141,8 +141,8 @@ def main(commands: argparse.Namespace):
     torch.manual_seed(commands.seed)
     np.random.seed(commands.seed)
     torch.set_num_threads(commands.nb_threads)
-    # set device
 
+    # set device
     if commands.device is None:
         commands.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -199,19 +199,7 @@ def main(commands: argparse.Namespace):
     tensor_shapes = list(zip(commands.batch_size, commands.seq_len))
     # create onnx model and compare results
     if commands.task == "text-generation" and commands.generative_model == "t5":
-        input_ids: torch.Tensor = tokenizer(
-            "translate English to French: Transfer learning, where a model is first pre-trained "
-            "on a data-rich task before being fine-tuned on a downstream task, has emerged as a "
-            "powerful technique in natural language processing (NLP). The effectiveness of transfer "
-            "learning has given rise to a diversity of approaches, methodology, and practice. "
-            "In this paper, we explore the landscape of transfer learning techniques for NLP by "
-            "introducing a unified framework that converts all text-based language problems into "
-            "a text-to-text format.nd more.",
-            return_tensors=TensorType.PYTORCH,
-        ).input_ids
-        input_ids = input_ids.type(torch.int32)
-        if run_on_cuda:
-            input_ids = input_ids.to("cuda")
+        input_ids = generate_input_for_t5(tokenizer, run_on_cuda)
         inputs_pytorch: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = [{"input_ids": input_ids}]
         convert_t5_to_onnx(
             tokenizer=tokenizer,
@@ -444,22 +432,24 @@ def main(commands: argparse.Namespace):
             if commands.generative_model == "t5"
             else [onnx_model_path]
         )
+        print(model_paths)
+        print([(idx, path) for idx, path in enumerate(model_paths)])
         optim_model_paths = (
             [model_path[:-5] + "_optim.onnx" for model_path in model_paths]
             if commands.generative_model == "t5"
-            else os.path.join(commands.output, "model.onnx")
+            else [os.path.join(commands.output, "model.onnx")]
         )
         [
             optimize_onnx(
-                onnx_path=model_path,
-                onnx_optim_model_path=optim_model_paths[idx],
+                onnx_path=model_paths[idx],
+                onnx_optim_model_path=optim_model_path,
                 fp16=run_on_cuda,
                 use_cuda=run_on_cuda,
                 num_attention_heads=num_attention_heads,
                 hidden_size=hidden_size,
                 architecture=model_config.model_type,
             )
-            for idx, model_path in enumerate(model_paths)
+            for idx, optim_model_path in enumerate(optim_model_paths)
         ]
 
         if commands.device == "cpu" and commands.quantization:
@@ -524,22 +514,8 @@ def main(commands: argparse.Namespace):
                     return results["start_logits"], results["end_logits"]
 
             logging.info("running %s benchmark", benchmark_name)
-            inputs: List[Dict[str, Union[np.ndarray, torch.Tensor]]] = list()
-            [
-                inputs.append({key: torch.tensor(value, dtype=torch.int32, device="cuda")})
-                for input_pytorch in inputs_pytorch
-                for key, value in input_pytorch.items()
-            ]
-            text_test = ort_model.generate(
-                inputs=input_ids,
-                min_length=commands.seq_len[0],
-                max_length=commands.seq_len[1],
-                num_beams=2,
-            )[0]
-            print(tokenizer.decode(text_test, skip_special_tokens=True, clean_up_tokenization_spaces=True))
-            ort_output, time_buffer = launch_inference(
-                infer=infer_ort, inputs=[inputs[0]["input_ids"]], nb_measures=commands.nb_measures
-            )
+            inputs = input_ids if commands.generative_model == "t5" else inputs_pytorch
+            ort_output, time_buffer = launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures)
             check_accuracy(
                 engine_name=benchmark_name,
                 pytorch_output=pytorch_output[0] if commands.generative_model == "t5" else pytorch_output,

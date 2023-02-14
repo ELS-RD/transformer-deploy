@@ -2,12 +2,12 @@ import gc
 import os
 import random
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 import onnx
 import torch
-from onnxruntime import InferenceSession, IOBinding
+from onnxruntime import IOBinding
 from transformers import PretrainedConfig, PreTrainedModel, PreTrainedTokenizer
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput
 
@@ -140,49 +140,6 @@ def prepare_folder(path: str) -> Tuple[str, str]:
     p.mkdir(parents=True, exist_ok=True)
     [item.unlink() for item in Path(path).glob("*") if item.is_file()]
     return path + "/model.onnx", path + "/model_fp16.onnx"
-
-
-def decoder_onnx_inference(
-    decoder_input_ids: torch.Tensor,
-    encoder_hidden_states: torch.Tensor,
-    enable_cache: torch.Tensor,
-    decoder_onnx: InferenceSession,
-    num_layers: int,
-    past_key_values: Optional[torch.Tensor],
-):
-    inputs_onnx_dict = {
-        "input_ids": decoder_input_ids,
-        "encoder_hidden_states": encoder_hidden_states,
-        "enable_cache": enable_cache,
-    }
-
-    if past_key_values is not None:
-        for index, (k_dec, v_dec, k_enc, v_enc) in enumerate(past_key_values):
-            inputs_onnx_dict[f"past_key_values.{index}.decoder.key"] = k_dec
-            inputs_onnx_dict[f"past_key_values.{index}.decoder.value"] = v_dec
-            inputs_onnx_dict[f"past_key_values.{index}.encoder.key"] = k_enc
-            inputs_onnx_dict[f"past_key_values.{index}.encoder.value"] = v_enc
-
-    result_dict = inference_onnx_binding(
-        model_onnx=decoder_onnx,
-        inputs=inputs_onnx_dict,
-        binding=decoder_onnx.io_binding(),  # recycle the binding
-        device=decoder_input_ids.device.type,
-        clone_tensor=False,  # no memory copy -> best perf and lowest memory footprint!
-    )
-    past_states = list()
-    for index in range(num_layers):
-        kv = (
-            result_dict[f"present.{index}.decoder.key"],
-            result_dict[f"present.{index}.decoder.value"],
-            result_dict[f"present.{index}.encoder.key"],
-            result_dict[f"present.{index}.encoder.value"],
-        )
-        past_states.append(kv)
-    return BaseModelOutputWithPastAndCrossAttentions(
-        last_hidden_state=result_dict["logits"],
-        past_key_values=past_states,
-    )
 
 
 def convert_t5_to_onnx(
@@ -499,87 +456,6 @@ def convert_t5_to_onnx(
     torch.cuda.empty_cache()
     gc.collect()
 
-    # Check ONNX decoder output: Zero copy output
-    """
-    Below, we check that the new model output is similar to the ones from Pytorch.
-    We use our new implementation of inference call.
-    The idea is the following:
-        - we ask ONNX Runtime to output a pointer to the CUDA array containing the result of the inference;
-        - we use Cupy API to wrap the array and provide information regarding tensor shape and type.
-         Cupy doesn't own the data;
-        - we use Dlpack support to convert the Cupy tensor to Pytorch, another zero copy process.
-    This pipeline is unsafe, as the content of the tensor may change or disappear silently: only ONNX Runtime has the
-    control of the array containing the data. It will happen at the next inference call. Because we know that during
-    the text generation we discard each output before recalling ONNX Runtime, it works well in our case.
-    A second benefit of this approach is that we do not have anymore to guess the output shape.
-    """
-    model_pytorch = model_pytorch.cuda()
-    model_decoder = model_decoder.cuda()
-    input_ids = input_ids.cuda()
-    model_pytorch = model_pytorch.eval()
-    model_decoder = model_decoder.eval()
-    with torch.inference_mode():
-        out_encoder_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_pytorch.encoder(input_ids=input_ids)
-        previous_step_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_decoder(
-            input_ids=input_ids[:, :-1], encoder_hidden_states=out_encoder_pytorch.last_hidden_state
-        )
-        out_decoder_pytorch: BaseModelOutputWithPastAndCrossAttentions = model_decoder(
-            input_ids=input_ids, encoder_hidden_states=out_encoder_pytorch.last_hidden_state
-        )
-    model_pytorch = model_pytorch.cpu()
-    torch.cuda.empty_cache()
-    decoder_onnx = create_model_for_provider(decoder_if_fp16_model_path, "CUDAExecutionProvider", log_severity=3)
-    out_decoder_onnx_no_cache = decoder_onnx_inference(
-        decoder_input_ids=input_ids,
-        encoder_hidden_states=out_encoder_pytorch.last_hidden_state.half(),
-        enable_cache=torch.tensor([0], device="cuda", dtype=torch.int32),
-        past_key_values=None,
-        decoder_onnx=decoder_onnx,
-        num_layers=model_pytorch.config.num_layers,
-    )
-    are_equal(
-        a=out_decoder_onnx_no_cache.last_hidden_state[:, -1:, :],
-        b=out_decoder_pytorch.last_hidden_state[:, -1:, :],
-    )
-    # check that past states are identical between ONNX and Pytorch
-    assert len(out_decoder_onnx_no_cache.past_key_values) == len(out_decoder_pytorch.past_key_values)
-    for (o_dec_k, o_dev_v, o_enc_k, o_enc_v), (p_dec_k, p_dev_v, p_enc_k, p_enc_v) in zip(
-        out_decoder_onnx_no_cache.past_key_values, out_decoder_pytorch.past_key_values
-    ):
-        are_equal(a=o_dec_k, b=p_dec_k)
-        are_equal(a=o_dev_v, b=p_dev_v)
-        are_equal(a=o_enc_k, b=p_enc_k)
-        are_equal(a=o_enc_v, b=p_enc_v)
-    # convert ONNX inputs to FP16
-    previous_step_pytorch.past_key_values = tuple(
-        [tuple([past.half() for past in layer_state]) for layer_state in previous_step_pytorch.past_key_values]
-    )
-    out_encoder_pytorch.last_hidden_state = out_encoder_pytorch.last_hidden_state.half()
-
-    out_decoder_onnx_cache = decoder_onnx_inference(
-        decoder_input_ids=input_ids[:, -1:],
-        encoder_hidden_states=out_encoder_pytorch.last_hidden_state,
-        enable_cache=torch.tensor([1], device="cuda", dtype=torch.int32),
-        past_key_values=previous_step_pytorch.past_key_values,
-        decoder_onnx=decoder_onnx,
-        num_layers=model_pytorch.config.num_layers,
-    )
-
-    are_equal(
-        a=out_decoder_onnx_cache.last_hidden_state[:, -1:, :],
-        b=out_decoder_pytorch.last_hidden_state[:, -1:, :],
-    )
-
-    # check that past states are identical between ONNX and Pytorch
-    assert len(out_decoder_onnx_cache.past_key_values) == len(out_decoder_pytorch.past_key_values)
-    for (o_dec_k, o_dev_v, o_enc_k, o_enc_v), (p_dec_k, p_dev_v, p_enc_k, p_enc_v) in zip(
-        out_decoder_onnx_cache.past_key_values, out_decoder_pytorch.past_key_values
-    ):
-        are_equal(a=o_dec_k, b=p_dec_k)
-        are_equal(a=o_dev_v, b=p_dev_v)
-        are_equal(a=o_enc_k, b=p_enc_k)
-        are_equal(a=o_enc_v, b=p_enc_v)
-
     # Test full Onnx T5 converted:
     model_gen = (
         ExtT5(
@@ -769,3 +645,23 @@ def onnx_to_tensorrt_model(
     )
     del model_engine
     return tensorrt_model
+
+
+def generate_input_for_t5(tokenizer: PreTrainedTokenizer, run_on_cuda: bool) -> torch.Tensor:
+    from transformers import TensorType
+
+    input_ids: torch.Tensor = tokenizer(
+        "translate English to French: Transfer learning, where a model is first pre-trained "
+        "on a data-rich task before being fine-tuned on a downstream task, has emerged as a "
+        "powerful technique in natural language processing (NLP). The effectiveness of transfer "
+        "learning has given rise to a diversity of approaches, methodology, and practice. "
+        "In this paper, we explore the landscape of transfer learning techniques for NLP by "
+        "introducing a unified framework that converts all text-based language problems into "
+        "a text-to-text format.nd more.",
+        return_tensors=TensorType.PYTORCH,
+    ).input_ids
+    input_ids = input_ids.type(torch.int32)
+    if run_on_cuda:
+        input_ids = input_ids.to("cuda")
+
+    return input_ids

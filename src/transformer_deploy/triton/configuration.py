@@ -174,8 +174,11 @@ output {{
         :param engine_type: type of inference engine (ONNX or TensorRT)
         """
         self.engine_type = engine_type
-        self.num_layers = config.num_layers
-        self.vocab_size = tokenizer.vocab_size
+        try:
+            self.num_layers = config.num_layers
+            self.vocab_size = tokenizer.vocab_size
+        except:
+            pass
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)
         target.joinpath("model.py").write_text(self.python_code)

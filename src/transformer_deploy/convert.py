@@ -56,7 +56,6 @@ from transformer_deploy.backends.pytorch_utils import (
 from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
 from transformer_deploy.benchmarks.utils import (
     compare_outputs,
-    generate_input_for_t5,
     generate_multiple_inputs,
     print_timings,
     setup_logging,
@@ -67,6 +66,7 @@ from transformer_deploy.t5_utils.t5_utils import (
     ExtT5,
     convert_t5_to_onnx,
     create_triton_configs,
+    generate_input_for_t5,
     get_triton_output_shape,
     onnx_to_tensorrt_model,
 )

@@ -18,7 +18,7 @@ import tritonclient.http
 from transformer_deploy.benchmarks.utils import print_timings, setup_logging, track_infer_time
 
 
-model_name = "t5-encoder_onnx_inference"
+model_name = "transformer_onnx_tokenize"
 url = "127.0.0.1:8000"
 model_version = "1"
 text = "SOME TEXT"  # edit to check longer sequence length

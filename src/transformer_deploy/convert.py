@@ -62,7 +62,7 @@ from transformer_deploy.benchmarks.utils import (
     to_numpy,
     track_infer_time,
 )
-from transformer_deploy.t5_utils.t5_utils import (
+from transformer_deploy.t5_utils.conversion_utils import (
     ExtT5,
     convert_t5_to_onnx,
     create_triton_configs,
@@ -322,7 +322,7 @@ def main(commands: argparse.Namespace):
             import tensorrt as trt
             from tensorrt.tensorrt import Logger, Runtime
 
-            from transformer_deploy.t5_utils.t5_utils import prepare_input_shapes_tensorrt_decoder
+            from transformer_deploy.t5_utils.conversion_utils import prepare_input_shapes_tensorrt_decoder
 
         except ImportError:
             raise ImportError(

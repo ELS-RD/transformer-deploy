@@ -37,7 +37,7 @@ def save_onnx(proto: onnx.ModelProto, model_path: str, clean: bool = True) -> No
         to_save = clean_graph(proto=proto)
     else:
         to_save = proto
-    save_external_data: bool = to_save.ByteSize() > 2 * 1024 ** 3
+    save_external_data: bool = to_save.ByteSize() > 2 * 1024**3
     filename = Path(model_path).name
     onnx.save_model(
         proto=to_save,
@@ -94,7 +94,7 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
     # speed-up the duplicated weights search by using a dict of weights hashes
     initializer_no_cache = defaultdict(list)
     for node_no_cache in model_no_cache.graph.initializer:
-        if len(node_no_cache.raw_data) < 1024 ** 2:  # skip weights smaller than 1MB
+        if len(node_no_cache.raw_data) < 1024**2:  # skip weights smaller than 1MB
             continue
         initializer_no_cache[hash(node_no_cache.raw_data)].append(node_no_cache)
 

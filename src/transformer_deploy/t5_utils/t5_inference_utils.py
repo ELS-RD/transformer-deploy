@@ -24,7 +24,7 @@ class ExportT5(torch.nn.Module):
         )
         # weight tying -> rescale output before projecting on vocab
         # to comment for T0 for instance
-        out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (self.model_dim ** -0.5)
+        out_dec["last_hidden_state"] = out_dec["last_hidden_state"] * (self.model_dim**-0.5)
         out_dec["last_hidden_state"] = self.lm_head(out_dec["last_hidden_state"])
         return out_dec
 

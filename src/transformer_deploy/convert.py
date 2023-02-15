@@ -439,8 +439,6 @@ def main(commands: argparse.Namespace):
             if commands.generative_model == "t5"
             else [onnx_model_path]
         )
-        print(model_paths)
-        print([(idx, path) for idx, path in enumerate(model_paths)])
         optim_model_paths = (
             [model_path[:-5] + "_optim.onnx" for model_path in model_paths]
             if commands.generative_model == "t5"

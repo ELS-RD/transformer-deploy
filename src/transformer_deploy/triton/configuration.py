@@ -177,7 +177,7 @@ output {{
         try:
             self.num_layers = config.num_layers
             self.vocab_size = tokenizer.vocab_size
-        except Exception:
+        except AttributeError:
             pass
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)

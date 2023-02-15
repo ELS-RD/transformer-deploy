@@ -521,7 +521,7 @@ def main(commands: argparse.Namespace):
                     return results["start_logits"], results["end_logits"]
 
             logging.info("running %s benchmark", benchmark_name)
-            inputs = input_ids if commands.generative_model == "t5" else inputs_pytorch
+            inputs = [input_ids] if commands.generative_model == "t5" else inputs_pytorch
             ort_output, time_buffer = launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures)
             check_accuracy(
                 engine_name=benchmark_name,

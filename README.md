@@ -64,7 +64,7 @@ git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 # docker image may take a few minutes
 docker pull ghcr.io/els-rd/transformer-deploy:0.6.0 
-```
+
 
 ### Classification/reranking (encoder model)
 

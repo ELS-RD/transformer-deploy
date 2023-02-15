@@ -29,15 +29,17 @@ triton_client = tritonclient.http.InferenceServerClient(url=url, verbose=False)
 time_buffer = list()
 
 query = tritonclient.http.InferInput(name="TEXT", shape=(batch_size,), datatype="BYTES")
-outputs = tritonclient.http.InferRequestedOutput("output", binary_data=False)
-# attention_mask = tritonclient.http.InferRequestedOutput("attention_mask", binary_data=False)
-# token_type_ids = tritonclient.http.InferRequestedOutput("token_type_ids", binary_data=False)
+input_ids = tritonclient.http.InferRequestedOutput("input_ids", binary_data=False)
+attention_mask = tritonclient.http.InferRequestedOutput("attention_mask", binary_data=False)
+token_type_ids = tritonclient.http.InferRequestedOutput("token_type_ids", binary_data=False)
 
 
 def perform_inference():
     query.set_data_from_numpy(np.asarray([text] * batch_size, dtype=object))
-    output = triton_client.infer(model_name, model_version=model_version, inputs=[query], outputs=[outputs])
-    return output.as_numpy("input_ids")
+    output = triton_client.infer(
+        model_name, model_version=model_version, inputs=[query], outputs=[input_ids, attention_mask, token_type_ids]
+    )
+    return output.as_numpy("input_ids"), output.as_numpy("token_type_ids"), output.as_numpy("attention_mask")
 
 
 # warmup

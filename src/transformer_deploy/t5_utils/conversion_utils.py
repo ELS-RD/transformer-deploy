@@ -440,7 +440,6 @@ def convert_t5_to_onnx(
     # basically it's the fake node names we added above, we need to remove the output_ prefix to their names
     keep_fp32_cache = [item.replace("output_", "") for item in keep_fp32_cache]
 
-    del decoder_if_ort_model
     torch.cuda.empty_cache()
     gc.collect()
 
@@ -627,7 +626,7 @@ def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: i
 
 
 def onnx_to_tensorrt_model(
-    runtime, onnx_model_path, trt_logger, tensor_shapes, workspace_size, quantization, tensorrt_model_path
+    runtime, onnx_model_path, trt_logger, workspace_size, quantization, tensorrt_model_path, **kwargs
 ) -> Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]]:
     try:
         from tensorrt.tensorrt import ICudaEngine
@@ -641,17 +640,29 @@ def onnx_to_tensorrt_model(
             "Please find installation instruction on "
             "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
         )
-    model_engine: ICudaEngine = build_engine(
-        runtime=runtime,
-        onnx_file_path=onnx_model_path,
-        logger=trt_logger,
-        min_shape=tensor_shapes[0],
-        optimal_shape=tensor_shapes[1],
-        max_shape=tensor_shapes[2],
-        workspace_size=workspace_size * 1024 * 1024,
-        fp16=not quantization,
-        int8=quantization,
-    )
+    assert "tensor_shapes" in kwargs or "input_shapes" in kwargs, "Missing input shapes for TensorRT conversion."
+    if "tensor_shapes" in kwargs:
+        model_engine: ICudaEngine = build_engine(
+            runtime=runtime,
+            onnx_file_path=onnx_model_path,
+            logger=trt_logger,
+            min_shape=kwargs["tensor_shapes"][0],
+            optimal_shape=kwargs["tensor_shapes"][1],
+            max_shape=kwargs["tensor_shapes"][2],
+            workspace_size=workspace_size * 1024 * 1024,
+            fp16=not quantization,
+            int8=quantization,
+        )
+    else:
+        model_engine: ICudaEngine = build_engine(
+            runtime=runtime,
+            onnx_file_path=onnx_model_path,
+            logger=trt_logger,
+            input_shapes=kwargs["input_shapes"],
+            workspace_size=workspace_size * 1024 * 1024,
+            fp16=not quantization,
+            int8=quantization,
+        )
     save_engine(engine=model_engine, engine_file_path=tensorrt_model_path)
     # check encoder engine has been correctly serialized
     tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(

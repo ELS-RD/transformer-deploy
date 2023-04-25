@@ -241,7 +241,7 @@ def main(commands: argparse.Namespace):
                 model=model,
                 run_on_cuda=cuda,
                 min_length=commands.seq_len[0],
-                max_length=commands.seq_len[1],
+                max_length=commands.seq_len[0],
                 num_beams=2,
             )
         if task in ["classification", "text-generation", "token-classification", "question-answering"]:
@@ -264,8 +264,9 @@ def main(commands: argparse.Namespace):
             with autocast():
                 engine_name = "Pytorch (FP16)"
                 logging.info("running Pytorch (FP16) benchmark")
+                model_pytorch_fp16 = model_pytorch.half()
                 pytorch_fp16_output, time_buffer = launch_inference(
-                    infer=get_pytorch_infer(model=model_pytorch, cuda=run_on_cuda, task=commands.task),
+                    infer=get_pytorch_infer(model=model_pytorch_fp16, cuda=run_on_cuda, task=commands.task),
                     inputs=inputs_pytorch,
                     nb_measures=commands.nb_measures,
                 )
@@ -360,7 +361,7 @@ def main(commands: argparse.Namespace):
                 runtime=runtime,
                 onnx_model_path=decoder_onnx_path,
                 trt_logger=trt_logger,
-                tensor_shapes=input_shapes,
+                input_shapes=input_shapes,
                 workspace_size=commands.workspace_size,
                 quantization=commands.quantization,
                 tensorrt_model_path=tensorrt_decoder_path,
@@ -488,7 +489,7 @@ def main(commands: argparse.Namespace):
                 # warmup generative model:
                 [
                     ort_model.generate(
-                        inputs=input_ids, min_length=commands.seq_len[0], max_length=commands.seq_len[1], num_beams=2
+                        inputs=input_ids, min_length=commands.seq_len[0], max_length=commands.seq_len[0], num_beams=2
                     )
                     for _ in range(5)
                 ]
@@ -505,7 +506,7 @@ def main(commands: argparse.Namespace):
                     ort_model.generate(
                         inputs=inputs,
                         min_length=commands.seq_len[0],
-                        max_length=commands.seq_len[1],
+                        max_length=commands.seq_len[0],
                         num_beams=2,
                     )[0]
                     if commands.generative_model == "t5"
@@ -520,6 +521,7 @@ def main(commands: argparse.Namespace):
 
             logging.info("running %s benchmark", benchmark_name)
             inputs = [input_ids] if commands.generative_model == "t5" else inputs_pytorch
+            [launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures) for _ in range(5)]
             ort_output, time_buffer = launch_inference(infer=infer_ort, inputs=inputs, nb_measures=commands.nb_measures)
             check_accuracy(
                 engine_name=benchmark_name,

@@ -2,6 +2,21 @@ FROM nvcr.io/nvidia/tritonserver:22.07-py3
 
 # see .dockerignore to check what is transfered
 
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    python3-dev \
+    python3-distutils \
+    python3-venv \
+    python3-pip \
+    apt-get clean
+
+ARG UID=1000
+ARG GID=1000
+RUN addgroup --gid $GID ubuntu && \
+    useradd -d /home/ubuntu -ms /bin/bash -g ubuntu -G sudo -u $UID ubuntu
+## Switch to ubuntu user by default.
+USER ubuntu
+
 WORKDIR /build
 RUN pip3 install -U pip --no-cache-dir && \
     pip3 install numpy --pre torch --force-reinstall --index-url https://download.pytorch.org/whl/nightly/cu117 --no-cache-dir && \

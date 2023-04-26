@@ -4,9 +4,9 @@ FROM nvcr.io/nvidia/tritonserver:22.07-py3
 
 WORKDIR /build
 RUN pip3 install -U pip --no-cache-dir && \
+    pip3 install numpy --pre torch --force-reinstall --index-url https://download.pytorch.org/whl/nightly/cu117 --no-cache-dir && \
     pip3 install nvidia-pyindex --no-cache-dir && \
-    pip3 install --pre torch==2.0.0.dev20230128+cu117 --extra-index-url https://download.pytorch.org/whl/nightly/cu117 --no-cache-dir && \
-    pip3 install sentence-transformers notebook pytorch-quantization ipywidgets --no-cache-dir 
+    pip3 install sentence-transformers notebook pytorch-quantization ipywidgets --no-cache-dir
 
 RUN mkdir /syncback
 WORKDIR /transformer_deploy

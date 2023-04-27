@@ -22,7 +22,9 @@ jobs:
 
     - name: update pip
       run: python -m pip install --upgrade pip
-      run: python -m pip install nvidia-pyindex
+      
+    - name: install nvidia-pyindex
+    - run: python -m pip install nvidia-pyindex
 
     - name: install test dependencies
       run: python -m pip install sentence-transformers

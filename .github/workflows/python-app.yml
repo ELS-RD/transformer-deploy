@@ -20,6 +20,9 @@ jobs:
         python-version: '3.9'
         cache: 'pip' # caching pip dependencies
 
+    - name: update pip
+      run: pip install --upgrade pip
+        
     - name: install package dependencies
       run: pip install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.com
 

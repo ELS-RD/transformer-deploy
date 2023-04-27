@@ -15,7 +15,7 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v3
       with:
         python-version: '3.8'
         cache: 'pip' # caching pip dependencies
@@ -27,6 +27,7 @@ jobs:
       run: |
         pip3 install sentence-transformers
         pip3 install nvidia-pyindex
+        pip3 install pytest
 
     - name: test
       run: make test_ci

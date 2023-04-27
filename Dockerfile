@@ -4,6 +4,8 @@ FROM nvcr.io/nvidia/tritonserver:22.07-py3
 
 COPY ./ ./
 
-RUN pip3 install --upgrade pip && \
+RUN pip3 install --upgrade pip setuptools && \
+    pip3 uninstall nvidia-pyindex && \
+    pip3 install nvidia-pyindex && \
     pip3 install ".[GPU]" --extra-index-url https://pypi.ngc.nvidia.com --no-cache-dir && \
     pip3 install sentence-transformers notebook pytorch-quantization ipywidgets

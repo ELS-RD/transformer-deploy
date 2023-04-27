@@ -21,13 +21,13 @@ jobs:
         cache: 'pip' # caching pip dependencies
 
     - name: update pip
-      run: pip install --upgrade pip
+      run: python -m pip install --upgrade pip
         
     - name: install package dependencies
-      run: pip install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.com
+      run: python -m pip install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.com
 
     - name: install test dependencies
-      run: pip install sentence-transformers
+      run: python -m pip install sentence-transformers
 
     - name: linter
       run: make source_code_check_format

@@ -21,7 +21,7 @@ jobs:
         cache: 'pip' # caching pip dependencies
 
     - name: install package dependencies
-      run: pip install ".[CPU]" --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.com
+      run: pip install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.com
 
     - name: install test dependencies
       run: pip install sentence-transformers

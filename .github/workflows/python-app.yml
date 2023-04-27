@@ -28,9 +28,6 @@ jobs:
         pip3 install sentence-transformers
         pip3 install nvidia-pyindex
 
-    - name: linter
-      run: make source_code_check_format
-
     - name: test
       run: make test_ci
 

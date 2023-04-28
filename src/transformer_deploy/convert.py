@@ -54,14 +54,7 @@ from transformer_deploy.backends.pytorch_utils import (
     infer_text_generation,
 )
 from transformer_deploy.backends.st_utils import STransformerWrapper, load_sentence_transformers
-from transformer_deploy.benchmarks.utils import (
-    compare_outputs,
-    generate_multiple_inputs,
-    print_timings,
-    setup_logging,
-    to_numpy,
-    track_infer_time,
-)
+from transformer_deploy.benchmarks.utils import generate_multiple_inputs, print_timings, setup_logging, track_infer_time
 from transformer_deploy.t5_utils.conversion_utils import (
     ExtT5,
     convert_t5_to_onnx,
@@ -75,36 +68,8 @@ from transformer_deploy.triton.configuration_decoder import ConfigurationDec
 from transformer_deploy.triton.configuration_encoder import ConfigurationEnc
 from transformer_deploy.triton.configuration_question_answering import ConfigurationQuestionAnswering
 from transformer_deploy.triton.configuration_token_classifier import ConfigurationTokenClassifier
+from transformer_deploy.utils.accuracy import check_accuracy
 from transformer_deploy.utils.args import parse_args
-
-
-def check_accuracy(
-    engine_name: str,
-    pytorch_output: List[torch.Tensor],
-    engine_output: List[Union[np.ndarray, torch.Tensor]],
-    tolerance: float,
-) -> None:
-    """
-    Compare engine predictions with a reference.
-    Assert that the difference is under a threshold.
-
-    :param engine_name: string used in error message, if any
-    :param pytorch_output: reference output used for the comparaison
-    :param engine_output: output from the engine
-    :param tolerance: if difference in outputs is above threshold, an error will be raised
-    """
-    pytorch_output = to_numpy(pytorch_output)
-    engine_output = to_numpy(engine_output)
-    discrepency = compare_outputs(pytorch_output=pytorch_output, engine_output=engine_output)
-    assert discrepency <= tolerance, (
-        f"{engine_name} discrepency is too high ({discrepency:.2f} >= {tolerance}):\n"
-        f"Pythorch:\n{pytorch_output}\n"
-        f"VS\n"
-        f"Engine:\n{engine_output}\n"
-        f"Diff:\n"
-        f"{torch.asarray(pytorch_output) - torch.asarray(engine_output)}\n"
-        "Tolerance can be increased with --atol parameter."
-    )
 
 
 def launch_inference(

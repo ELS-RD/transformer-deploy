@@ -61,7 +61,6 @@ from transformer_deploy.t5_utils.conversion_utils import (
     create_triton_configs,
     generate_input_for_t5,
     get_triton_output_shape,
-    onnx_to_tensorrt_model,
 )
 from transformer_deploy.triton.configuration import Configuration, EngineType
 from transformer_deploy.triton.configuration_decoder import ConfigurationDec
@@ -113,6 +112,9 @@ def main(commands: argparse.Namespace):
 
     if commands.device == "cpu" and "tensorrt" in commands.backend:
         raise Exception("can't perform inference on CPU and use Nvidia TensorRT as backend")
+
+    if commands.task == "text-generation" and commands.generative_model == "t5" and "tensorrt" in commands.backend:
+        raise Exception("TensorRT is not supported yet for T5 transformation")
 
     if len(commands.seq_len) == len(set(commands.seq_len)) and "tensorrt" in commands.backend:
         logging.warning("having different sequence lengths may make TensorRT slower")
@@ -293,10 +295,9 @@ def main(commands: argparse.Namespace):
         logging.info("preparing TensorRT (FP16) benchmark")
         try:
             import tensorrt as trt
-            from tensorrt.tensorrt import Logger, Runtime
+            from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
 
-            from transformer_deploy.t5_utils.conversion_utils import prepare_input_shapes_tensorrt_decoder
-
+            from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
         except ImportError:
             raise ImportError(
                 "It seems that TensorRT is not yet installed. "
@@ -304,56 +305,25 @@ def main(commands: argparse.Namespace):
                 "Please find installation instruction on "
                 "https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html"
             )
+        tensorrt_path = os.path.join(commands.output, "model.plan")
         trt_logger: Logger = trt.Logger(trt.Logger.VERBOSE if commands.verbose else trt.Logger.WARNING)
         runtime: Runtime = trt.Runtime(trt_logger)
-        if commands.generative_model == "t5":
-            encoder_onnx_path = os.path.join(commands.output, "t5-encoder") + "/model.onnx"
-            tensorrt_encoder_path = os.path.join(commands.output, "t5-encoder") + "/model.plan"
-            tensorrt_encoder = onnx_to_tensorrt_model(
-                runtime=runtime,
-                onnx_model_path=encoder_onnx_path,
-                trt_logger=trt_logger,
-                tensor_shapes=tensor_shapes,
-                workspace_size=commands.workspace_size,
-                quantization=commands.quantization,
-                tensorrt_model_path=tensorrt_encoder_path,
-            )
-
-            decoder_onnx_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.onnx"
-            tensorrt_decoder_path = os.path.join(commands.output, "t5-dec-if-node") + "/model.plan"
-            input_shapes = prepare_input_shapes_tensorrt_decoder(input_ids, model_pytorch.config.num_layers)
-            tensorrt_decoder = onnx_to_tensorrt_model(
-                runtime=runtime,
-                onnx_model_path=decoder_onnx_path,
-                trt_logger=trt_logger,
-                input_shapes=input_shapes,
-                workspace_size=commands.workspace_size,
-                quantization=commands.quantization,
-                tensorrt_model_path=tensorrt_decoder_path,
-            )
-
-            def tensorrt_model(x):
-                encoder_outputs = tensorrt_encoder(x)
-                inputs = {
-                    "input_ids": input_ids,
-                    "encoder_hidden_states": encoder_outputs.last_hidden_state,
-                    "final_seq_len": torch.tensor([1], dtype=torch.int32, device="cuda"),
-                    "enable_cache": torch.tensor([True], dtype=torch.bool, device="cuda"),
-                }
-                decoder_outputs = tensorrt_decoder(inputs)
-                return decoder_outputs[0]
-
-        else:
-            tensorrt_path = os.path.join(commands.output, "model.plan")
-            tensorrt_model = onnx_to_tensorrt_model(
-                runtime=runtime,
-                onnx_model_path=onnx_model_path,
-                trt_logger=trt_logger,
-                tensor_shapes=tensor_shapes,
-                workspace_size=commands.workspace_size,
-                quantization=commands.quantization,
-                tensorrt_model_path=tensorrt_path,
-            )
+        engine: ICudaEngine = build_engine(
+            runtime=runtime,
+            onnx_file_path=onnx_model_path,
+            logger=trt_logger,
+            min_shape=tensor_shapes[0],
+            optimal_shape=tensor_shapes[1],
+            max_shape=tensor_shapes[2],
+            workspace_size=commands.workspace_size * 1024 * 1024,
+            fp16=not commands.quantization,
+            int8=commands.quantization,
+        )
+        save_engine(engine=engine, engine_file_path=tensorrt_path)
+        # important to check the engine has been correctly serialized
+        tensorrt_model: Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]] = load_engine(
+            runtime=runtime, engine_file_path=tensorrt_path
+        )
 
         if commands.task == "question-answering":
             tensorrt_inf: Callable[[Dict[str, torch.Tensor]], List[torch.Tensor]] = lambda x: list(
@@ -376,26 +346,11 @@ def main(commands: argparse.Namespace):
             tolerance=commands.atol,
         )
         timings[engine_name] = time_buffer
-        del tensorrt_model, runtime  # delete all tensorrt objects
+        del engine, tensorrt_model, runtime  # delete all tensorrt objects
         gc.collect()
-        if commands.task == "text-generation" and commands.generative_model == "t5":
-            encoder_outputs = tensorrt_encoder(input_ids)
-            create_triton_configs(
-                tokenizer,
-                model_config,
-                encoder_outputs,
-                tensorrt_output,
-                EngineType.TensorRT,
-                commands.task,
-                commands.nb_instances,
-                input_names,
-                commands.output,
-                commands.device,
-            )
-        else:
-            triton_conf.create_configs(
-                tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
-            )
+        triton_conf.create_configs(
+            tokenizer=tokenizer, model_path=tensorrt_path, config=model_config, engine_type=EngineType.TensorRT
+        )
 
     if "onnx" in commands.backend:
         # create optimized onnx model and compare results

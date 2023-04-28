@@ -35,7 +35,6 @@ from transformer_deploy.backends.ort_utils import (
     search_fp32_nodes,
 )
 from transformer_deploy.backends.pytorch_utils import convert_to_onnx
-from transformer_deploy.backends.trt_utils import TensorRTShape
 from transformer_deploy.t5_utils.t5_inference_utils import ExportT5, ExtT5
 from transformer_deploy.triton.configuration import EngineType
 from transformer_deploy.triton.configuration_t5 import ConfigurationT5Decoder, ConfigurationT5Encoder
@@ -566,6 +565,8 @@ def create_triton_configs(
 
 
 def prepare_input_shapes_tensorrt_decoder(input_ids: torch.tensor, num_layers: int) -> List[str]:
+    from transformer_deploy.backends.trt_utils import TensorRTShape
+
     input_ids_shape = input_ids.shape[0]
     input_id_shape = TensorRTShape(
         min_shape=[input_ids_shape, 1],

@@ -23,14 +23,13 @@ jobs:
     - name: update pip
       run: python -m pip install --upgrade pip
 
-    - name: install pyindex
-      run: pip3 install nvidia-pyindex
+    - name: install test dependencies
+      run: |
+        pip3 install sentence-transformers
+        pip3 install nvidia-pyindex
 
     - name: install package
       run: pip3 install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.c
-
-    - name: install test dependencies
-      run: pip3 install sentence-transformers
 
     - name: test
       run: make test_ci

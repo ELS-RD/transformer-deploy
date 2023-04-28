@@ -27,10 +27,15 @@ jobs:
       run: |
         pip3 install sentence-transformers
         pip3 install nvidia-pyindex
-        pip3 install pytest
+
+    - name: install package
+      run: pip3 install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.c
 
     - name: test
       run: make test_ci
+
+    - name: lint
+      run: make source_code_check_format
 
     - name: read VERSION file
       id: getversion

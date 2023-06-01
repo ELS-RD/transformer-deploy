@@ -1,5 +1,5 @@
 torch
-onnx
+onnx==1.13.1
 tritonclient[all]
 nvidia-pyindex
 numpy==1.23.5

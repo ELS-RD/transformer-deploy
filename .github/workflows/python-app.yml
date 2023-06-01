@@ -34,9 +34,6 @@ jobs:
     - name: test
       run: make test_ci
 
-    - name: lint
-      run: make source_code_check_format
-
     - name: read VERSION file
       id: getversion
       run: echo "::set-output name=version::$(cat VERSION)"

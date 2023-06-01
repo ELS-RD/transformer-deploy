@@ -63,8 +63,8 @@ First, clone the repo as some commands below expect to find the `demo` folder:
 git clone git@github.com:ELS-RD/transformer-deploy.git
 cd transformer-deploy
 # docker image may take a few minutes
-docker pull ghcr.io/els-rd/transformer-deploy:0.5.4 
-```
+docker pull ghcr.io/els-rd/transformer-deploy:0.6.0 
+
 
 ### Classification/reranking (encoder model)
 
@@ -77,7 +77,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m \"philschmid/MiniLM-L6-H384-uncased-sst2\" \
     --backend tensorrt onnx \
@@ -147,7 +147,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m \"kamalkraj/bert-base-cased-ner-conll2003\" \
     --backend tensorrt onnx \
@@ -212,7 +212,7 @@ This will optimize models, generate Triton configuration and Triton folder layou
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m \"distilbert-base-cased-distilled-squad\" \
     --backend tensorrt onnx \
@@ -280,7 +280,7 @@ a version >= V2.2.0 of sentence-transformers library.
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m \"sentence-transformers/msmarco-distilbert-cos-v5\" \
     --backend tensorrt onnx \
@@ -330,6 +330,9 @@ curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/version
 Text generation seems to be the way to go for NLP.  
 Unfortunately, they are slow to run, below we will accelerate the most famous of them: GPT-2.
 
+#### GPT example
+We will start with GPT-2 model example, then in the next section we will use T5-model.
+
 #### Optimize existing model
 
 Like before, command below will prepare Triton inference server stuff.  
@@ -341,7 +344,7 @@ One point to have in mind is that Triton run:
 
 ```shell
 docker run -it --rm --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m gpt2 \
     --backend tensorrt onnx \
@@ -371,7 +374,7 @@ To optimize models which typically don't fit twice onto a single GPU, run the sc
 
 ```shell
 docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
-  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && \
     convert_model -m gpt2-medium \
     --backend tensorrt onnx \
@@ -425,8 +428,54 @@ You may want to tweak it regarding your needs (default is set for greedy search 
 You may be interested in running optimized text generation on Python directly, without using any inference server:  
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+docker run -p 8888:8888 -v $PWD/demo/generative-model:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
+```
+
+#### T5-small example
+In this section we will present the t5-small model conversion.
+
+#### Optimize existing large model
+
+To optimize model run the script as follows:
+
+```shell
+docker run -it --rm --shm-size=24g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all \
+  -v $PWD:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
+  bash -c "cd /project && \
+    convert_model -m t5-small \
+    --backend onnx \
+    --seq-len 16 256 256 \
+    --task text-generation \
+    --nb-measures 100 \
+    --generative-model t5 \
+    --output triton_models"
+```
+#### Run Nvidia Triton inference server
+
+To run decoding algorithm server side, we need to install `Pytorch` on `Triton` docker image.
+
+```shell
+docker run -it --rm --gpus all -p8000:8000 -p8001:8001 -p8002:8002 --shm-size 8g \
+  -v $PWD/triton_models/:/models nvcr.io/nvidia/tritonserver:22.07-py3 \
+  bash -c "pip install onnx onnxruntime-gpu transformers==4.21.3 git+https://github.com/ELS-RD/transformer-deploy torch==1.12.0 -f https://download.pytorch.org/whl/cu116/torch_stable.html onnx onnxruntime-gpu && \
+  tritonserver --model-repository=/models"
+```
+To test text generation, you can try this request:
+```shell
+curl -X POST http://localhost:8000/v2/models/t5_model_generate/versions/1/infer --data-binary "@demo/generative-model/t5_query_body.bin" --header "Inference-Header-Content-Length: 181"
+
+# output:
+# {"model_name":"t5_model_generate","model_version":"1","outputs":[{"name":"OUTPUT_TEXT","datatype":"BYTES","shape":[],"data":["Mein Name mein Wolfgang Wolfgang und ich wohne in Berlin."]}]}
+```
+#### Query inference
+
+Replace `transformer_onnx_generate` by `transformer_tensorrt_generate` to query `TensorRT` engine.
+
+```shell
+curl -X POST  http://localhost:8000/v2/models/transformer_onnx_inference/versions/1/infer \
+  --data-binary "@demo/infinity/seq2seq_query_body.bin" \
+  --header "Inference-Header-Content-Length: 176"
 ```
 
 ### Model quantization on GPU
@@ -440,7 +489,7 @@ It makes it easy to use.
 To play with it, open this notebook:
 
 ```shell
-docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.5.4 \
+docker run -p 8888:8888 -v $PWD/demo/quantization:/project ghcr.io/els-rd/transformer-deploy:0.6.0 \
   bash -c "cd /project && jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root"
 ```
 

@@ -19,7 +19,7 @@ import transformers.models.t5.modeling_t5
 
 from transformer_deploy.backends.pytorch_utils import get_model_size
 from transformer_deploy.benchmarks.utils import compare_outputs, generate_input, generate_multiple_inputs, to_numpy
-from transformer_deploy.convert import check_accuracy
+from transformer_deploy.utils.accuracy import check_accuracy
 from transformer_deploy.utils.fastseq import code_patcher
 
 

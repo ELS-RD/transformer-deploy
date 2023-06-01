@@ -168,12 +168,18 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
 
     # a new input to decide if we use past state or not
     enable_cache_input = onnx.helper.make_tensor_value_info(
-        name="enable_cache", elem_type=onnx.TensorProto.BOOL, shape=[1]
+        name="enable_cache", elem_type=onnx.TensorProto.INT32, shape=[1]
     )
 
+    cast_node = onnx.helper.make_node(
+        "Cast",
+        inputs=["enable_cache"],
+        outputs=["bool_enable_cache"],
+        to=getattr(onnx.TensorProto, "BOOL"),
+    )
     if_node = onnx.helper.make_node(
         op_type="If",
-        inputs=["enable_cache"],
+        inputs=["bool_enable_cache"],
         outputs=[o.name for o in list(model_no_cache.graph.output)],
         then_branch=graph_cache,
         else_branch=graph_no_cache,
@@ -181,7 +187,7 @@ def merge_autoregressive_model_graphs(model_cache_path: str, model_no_cache_path
 
     # final model which can disable its cache
     if_graph_def: onnx.GraphProto = onnx.helper.make_graph(
-        nodes=[if_node],
+        nodes=[cast_node, if_node],
         name="if-model",
         inputs=list(model_cache.graph.input) + [enable_cache_input],
         outputs=list(model_no_cache.graph.output),

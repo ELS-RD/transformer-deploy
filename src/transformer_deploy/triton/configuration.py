@@ -39,6 +39,8 @@ class EngineType(Enum):
 class Configuration(ABC):
 
     engine_type: Optional[EngineType]
+    num_layers: Optional[int]
+    vocab_size: Optional[int]
     python_code: Optional[str]
 
     def __init__(
@@ -171,6 +173,11 @@ output {{
         :param model_path: main folder where to save configurations and artefacts
         :param engine_type: type of inference engine (ONNX or TensorRT)
         """
+        try:
+            self.num_layers = config.num_layers
+            self.vocab_size = tokenizer.vocab_size
+        except AttributeError:
+            pass
         self.engine_type = engine_type
         target = self.working_dir.joinpath(self.python_folder_name).joinpath("1")
         target.mkdir(parents=True, exist_ok=True)

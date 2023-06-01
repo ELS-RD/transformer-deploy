@@ -50,6 +50,30 @@ def infer_classification_pytorch(
     return infer
 
 
+def infer_text_generation(
+    model: PreTrainedModel, run_on_cuda: bool, min_length: int, max_length: int, num_beams: int
+) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:
+    """
+    Perform Pytorch inference for T5 text generation task
+    :param model: Text generation model
+    :param run_on_cuda: True if model should run on GPU
+    :param min_length: minimum text length to be generated
+    :param max_length: maximum text length to be generated
+    :param num_beams: number of beams used for text generation
+    :return: a function to perform inference
+    """
+
+    def infer(inputs: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        model_outputs = model.generate(
+            inputs=inputs["input_ids"], min_length=min_length, max_length=max_length, num_beams=num_beams
+        )
+        if run_on_cuda:
+            torch.cuda.synchronize()
+        return model_outputs
+
+    return infer
+
+
 def infer_feature_extraction_pytorch(
     model: PreTrainedModel, run_on_cuda: bool
 ) -> Callable[[Dict[str, torch.Tensor]], torch.Tensor]:

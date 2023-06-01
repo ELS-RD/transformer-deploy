@@ -1,8 +1,8 @@
 torch
-onnx
+onnx==1.13.1
 tritonclient[all]
 nvidia-pyindex
-numpy
+numpy==1.23.5
 requests
 transformers
 sentencepiece
@@ -16,3 +16,4 @@ isort
 flake8
 onnxoptimizer
 packaging
+protobuf==3.20.3

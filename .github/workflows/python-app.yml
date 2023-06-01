@@ -12,24 +12,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-python@v3
       with:
-        python-version: "3.9"
+        python-version: '3.9'
+        cache: 'pip' # caching pip dependencies
 
-    - name: Install dependencies
-      run: |
-        pip install -U pip
-        python -m pip install --upgrade pip
-        pip install ".[CPU]" -f https://download.pytorch.org/whl/cpu/torch_stable.html
-        pip install sentence-transformers
+    - name: update pip
+      run: python -m pip install --upgrade pip
 
-    - name: linter and tests
+    - name: install test dependencies
       run: |
-        make source_code_check_format
-        make test_ci
+        pip3 install sentence-transformers
+        pip3 install nvidia-pyindex
+
+    - name: install package
+      run: pip3 install ".[CPU]" --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.ngc.nvidia.c
+
+    - name: test
+      run: make test_ci
 
     - name: read VERSION file
       id: getversion

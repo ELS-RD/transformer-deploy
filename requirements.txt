@@ -2,7 +2,7 @@ torch
 onnx
 tritonclient[all]
 nvidia-pyindex
-numpy
+numpy==1.23.5
 requests
 transformers
 sentencepiece

@@ -43,6 +43,7 @@ def test_albert_gpu():
     main(commands=args)
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
 def test_minilm_cpu():
     commands = [
         "--model",

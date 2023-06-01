@@ -16,3 +16,4 @@ isort
 flake8
 onnxoptimizer
 packaging
+protobuf==3.20.3

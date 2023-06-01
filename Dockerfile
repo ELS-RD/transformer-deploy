@@ -19,7 +19,7 @@ USER ubuntu
 
 WORKDIR /build
 RUN pip3 install -U pip --no-cache-dir && \
-    pip3 install --pre torch --force-reinstall --extra-index-url https://download.pytorch.org/whl/nightly/cpu --no-cache-dir && \
+    pip3 install --pre torch --force-reinstall --index-url https://download.pytorch.org/whl/nightly/cu117 --no-cache-dir && \
     pip3 install sentence-transformers notebook pytorch-quantization ipywidgets --no-cache-dir
 
 RUN mkdir /syncback

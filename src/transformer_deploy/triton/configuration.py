@@ -16,7 +16,6 @@
 Generate Nvidia Triton server configuration files.
 """
 
-
 import os
 import shutil
 from abc import ABC
@@ -24,6 +23,8 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
+import tritonclient.grpc.model_config_pb2 as model_config
+from google.protobuf import text_format
 from transformers import PretrainedConfig, PreTrainedTokenizer
 
 
@@ -37,7 +38,6 @@ class EngineType(Enum):
 
 
 class Configuration(ABC):
-
     engine_type: Optional[EngineType]
     num_layers: Optional[int]
     vocab_size: Optional[int]
@@ -67,28 +67,39 @@ class Configuration(ABC):
         self.nb_instance = nb_instance
         self.tensor_input_names = tensor_input_names
         self.working_dir: Path = Path(working_directory)
-        self.device_kind = "KIND_GPU" if device == "cuda" else "KIND_CPU"
+        self.device_kind = (
+            model_config.ModelInstanceGroup.Kind.KIND_GPU
+            if device == "cuda"
+            else model_config.ModelInstanceGroup.Kind.KIND_CPU
+        )
 
     @property
     def python_folder_name(self) -> str:
         raise Exception("to implement")
 
-    def _get_tokens(self) -> str:
+    def _get_tokens(self) -> List[str]:
         """
         Generate input tensor configuration
         :return: input tensor configuration string
         """
         result: List[str] = list()
         for input_name in self.tensor_input_names:
-            text = f"""
-{{
-    name: "{input_name}"
-    data_type: TYPE_INT32
-    dims: [-1, -1]
-}}
-""".strip()
-            result.append(text)
-        return ",\n".join(result)
+            result.append(
+                model_config.ModelInput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1])
+            )
+        return result
+
+    def _get_tokens_output(self) -> List[str]:
+        """
+        Generate input tensor configuration
+        :return: input tensor configuration string
+        """
+        result: List[str] = list()
+        for input_name in self.tensor_input_names:
+            result.append(
+                model_config.ModelOutput(name=input_name, data_type=model_config.DataType.TYPE_INT32, dims=[-1, -1])
+            )
+        return result
 
     @property
     def model_name(self) -> str:
@@ -112,56 +123,33 @@ class Configuration(ABC):
         else:
             raise Exception(f"unknown model type: {self.engine_type}")
 
-    def _instance_group(self) -> str:
-        """
-        Generate instance configuration.
-        :return: instance configuration
-        """
-        return f"""
-instance_group [
-    {{
-      count: {self.nb_instance}
-      kind: {self.device_kind}
-    }}
-]
-""".strip()
-
     @staticmethod
-    def _get_header(name: str, platform: Optional[str] = None, backend: Optional[str] = None):
+    def _get_model_base(name: str, platform: Optional[str] = None, backend: Optional[str] = None):
         assert platform is not None or backend is not None
-        text = f"""
-name: "{name}"
-max_batch_size: 0
-""".strip()
+        config = model_config.ModelConfig(name=name, max_batch_size=0)
         if platform is not None:
-            text += f'\nplatform: "{platform}"'
+            config.platform = platform
         if backend is not None:
-            text += f'\nbackend: "{backend}"'
-        return text
+            config.backend = backend
+        return config
 
     def get_model_conf(self) -> str:
         """
         Generate model configuration.
         :return: model configuration
         """
-        return f"""
-name: "{self.model_folder_name}"
-max_batch_size: 0
-platform: "{self.inference_platform}"
-default_model_filename: "model.bin"
-
-input [
-{self._get_tokens()}
-]
-
-output {{
-    name: "output"
-    data_type: TYPE_FP32
-    dims: {str(self.dim_output)}
-}}
-
-{self._instance_group()}
-""".strip()
+        config = model_config.ModelConfig(
+            name=self.model_folder_name,
+            max_batch_size=0,
+            platform=self.inference_platform,
+            default_model_filename="model.bin",
+            input=self._get_tokens(),
+            output=[
+                model_config.ModelOutput(name="output", data_type=model_config.DataType.TYPE_FP32, dims=self.dim_output)
+            ],
+            instance_group=[model_config.ModelInstanceGroup(count=self.nb_instance, kind=self.device_kind)],
+        )
+        return text_format.MessageToString(config)
 
     def create_configs(
         self, tokenizer: PreTrainedTokenizer, config: PretrainedConfig, model_path: str, engine_type: EngineType

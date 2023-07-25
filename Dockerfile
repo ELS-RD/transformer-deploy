@@ -10,8 +10,8 @@ RUN apt-get update && \
     python3-pip \
     && apt-get clean
 
-ARG UID=10000
-ARG GID=10000
+ARG UID=1000
+ARG GID=1000
 RUN addgroup --gid $GID ubuntu && \
     useradd -d /home/ubuntu -ms /bin/bash -g ubuntu -G sudo -u $UID ubuntu
 ## Switch to ubuntu user by default.

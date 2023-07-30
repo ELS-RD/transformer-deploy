@@ -295,7 +295,7 @@ def main(commands: argparse.Namespace):
         logging.info("preparing TensorRT (FP16) benchmark")
         try:
             import tensorrt as trt
-            from tensorrt.tensorrt import ICudaEngine, Logger, Runtime
+            from tensorrt import ICudaEngine, Logger, Runtime
 
             from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
         except ImportError:

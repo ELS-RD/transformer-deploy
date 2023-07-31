@@ -630,7 +630,7 @@ def onnx_to_tensorrt_model(
     runtime, onnx_model_path, trt_logger, workspace_size, quantization, tensorrt_model_path, **kwargs
 ) -> Callable[[Dict[str, torch.Tensor]], Dict[str, torch.Tensor]]:
     try:
-        from tensorrt.tensorrt import ICudaEngine
+        from tensorrt import ICudaEngine
 
         from transformer_deploy.backends.trt_utils import build_engine, load_engine, save_engine
 

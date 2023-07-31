@@ -2,4 +2,4 @@ onnxruntime-gpu==1.13.1
 onnx_graphsurgeon
 polygraphy
 cupy-cuda117
-tensorrt
+tensorrt==8.6.1

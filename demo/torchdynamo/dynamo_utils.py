@@ -25,7 +25,7 @@ import torchdynamo
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from onnxruntime import GraphOptimizationLevel
-from tensorrt.tensorrt import Runtime
+from tensorrt import Runtime
 from torch._C._autograd import ProfilerActivity
 from torchdynamo.eval_frame import OptimizeContext
 from transformers import PreTrainedModel

@@ -43,7 +43,7 @@ class TritonPythonModel:
         """
         # more variables in https://github.com/triton-inference-server/python_backend/blob/main/src/python.cc
 
-        path: str = str(Path(args["model_repository"]).parent.absolute())
+        path: str = str(Path(args["model_repository"]).absolute() / args["model_version"])
         self.tokenizer = AutoTokenizer.from_pretrained(path)
         model_config = AutoConfig.from_pretrained(path)
         self.model_input_names = self.tokenizer.model_input_names

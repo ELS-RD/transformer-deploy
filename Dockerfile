@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:22.07-py3
+FROM nvcr.io/nvidia/tritonserver:23.06-py3
 
 # see .dockerignore to check what is transfered
 
@@ -8,7 +8,7 @@ RUN apt-get update && \
     python3-distutils \
     python3-venv \
     python3-pip \
-    apt-get clean
+    && apt-get clean
 
 ARG UID=1000
 ARG GID=1000

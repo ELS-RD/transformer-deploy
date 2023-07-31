@@ -1,5 +1,5 @@
 onnxruntime-gpu==1.13.1
-nvidia-tensorrt==8.4.1.5
 onnx_graphsurgeon
 polygraphy
 cupy-cuda117
+tensorrt==8.6.1

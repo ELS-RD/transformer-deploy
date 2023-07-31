@@ -21,7 +21,7 @@ Now we need to convert to TensorRT:
 
 ```python
 import tensorrt as trt
-from tensorrt.tensorrt import Logger, Runtime
+from tensorrt import Logger, Runtime
 
 from transformer_deploy.backends.trt_utils import build_engine
 
@@ -50,7 +50,7 @@ Now the engine is ready, we can prepare the inference:
 
 ```python
 import torch
-from tensorrt.tensorrt import IExecutionContext
+from tensorrt import IExecutionContext
 
 from transformer_deploy.backends.trt_utils import get_binding_idxs
 

@@ -23,8 +23,8 @@ from typing import Callable, Dict, List, Optional
 
 import tensorrt as trt
 import torch
-from tensorrt import ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, Logger, Runtime
-from tensorrt.tensorrt import Builder, IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser
+from tensorrt import (ICudaEngine, IExecutionContext, ILayer, INetworkDefinition, Logger, Runtime, Builder,
+                      IBuilderConfig, IElementWiseLayer, IOptimizationProfile, IReduceLayer, OnnxParser)
 
 
 @dataclass
